@@ -386,7 +386,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         [Option("port", Required = false, Default = 32150, HelpText = "The port to bind the server to.")]
         public int Port { get; set; }
 
-        [Option("endpoint", Required = false, Default = "*", HelpText = "The port to bind the server to.")]
+        [Option("endpoint", Required = false, Default = "*", HelpText = "The endpoint to bind the server to.")]
         public string Endpoint { get; set; }
     }
 

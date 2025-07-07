@@ -20,44 +20,43 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void Run(RunUpstreamServerOptions options)
         {
             var serviceConfigurationJson = File.ReadAllText("./upstream-server-config.json");
-            var bindEndpoint = "localhost";
-            var bindPort = 40080;
-            var metadataPath = "./store";
-            var contentPath = "./content";
+            var bindEndpoint = options.Endpoint;
+            var bindPort = options.Port;
+            var metadataPath = options.Path;
+            var contentPath = options.ContentSourcePath;
 
-var host = new WebHostBuilder()
-    // Bind to a specific IP address or HOST NAME
-    .UseUrls($"http://{bindEndpoint}:{bindPort}")
-    // Use the sample startup provided. Use the sample startup as a starting point for a custom startup
-    .UseStartup<UpstreamServerStartup>()
-    .UseKestrel()
-    .ConfigureKestrel((context, opts) => { })
-    .ConfigureLogging((hostingContext, logging) =>
-    {
-        logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
-        logging.AddConsole();
-        logging.AddDebug();
-        logging.AddEventSourceLogger();
-    })
-    .ConfigureAppConfiguration((hostingContext, config) =>
-    {
-        // Pass along configuration to the startup.
-        var configDictionary = new Dictionary<string, string>()
-        {
+            var host = new WebHostBuilder()
+                // Bind to a specific IP address or HOST NAME
+                .UseUrls($"http://{bindEndpoint}:{bindPort}")
+                // Use the sample startup provided. Use the sample startup as a starting point for a custom startup
+                .UseStartup<UpstreamServerStartup>()
+                .UseKestrel()
+                .ConfigureKestrel((context, opts) => { })
+                .ConfigureLogging((hostingContext, logging) =>
+                {
+                    logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
+                    logging.AddConsole();
+                    logging.AddDebug();
+                    logging.AddEventSourceLogger();
+                })
+                .ConfigureAppConfiguration((hostingContext, config) =>
+                {
+                    // Pass along configuration to the startup.
+                    var configDictionary = new Dictionary<string, string>()
+                    {
             // Path to local metadata store
             { "metadata-path", metadataPath },
             // Path to local update content store
             { "content-path", contentPath },
             // Path to the WSUS configuration file
             { "service-config-json", serviceConfigurationJson }
-        };
+                    };
 
-        config.AddInMemoryCollection(configDictionary);
-    })
-    .Build();
+                    config.AddInMemoryCollection(configDictionary);
+                })
+                .Build();
 
             host.Run();
-
         }
     }
 }

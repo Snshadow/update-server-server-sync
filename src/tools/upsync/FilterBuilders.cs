@@ -52,14 +52,14 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
 
             var classificationFilter = StringGuidsToGuids(filterOptions.ClassificationsFilter);
-            if (classificationFilter == null)
+            if (classificationFilter is null)
             {
                 ConsoleOutput.WriteRed("The classification filter must contain only GUIDs!");
                 return null;
             }
 
             var productsFilter = StringGuidsToGuids(filterOptions.ProductsFilter);
-            if (productsFilter == null)
+            if (productsFilter is null)
             {
                 ConsoleOutput.WriteRed("The product ID filter must contain only GUIDs!");
                 return null;
@@ -69,7 +69,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             filter.CategoryFilter.AddRange(classificationFilter);
 
             filter.IdFilter = StringGuidsToGuids(filterOptions.IdFilter);
-            if (filter.IdFilter == null)
+            if (filter.IdFilter is null)
             {
                 ConsoleOutput.WriteRed("The update ID filter must contain only GUIDs!");
                 return null;

@@ -76,7 +76,7 @@ var baselineSource = CompressedMetadataStore.Open(&quot;baseline.zip&quot;);
 var latestSource = new CompressedMetadataStore(baselineSource);
 
 var queryFilter = baselineSource.Filters.FirstOrDefault();
-if (queryFilter == null)
+if (queryFilter is null)
 {
     // The baseline does not have any filteres; create a filter that matches all updates
     queryFilter = new QueryFilter(

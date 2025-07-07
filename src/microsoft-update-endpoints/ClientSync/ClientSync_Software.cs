@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
-using Microsoft.UpdateServices.WebServices.ClientSync;
 using System.ServiceModel;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {
@@ -23,7 +23,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             MetadataSourceLock.EnterReadLock();
 
-            if (MetadataSource == null)
+            if (MetadataSource is null)
             {
                 throw new FaultException();
             }
@@ -78,7 +78,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             var missingRootUpdates = RootUpdates
                 .Except(installedNonLeaf)                               // Do not resend installed updates
                 .Except(otherCached)                                    // Do not resend other client known updates
-                .Where(guid => IdToFullIdentityMap.ContainsKey(guid))   
+                .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
                 .Select(guid => IdToFullIdentityMap[guid])              // Map the GUID to a fully qualified identity
                 .Select(id => MetadataSource.GetPackage(id) as MicrosoftUpdatePackage)       // Get the update by identity
                 .Take(MaxUpdatesInResponse + 1)                         // Only take the maximum number of updates allowed + 1 (to see if we truncated)
@@ -116,7 +116,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                     .Except(otherCached)                        // Do not resend other client known updates
                     .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
                     .Select(guid => IdToFullIdentityMap[guid])  // Map the GUID to a fully qualified identity
-                    // Non leaf updates can be either a category or regular update
+                                                                // Non leaf updates can be either a category or regular update
                     .Select(id => MetadataSource.GetPackage(id) as MicrosoftUpdatePackage)
                     .Where(u => u.IsApplicable(installedNonLeaf))    // Eliminate not applicable updates
                     .Take(MaxUpdatesInResponse + 1)             // Only take the maximum number of updates allowed + 1 (to see if we truncated)
@@ -155,7 +155,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
                 .Select(guid => IdToFullIdentityMap[guid])              // Map the GUID to a fully qualified identity
                 .Select(id => MetadataSource.GetPackage(id) as SoftwareUpdate)          // Select the software update by identity
-                .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates != null && u.BundledWithUpdates.Count > 0))// Remove not applicable and not bundles
+                .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates?.Count ?? 0) > 0)// Remove not applicable and not bundles
                 .Take(MaxUpdatesInResponse + 1)
                 .ToList();
 
@@ -191,7 +191,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 .Except(otherCached)                                    // Do not resend other client known updates
                 .Select(guid => IdToFullIdentityMap[guid])              // Map the GUID to a fully qualified identity
                 .Select(id => MetadataSource.GetPackage(id) as SoftwareUpdate)          // Select the software update by identity
-                .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates == null || u.BundledWithUpdates.Count == 0)) // Remove not applicable and bundles
+                .Where(u => u.IsApplicable(installedNonLeaf) && ((u.BundledWithUpdates?.Count ?? 0) == 0)) // Remove not applicable and bundles
                 .Take(MaxUpdatesInResponse + 1)
                 .ToList();
 
@@ -235,8 +235,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 var identity = softwareUpdates[i].Id;
                 var coreXml = GetCoreFragment(identity);
 
-                var isBundle = softwareUpdates[i].BundledUpdates != null && softwareUpdates[i].BundledUpdates.Count > 0;
-                var isBundled = softwareUpdates[i].BundledWithUpdates != null && softwareUpdates[i].BundledWithUpdates.Count > 0;
+                var isBundle = softwareUpdates[i].BundledUpdates is not null && softwareUpdates[i].BundledUpdates.Count > 0;
+                var isBundled = softwareUpdates[i].BundledWithUpdates is not null && softwareUpdates[i].BundledWithUpdates.Count > 0;
 
                 // Add the update information to the return array
                 returnList.Add(new UpdateInfo()

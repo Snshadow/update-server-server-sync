@@ -54,12 +54,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _Title;
                 }
-                else if (_FastLookupSource != null)
+                else if (_FastLookupSource is not null)
                 {
                     _FastLookupSource.TrySimpleKeyLookup<string>(_Id, Storage.Index.AvailableIndexes.TitlesIndexName, out string title);
                     return title;
                 }
-                else if (_MetadataSource != null)
+                else if (_MetadataSource is not null)
                 {
                     LoadNonIndexedMetadataBase();
                     _TitleLoaded = true;
@@ -85,7 +85,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _Categories;
                 }
-                else if (_FastLookupSource != null)
+                else if (_FastLookupSource is not null)
                 {
                     _FastLookupSource.TrySimpleKeyLookup<List<Guid>>(this._Id, Index.AvailableIndexes.CategoriesIndexName, out _Categories);
                     _CategoriesLoaded = true;
@@ -105,7 +105,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public List<MicrosoftUpdatePackage> GetCategories(ILookup<Guid, MicrosoftUpdatePackage> knownCategories)
         {
             var prerequisites = Prerequisites;
-            if (prerequisites == null)
+            if (prerequisites is null)
             {
                 return null;
             }
@@ -133,7 +133,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _Prerequisites;
                 }
-                else if (_FastLookupSource != null)
+                else if (_FastLookupSource is not null)
                 {
                     _FastLookupSource.TryListKeyLookup<IPrerequisite>(this._Id, Index.AvailableIndexes.PrerequisitesIndexName, out _Prerequisites);
                     _PrerequisitesLoaded = true;
@@ -191,12 +191,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _Files;
                 }
-                else if (_FastLookupSource != null)
+                else if (_FastLookupSource is not null)
                 {
                     _FastLookupSource.TryListKeyLookup<UpdateFile>(this._Id, Index.AvailableIndexes.FilesIndexName, out _Files);
                     _FilesLoaded = true;
                 }
-                else if (_MetadataSource != null)
+                else if (_MetadataSource is not null)
                 {
                     _Files = _MetadataSource.GetFiles<UpdateFile>(this._Id).Cast<UpdateFile>().ToList();
                     _FilesLoaded = true;
@@ -220,7 +220,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _Handler;
                 }
-                else if (_MetadataSource != null)
+                else if (_MetadataSource is not null)
                 {
                     LoadApplicabilityRules();
                 }
@@ -242,7 +242,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _ApplicabilityRules;
                 }
-                else if (_MetadataSource != null)
+                else if (_MetadataSource is not null)
                 {
                     LoadApplicabilityRules();
                 }
@@ -270,11 +270,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <returns>XML stream, UTF8 encoded</returns>
         public Stream GetMetadataStream()
         {
-            if (_MetadataBytes != null)
+            if (_MetadataBytes is not null)
             {
                 return new GZipStream(new MemoryStream(_MetadataBytes, false), CompressionMode.Decompress);
             }
-            else if (_MetadataSource != null)
+            else if (_MetadataSource is not null)
             {
                 return _MetadataSource.GetMetadata(_Id);
             }
@@ -376,7 +376,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
             createdUpdate._MetadataSource = metadataStore;
 
-            if (metadataStore != null)
+            if (metadataStore is not null)
             {
                 createdUpdate._Files = metadataStore.GetFiles<UpdateFile>(createdUpdate._Id).Cast<UpdateFile>().ToList();
                 createdUpdate._FilesLoaded = true;
@@ -493,7 +493,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 return;
             }
 
-            if (filesCollection == null)
+            if (filesCollection is null)
             {
                 throw new Exception($"Update {_Id} has unresolved files");
             }
@@ -529,7 +529,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         {
             lock (this)
             {
-                if (_ApplicabilityRulesLoaded || _MetadataSource == null)
+                if (_ApplicabilityRulesLoaded || _MetadataSource is null)
                 {
                     return;
                 }
@@ -540,16 +540,16 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     XPathNavigator navigator = document.CreateNavigator();
 
                     XmlNamespaceManager manager = new(navigator.NameTable);
-                    manager.AddNamespace("upd", "http://schemas.microsoft.com/msus/2002/12/Update");
-                    manager.AddNamespace("cat", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/Category");
-                    manager.AddNamespace("drv", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsDriver");
-                    manager.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
-                    manager.AddNamespace("cmd", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/CommandLineInstallation");
-                    manager.AddNamespace("psf", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsPatch");
                     manager.AddNamespace("cbs", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/Cbs");
+                    manager.AddNamespace("cat", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/Category");
+                    manager.AddNamespace("cmd", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/CommandLineInstallation");
+                    manager.AddNamespace("drv", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsDriver");
+                    manager.AddNamespace("lar", "http://schemas.microsoft.com/msus/2002/12/LogicalApplicabilityRules");
                     manager.AddNamespace("msp", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsInstaller");
+                    manager.AddNamespace("psf", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsPatch");
+                    manager.AddNamespace("upd", "http://schemas.microsoft.com/msus/2002/12/Update");
                     manager.AddNamespace("wsi", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsSetup");
-
+                    manager.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
                     _ApplicabilityRules = ApplicabilityRule.FromXml(navigator, manager);
                     _Handler = HandlerMetadata.FromXml(navigator, manager);
                 }
@@ -561,9 +561,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
         internal void LoadNonIndexedMetadataBase()
         {
-            lock(this)
+            lock (this)
             {
-                if (_MetadataLoaded || _MetadataSource == null)
+                if (_MetadataLoaded || _MetadataSource is null)
                 {
                     return;
                 }
@@ -583,7 +583,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     manager.AddNamespace("cbs", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/Cbs");
                     manager.AddNamespace("msp", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsInstaller");
                     manager.AddNamespace("wsi", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsSetup");
-                
+
                     _Description = UpdateParser.GetDescription(navigator, manager);
                     _Title = UpdateParser.GetTitle(navigator, manager);
 

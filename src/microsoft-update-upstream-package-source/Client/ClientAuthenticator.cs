@@ -71,7 +71,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         {
             UpstreamEndpoint = endpoint;
             AccountGuid = accountGuid;
-            
+
             if (!string.IsNullOrEmpty(accountName))
             {
                 AccountName = accountName;
@@ -94,7 +94,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <returns>The new ServiceAccessToken</returns>
         public async Task<ServiceAccessToken> Authenticate(ServiceAccessToken cachedAccessToken)
         {
-            if (cachedAccessToken == null)
+            if (cachedAccessToken is null)
             {
                 return await Authenticate();
             }
@@ -172,11 +172,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             // Retrieve the authentication information
             authConfigResponse = await serverSyncClient.GetAuthConfigAsync(new GetAuthConfigRequest());
 
-            if (authConfigResponse == null)
+            if (authConfigResponse is null)
             {
                 throw new Exception("Authentication config response was null.");
             }
-            else if (authConfigResponse.GetAuthConfigResponse1.GetAuthConfigResult.AuthInfo == null)
+            else if (authConfigResponse.GetAuthConfigResponse1.GetAuthConfigResult.AuthInfo is null)
             {
                 throw new Exception("Authentication config payload was null.");
             }
@@ -213,8 +213,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
             var getAuthCookieResponse = await authenticationService.GetAuthorizationCookieAsync(cookieRequest);
 
-            if (getAuthCookieResponse == null ||
-                getAuthCookieResponse.GetAuthorizationCookieResponse1.GetAuthorizationCookieResult.CookieData == null)
+            if (getAuthCookieResponse is null ||
+                getAuthCookieResponse.GetAuthorizationCookieResponse1.GetAuthorizationCookieResult.CookieData is null)
             {
                 throw new Exception("Failed to get authorization token. Response or cookie is null.");
             }
@@ -244,8 +244,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             {
                 GetCookie = new GetCookieRequestBody()
                 {
-                    authCookies = new UpdateServices.WebServices.ServerSync.AuthorizationCookie[] 
-                    { 
+                    authCookies = new UpdateServices.WebServices.ServerSync.AuthorizationCookie[]
+                    {
                         new UpdateServices.WebServices.ServerSync.AuthorizationCookie()
                         {
                             CookieData = authCookie.CookieData,
@@ -268,13 +268,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             {
                 cookieResponse = await serverSyncClient.GetCookieAsync(cookieRequest);
             }
-            catch(System.ServiceModel.FaultException ex)
+            catch (System.ServiceModel.FaultException ex)
             {
                 throw new UpstreamServerException(ex);
             }
 
-            if (cookieResponse == null ||
-                cookieResponse.GetCookieResponse1.GetCookieResult.EncryptedData == null)
+            if (cookieResponse is null ||
+                cookieResponse.GetCookieResponse1.GetCookieResult.EncryptedData is null)
             {
                 throw new Exception("Failed to get access cookie. Response or cookie is null.");
             }

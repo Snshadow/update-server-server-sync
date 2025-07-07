@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 using ICSharpCode.SharpZipLib.GZip;
-using Microsoft.Azure.Storage.Blob;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs.Specialized;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Newtonsoft.Json;
@@ -17,7 +19,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 {
     class IdentitiesIndex
     {
-        private readonly CloudBlobContainer ParentContainer;
+        private readonly BlobContainerClient ParentContainer;
 
         private Dictionary<IPackageIdentity, int> _IdentityToIndexMap;
         private Dictionary<int, IPackageIdentity> _IndexToIdentityMap;
@@ -34,16 +36,16 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public List<IPackageIdentity> Identities => _IdentityToIndexMap.Keys.ToList();
 
-        public IdentitiesIndex(CloudBlobContainer container, AzurePackageStoreInitializeMode mode)
+        public IdentitiesIndex(BlobContainerClient container, AzurePackageStoreInitializeMode mode)
         {
             ParentContainer = container;
             PendingIdentities = new List<PackageStoreEntry>();
             Read(mode);
         }
 
-        public static void Erase(CloudBlobContainer container)
+        public static void Erase(BlobContainerClient container)
         {
-            var indexBlob = container.GetBlockBlobReference(IdentitiesIndexBlobName);
+            var indexBlob = container.GetBlockBlobClient(IdentitiesIndexBlobName);
             indexBlob.DeleteIfExists();
         }
 
@@ -62,14 +64,14 @@ namespace Microsoft.PackageGraph.Storage.Azure
             PackageTypeIndex = new Dictionary<int, int>();
             StoreEntries = new Dictionary<int, PackageStoreEntry>();
 
-            var indexBlob = ParentContainer.GetBlockBlobReference(IdentitiesIndexBlobName);
+            var indexBlob = ParentContainer.GetBlockBlobClient(IdentitiesIndexBlobName);
             if (indexBlob.Exists())
             {
-                ConcurrencyEtag = indexBlob.Properties.ETag;
+                ConcurrencyEtag = indexBlob.GetProperties().Value.ETag.ToString();
                 using var indexStream = new MemoryStream();
-                indexBlob.DownloadRangeToStream(indexStream, 0, indexBlob.Properties.Length);
+                indexBlob.DownloadTo(indexStream);
 
-                var blockList = indexBlob.DownloadBlockList(BlockListingFilter.Committed);
+                var blockList = indexBlob.GetBlockList(BlockListTypes.Committed).Value.CommittedBlocks;
                 long currentOffset = 0;
 
                 foreach (var block in blockList)
@@ -97,7 +99,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
                         });
                     }
 
-                    currentOffset += block.Length;
+                    currentOffset += block.SizeLong;
                 }
             }
             else
@@ -172,7 +174,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public int AddPackage(IPackage package, PackageStoreEntry packageEntry)
         {
-            lock(_IdentityToIndexMap)
+            lock (_IdentityToIndexMap)
             {
                 var insertIndex = _IdentityToIndexMap.Count;
                 if (!_IdentityToIndexMap.TryAdd(package.Id, insertIndex))
@@ -213,7 +215,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public void Save()
         {
-            lock(_IdentityToIndexMap)
+            lock (_IdentityToIndexMap)
             {
                 if (PendingIdentities.Count > 0)
                 {
@@ -226,14 +228,14 @@ namespace Microsoft.PackageGraph.Storage.Azure
                     }
 
                     pendingIdentitiesStream.Seek(0, SeekOrigin.Begin);
-                    var indexBlob = ParentContainer.GetBlockBlobReference(IdentitiesIndexBlobName);
+                    var indexBlob = ParentContainer.GetBlockBlobClient(IdentitiesIndexBlobName);
                     List<string> blocksList = new();
 
                     string currentEtag = null;
                     if (indexBlob.Exists())
                     {
-                        currentEtag = indexBlob.Properties.ETag;
-                        blocksList.AddRange(indexBlob.DownloadBlockList(BlockListingFilter.Committed).Select(block => block.Name));
+                        currentEtag = indexBlob.GetProperties().Value.ETag.ToString();
+                        blocksList.AddRange(indexBlob.GetBlockList(BlockListTypes.Committed).Value.CommittedBlocks.Select(block => block.Name));
                     }
 
                     if (currentEtag != ConcurrencyEtag)
@@ -242,10 +244,10 @@ namespace Microsoft.PackageGraph.Storage.Azure
                     }
 
                     var commitId = GetCommitIdForPackages(PendingIdentities.Select(p => p.PackageId).ToList());
-                    indexBlob.PutBlock(commitId, pendingIdentitiesStream, null);
+                    indexBlob.StageBlock(commitId, pendingIdentitiesStream, null);
 
                     blocksList.Add(commitId);
-                    indexBlob.PutBlockList(blocksList);
+                    indexBlob.CommitBlockList(blocksList);
 
                     PendingIdentities.Clear();
                 }

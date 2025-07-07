@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.UpdateServices.WebServices.ClientReporting;
 using System;
 using System.Threading.Tasks;
-using Microsoft.UpdateServices.WebServices.ClientReporting;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {

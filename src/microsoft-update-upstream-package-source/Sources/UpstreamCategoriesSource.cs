@@ -52,7 +52,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         {
             lock(this)
             {
-                if (_Identities == null)
+                if (_Identities is null)
                 {
                     _Identities = _Client.GetCategoryIds(out var _).ToList();
                     _Identities.Sort();
@@ -121,7 +121,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
                 lock (progressArgs)
                 {
-                    progressArgs.Current++;
+                    progressArgs.Current += retrievedBatch.Count;
                     MetadataCopyProgress?.Invoke(this, progressArgs);
                 }
             });

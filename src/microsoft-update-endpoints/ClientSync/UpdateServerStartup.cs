@@ -1,19 +1,19 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Logging;
-using SoapCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.UpdateServices.WebServices.ClientSync;
-using System.Reflection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
+using Microsoft.UpdateServices.WebServices.ClientSync;
 using Newtonsoft.Json;
-using System.ServiceModel;
+using SoapCore;
+using System.Reflection;
 using System.Text;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
@@ -58,7 +58,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             if (!string.IsNullOrEmpty(contentPath))
             {
                 ContentSource = new FileSystemContentStore(contentPath);
-                if (ContentSource == null)
+                if (ContentSource is null)
                 {
                     throw new System.Exception($"Cannot open updates content source from path {contentPath}");
                 }
@@ -80,7 +80,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             // Enable the upstream WCF services
             var clientSyncService = new ClientSyncWebService();
-            clientSyncService.SetContentURLBase(ContentSource == null ? null : ContentRoot);
+            clientSyncService.SetContentURLBase(ContentSource is null ? null : ContentRoot);
             clientSyncService.SetServiceConfiguration(UpdateServiceConfiguration);
             clientSyncService.SetPackageStore(MetadataSource);
 
@@ -89,9 +89,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             services.TryAddSingleton<ReportingWebService>();
 
             // Enable the content controller if serving content
-            if (ContentSource != null)
+            if (ContentSource is not null)
             {
-                services.AddSingleton(ContentSource as IContentStore);
+                services.AddSingleton<IContentStore>(ContentSource);
                 // Add ContentController from this assembly
                 services.AddMvc().AddApplicationPart(Assembly.GetExecutingAssembly()).AddControllersAsServices();
             }
@@ -103,14 +103,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="app">App builder to configure</param>
         /// <param name="env">Hosting environment</param>
         /// <param name="loggerFactory">Logging factory</param>
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            if (ContentSource != null)
+            if (ContentSource is not null)
             {
                 app.UseRouting();
                 app.UseEndpoints(endpoints =>
@@ -124,7 +124,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             // Wire the upstream WCF services
             app.UseSoapEndpoint<ClientSyncWebService>(
-                "/ClientWebService/client.asmx", 
+                "/ClientWebService/client.asmx",
                 new SoapEncoderOptions() { WriteEncoding = new UTF8Encoding(false) },
                 SoapSerializer.XmlSerializer);
 

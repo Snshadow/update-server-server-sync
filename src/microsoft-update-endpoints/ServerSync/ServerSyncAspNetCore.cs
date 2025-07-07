@@ -1,19 +1,19 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.UpdateServices.WebServices.ServerSync;
-using System.Linq;
-using System.IO;
-using System.Text;
-using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
-using System.Threading;
+using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
+using Microsoft.UpdateServices.WebServices.ServerSync;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
+using System.IO;
+using System.Text;
+using System.Threading;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
 {
@@ -74,12 +74,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             ProductsIndex = new Dictionary<Guid, List<MicrosoftUpdatePackage>>();
             ClassificationsIndex = new Dictionary<Guid, List<MicrosoftUpdatePackage>>();
 
-            if (PackageStore != null)
+            if (PackageStore is not null)
             {
                 Categories.AddRange(packageSource.OfType<ProductCategory>());
                 Categories.AddRange(packageSource.OfType<ClassificationCategory>());
                 Categories.AddRange(packageSource.OfType<DetectoidCategory>());
-                foreach(var softwarePackage in packageSource.OfType<SoftwareUpdate>())
+                foreach (var softwarePackage in packageSource.OfType<SoftwareUpdate>())
                 {
                     Updates.Add(softwarePackage.Id as MicrosoftUpdatePackageIdentity, softwarePackage);
                 }
@@ -101,7 +101,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
 
                 foreach (var update in Updates.Values)
                 {
-                    if (update.Prerequisites != null)
+                    if (update.Prerequisites is not null)
                     {
                         foreach (var prerequisite in update.Prerequisites.OfType<AtLeastOne>().SelectMany(p => p.Simple))
                         {
@@ -148,14 +148,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                 LastChange = DateTime.Now,
                 AuthInfo = new AuthPlugInInfo[]
                 {
-                    new AuthPlugInInfo() { PlugInID = "DssTargeting", ServiceUrl = "DssAuthWebService/DssAuthWebService.asmx" } 
+                    new AuthPlugInInfo() { PlugInID = "DssTargeting", ServiceUrl = "DssAuthWebService/DssAuthWebService.asmx" }
                 }
             };
 
             GetAuthConfigResponse response = new(
-                new GetAuthConfigResponseBody() 
-                { 
-                    GetAuthConfigResult = result 
+                new GetAuthConfigResponseBody()
+                {
+                    GetAuthConfigResult = result
                 });
 
             return Task.FromResult(response.GetAuthConfigResponse1.GetAuthConfigResult);
@@ -210,8 +210,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     var productsFilter = request.GetRevisionIdList.filter.Categories;
                     var classificationsFilter = request.GetRevisionIdList.filter.Classifications;
 
-                    var effectiveProductsFilter = productsFilter == null ? ProductsIndex.Keys : productsFilter.Select(p => p.Id);
-                    var effectiveClassificationsFilter = classificationsFilter == null ? ClassificationsIndex.Keys : classificationsFilter.Select(c => c.Id);
+                    var effectiveProductsFilter = productsFilter is null ? ProductsIndex.Keys : productsFilter.Select(p => p.Id);
+                    var effectiveClassificationsFilter = classificationsFilter is null ? ClassificationsIndex.Keys : classificationsFilter.Select(c => c.Id);
 
                     var filteredByProduct = new List<MicrosoftUpdatePackageIdentity>();
                     foreach (var product in effectiveProductsFilter)
@@ -234,17 +234,17 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     // Also select all updates that are bundled with updates matching the filter
                     var filteredResult = filteredByProduct.Intersect(filteredByClassification);
                     List<MicrosoftUpdatePackageIdentity> bundledUpdates = new();
-                    foreach(var result in filteredResult)
+                    foreach (var result in filteredResult)
                     {
                         if (Updates[result] is SoftwareUpdate softwareUpdate)
                         {
-                            if (softwareUpdate.BundledUpdates != null)
+                            if (softwareUpdate.BundledUpdates is not null)
                             {
                                 bundledUpdates.AddRange(softwareUpdate.BundledUpdates);
                             }
                         }
                     }
-                    
+
                     // Deduplicate result and convert to raw identity format
                     response.NewRevisions = filteredResult
                         .Union(bundledUpdates)
@@ -253,7 +253,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                         .ToArray();
                 }
             }
-            catch(Exception) { }
+            catch (Exception) { }
 
             PackageStoreLock.ReleaseReaderLock();
 
@@ -274,12 +274,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             serviceConfiguration = ServiceConfiguration;
             ServiceConfigurationLock.ReleaseReaderLock();
 
-            if (serviceConfiguration == null)
+            if (serviceConfiguration is null)
             {
                 return Task.FromResult(response);
             }
 
-            if (PackageStore == null)
+            if (PackageStore is null)
             {
                 return Task.FromResult(response);
             }
@@ -308,7 +308,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     }
 
                     var update = PackageStore.GetPackage(updateIdentity) as MicrosoftUpdatePackage;
-                    if (update.Files != null)
+                    if (update.Files is not null)
                     {
                         // if update contains files, we must also gather file information
                         foreach (var updateFile in update.Files)
@@ -337,7 +337,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     returnUpdatesList.Add(rawUpdateData);
                 }
             }
-            catch(Exception) { }
+            catch (Exception) { }
 
             response.updates = returnUpdatesList.ToArray();
             // Deduplicate list of files

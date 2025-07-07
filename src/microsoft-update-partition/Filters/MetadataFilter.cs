@@ -80,6 +80,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// Create a filter from JSON
         /// </summary>
         /// <param name="source">The JSON string</param>
+
         /// <returns>A filter for metadata in a updates metadata source</returns>
         public static MetadataFilter FromJson(string source)
         {
@@ -101,7 +102,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <typeparam name="T">Package type to query. The type must inherit <see cref="MicrosoftUpdatePackage"/></typeparam>
         /// <param name="source">The metadata store to filter</param>
         /// <returns>Matching packages</returns>
-        public IEnumerable<T> Apply<T>(IMetadataStore source)  where T : MicrosoftUpdatePackage
+        public IEnumerable<T> Apply<T>(IMetadataStore source) where T : MicrosoftUpdatePackage
         {
             IEnumerable<T> filteredUpdates;
             var updates = source.OfType<T>();
@@ -137,7 +138,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
             if (CategoryFilter?.Count > 0)
             {
-                filteredUpdates = filteredUpdates.Where(u => u.Prerequisites != null);
+                filteredUpdates = filteredUpdates.Where(u => u.Prerequisites is not null);
 
                 filteredUpdates = filteredUpdates
                     .Where(u =>
@@ -170,8 +171,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             if (SkipSuperseded)
             {
                 filteredUpdates = filteredUpdates
-                    .Where(u => u is not SoftwareUpdate || 
-                    (u is SoftwareUpdate softwareUpdate && (softwareUpdate.IsSupersededBy == null || softwareUpdate.IsSupersededBy.Count == 0)));
+                    .Where(u => u is not SoftwareUpdate ||
+                    (u is SoftwareUpdate softwareUpdate && (softwareUpdate.IsSupersededBy is null || softwareUpdate.IsSupersededBy.Count == 0)));
             }
 
             // Return first X matches, if requested

@@ -25,7 +25,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content
         public string FileName { get; set; }
 
         /// <summary>
-        /// Ges the file size, in bytes.
+        /// Get the file size, in bytes.
         /// </summary>
         /// <value>File size</value>
         [JsonProperty]

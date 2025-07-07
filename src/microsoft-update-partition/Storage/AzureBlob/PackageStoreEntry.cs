@@ -8,7 +8,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
     class PackageStoreEntry
     {
         [JsonConstructor]
-        private PackageStoreEntry()
+        public PackageStoreEntry()
         {
         }
 

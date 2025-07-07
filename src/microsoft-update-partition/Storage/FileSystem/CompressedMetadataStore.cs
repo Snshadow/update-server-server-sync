@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure.Storage.Blobs.Models;
 using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
@@ -20,7 +21,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         ZipOutputStream OutputFile;
 
         Dictionary<string, long> ZipEntriesIndex;
-        
+
         private bool IsDisposed = false;
 
         readonly object WriteLock = new();
@@ -75,7 +76,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public bool ContainsMetadata(IPackageIdentity packageIdentity)
         {
-            if (InputFile != null)
+            if (InputFile is not null)
             {
                 var metadataPath = GetPackageMetadataPath(packageIdentity);
                 return ZipEntriesIndex.TryGetValue(metadataPath, out var _);
@@ -88,7 +89,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public Stream GetMetadata(IPackageIdentity packageIdentity)
         {
-            if (InputFile != null)
+            if (InputFile is not null)
             {
                 var metadataPath = GetPackageMetadataPath(packageIdentity);
                 return GetEntryStream(metadataPath);
@@ -115,15 +116,15 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             if (!IsDisposed)
             {
-                if (OutputFile != null)
+                if (OutputFile is not null)
                 {
                     OutputFile.Close();
                     OutputFile.Dispose();
                     OutputFile = null;
                 }
-                else if (InputFile == null)
+                else
                 {
-                    InputFile.Close();
+                    InputFile?.Close();
                     InputFile = null;
                 }
 
@@ -133,19 +134,18 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void AddPackage(IPackage package)
         {
-            if (OutputFile == null)
+            if (OutputFile is null)
             {
                 throw new Exception("Write not supported");
             }
 
-            lock(WriteLock)
+            lock (WriteLock)
             {
                 WritePackageMetadata(package);
 
                 if (PartitionRegistration.TryGetPartitionFromPackage(package, out var partitionDefinition) &&
                     partitionDefinition.HasExternalContentFileMetadata &&
-                    package.Files != null &&
-                    package.Files.Any())
+                    (package.Files?.Any() ?? false))
                 {
                     WritePackageFiles(package);
                 }
@@ -177,7 +177,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
         {
-            if (InputFile == null)
+            if (InputFile is null)
             {
                 throw new Exception("Read not supported");
             }
@@ -191,7 +191,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     using var filesStream = InputFile.GetInputStream(entryIndex);
                     using var filesReader = new StreamReader(filesStream);
                     var serializer = new JsonSerializer();
-                    return (serializer.Deserialize(filesReader, typeof(List<T>)) as List<T>);
+                    return serializer.Deserialize(filesReader, typeof(List<T>)) as List<T>;
                 }
             }
 
@@ -200,7 +200,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void AddPackages(IEnumerable<IPackage> packages)
         {
-            foreach(var package in packages)
+            foreach (var package in packages)
             {
                 AddPackage(package);
             }
@@ -208,9 +208,9 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void Flush()
         {
-            if (OutputFile != null)
+            if (OutputFile is not null)
             {
-                lock(WriteLock)
+                lock (WriteLock)
                 {
                     OutputFile.Flush();
                 }
@@ -225,14 +225,14 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 if (entry is ZipEntry zipEntry)
                 {
-                    foreach(var partitionDefinition in PartitionRegistration.GetAllPartitions())
+                    foreach (var partitionDefinition in PartitionRegistration.GetAllPartitions())
                     {
                         if (zipEntry.Name.StartsWith($"metadata/partitions/{partitionDefinition.Name}/"))
                         {
                             packagePaths.Add(new KeyValuePair<string, PartitionDefinition>(zipEntry.Name, partitionDefinition));
                             break;
                         }
-                    }   
+                    }
                 }
             }
 
@@ -252,7 +252,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public IEnumerator<IPackage> GetEnumerator()
         {
-            if (InputFile == null)
+            if (InputFile is null)
             {
                 throw new Exception("Read not supported");
             }
@@ -276,7 +276,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 destination.AddPackage(GetPackage(packageEntry.Key, packageEntry.Value.Name));
 
-                lock(progressArgs)
+                lock (progressArgs)
                 {
                     progressArgs.Current++;
                 }

@@ -180,7 +180,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
                     computerHwIdSet = driverMetadata[i].DistributionComputerHardwareId;
                 }
 
-                if (computerHwIdSet != null)
+                if (computerHwIdSet is not null)
                 {
                     MetadataToComputerHardwareIdMap.Add(startIndexInMetadataStore + i, computerHwIdSet);
                 }
@@ -202,7 +202,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
             foreach (var hardwareId in hardwareIds)
             {
                 var driverMatch = MatchDriverMetadata(hardwareId, computerHardwareIds, installedPrerequisites);
-                if (driverMatch != null)
+                if (driverMatch is not null)
                 {
                     driverMatch.MatchedHardwareId = hardwareId;
                     return driverMatch;
@@ -236,7 +236,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
                 !GetDriverUpdateFromMetadataIndex(metadataIndex).IsApplicable(installedPrerequisites));
 
             var bestMatch = MatchByComputerHardwareId(matchedDriverMetadataIndexes, computerHardwareIds);
-            if (bestMatch == null)
+            if (bestMatch is null)
             {
                 bestMatch = MatchBySimpleHardwareId(matchedDriverMetadataIndexes);
             }

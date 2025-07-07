@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Azure.Storage.Blob;
+using Azure;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Newtonsoft.Json;
@@ -17,7 +19,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 {
     class MetadataStore
     {
-        readonly CloudBlobContainer Container;
+        readonly BlobContainerClient Container;
 
         private const long InitialBlobSize = 32 * 1024 * 1024;
         private const int MetadataPageSize = 512;
@@ -39,10 +41,10 @@ namespace Microsoft.PackageGraph.Storage.Azure
         private long DownloadCacheOffset = long.MaxValue;
         private readonly MemoryStream DownloadCache = new(DownloadCacheSize);
 
-        internal MetadataStore(CloudBlobContainer container)
+        internal MetadataStore(BlobContainerClient container)
         {
             Container = container;
-            var targetBlob = container.GetPageBlobReference(MetadataBlobName);
+            var targetBlob = container.GetPageBlobClient(MetadataBlobName);
 
             if (!targetBlob.Exists())
             {
@@ -52,16 +54,16 @@ namespace Microsoft.PackageGraph.Storage.Azure
             }
             else
             {
-                var ranges = targetBlob.GetPageRanges();
-                UploadCacheOffset = NextAvailableOffset = !ranges.Any() ? 0 : ranges.Max(r => r.EndOffset) + 1;
-                PageBlobSize = targetBlob.Properties.Length;
+                var ranges = targetBlob.GetPageRanges().Value.PageRanges;
+                UploadCacheOffset = NextAvailableOffset = !ranges.Any() ? 0 : ranges.Max(r => r.Offset + r.Length) ?? 0;
+                PageBlobSize = targetBlob.GetProperties().Value.ContentLength;
             }
         }
 
         private void FillReadCache(long startOffset, long requiredLength)
         {
             DownloadCache.Seek(0, SeekOrigin.Begin);
-            var targetBlob = Container.GetPageBlobReference(MetadataBlobName);
+            var targetBlob = Container.GetPageBlobClient(MetadataBlobName);
 
             if (startOffset > NextAvailableOffset)
             {
@@ -73,11 +75,12 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
             if (fillSize < requiredLength)
             {
-                throw new Exception("Not enought range avaialable in the metadata blob");
+                throw new Exception("Not enough range available in the metadata blob");
             }
 
             DownloadCache.Seek(0, SeekOrigin.Begin);
-            targetBlob.DownloadRangeToStream(DownloadCache, startOffset, fillSize);
+            var response = targetBlob.Download(new HttpRange(startOffset, fillSize));
+            response.Value.Content.CopyTo(DownloadCache);
             DownloadCache.Seek(0, SeekOrigin.Begin);
             DownloadCache.SetLength(fillSize);
             DownloadCacheOffset = startOffset;
@@ -99,7 +102,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public Stream GetMetadata(PackageStoreEntry packageEntry)
         {
-            lock(DownloadCache)
+            lock (DownloadCache)
             {
                 FillBufferForPackage(packageEntry);
 
@@ -130,7 +133,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
             using var filesReader = new StreamReader(inMemoryFilesList);
             var serializer = new JsonSerializer();
-            var filesList = (serializer.Deserialize(filesReader, typeof(List<T>)) as List<T>);
+            var filesList = serializer.Deserialize(filesReader, typeof(List<T>)) as List<T>;
 
             return filesList;
         }
@@ -152,10 +155,10 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         private static bool PackageHasExternalFileMetadata(IPackage package)
         {
-            return (PartitionRegistration.TryGetPartitionFromPackage(package, out var partitionDefinition) &&
+            return PartitionRegistration.TryGetPartitionFromPackage(package, out var partitionDefinition) &&
                 partitionDefinition.HasExternalContentFileMetadata &&
-                package.Files != null &&
-                package.Files.Any());
+                package.Files is not null &&
+                package.Files.Any();
         }
 
         public PackageStoreEntry AddPackage(IPackage package)
@@ -219,7 +222,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         private void UploadMetadata(MemoryStream metadataBuffer, long offset)
         {
-            var targetBlob = Container.GetPageBlobReference(MetadataBlobName);
+            var targetBlob = Container.GetPageBlobClient(MetadataBlobName);
             lock (MetadataBlobLock)
             {
                 long requiredLength = offset + metadataBuffer.Length;
@@ -240,7 +243,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
                 readCount = metadataBuffer.Read(uploadBuffer, 0, uploadBuffer.Length);
                 if (readCount > 0)
                 {
-                    targetBlob.WritePages(new MemoryStream(uploadBuffer, 0, readCount), pageBlobOffset);
+                    targetBlob.UploadPages(new MemoryStream(uploadBuffer, 0, readCount), pageBlobOffset);
                     pageBlobOffset += readCount;
                 }
             } while (readCount > 0);

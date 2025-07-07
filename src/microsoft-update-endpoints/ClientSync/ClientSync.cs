@@ -1,20 +1,20 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
-using Microsoft.UpdateServices.WebServices.ClientSync;
-using System.IO;
-using System.Threading;
-using System.ServiceModel;
-using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
+using Microsoft.PackageGraph.Storage;
+using Microsoft.UpdateServices.WebServices.ClientSync;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.ServiceModel;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {
@@ -75,7 +75,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         }
 
         /// <summary>
-        /// Sets the service configuratoin
+        /// Sets the service configuration
         /// </summary>
         /// <param name="serviceConfiguration">Service configuration</param>
         public void SetServiceConfiguration(Config serviceConfiguration)
@@ -93,7 +93,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataSource = metadataSource;
 
-            if (MetadataSource != null)
+            if (MetadataSource is not null)
             {
                 PrerequisitesGraph prereqGraph = PrerequisitesGraph.FromIndexedPackageSource(MetadataSource);
 
@@ -109,7 +109,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 // Filter out leaf updates and only retain software ones that are not superseded
                 var leafSoftwareUpdates = MetadataSource.
                     OfType<SoftwareUpdate>()
-                    .Where(u => u.IsSupersededBy == null || u.IsSupersededBy.Count == 0)
+                    .Where(u => (u.IsSupersededBy?.Count ?? 0) == 0)
                     .GroupBy(u => u.Id.ID)
                     .Select(k => k.Key)
                     .ToHashSet();
@@ -117,7 +117,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
                 // Get the mapping of update index to identity that is used in the metadata source.
                 MetadataSourceIndex = new Dictionary<int, MicrosoftUpdatePackageIdentity>();
-                foreach(var package in MetadataSource.OfType<MicrosoftUpdatePackage>())
+                foreach (var package in MetadataSource.OfType<MicrosoftUpdatePackage>())
                 {
                     MetadataSourceIndex.Add(MetadataSource.GetPackageIndex(package.Id), package.Id);
                 }
@@ -185,15 +185,16 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         }
 
         /// <summary>
-        /// Not implemented.
+        /// Handle requests for extended update information. The extended information is extracted from update metadata.
+        /// Extended information also includes file URLs
         /// </summary>
-        /// <param name="cookie">Not implemented</param>
-        /// <param name="updateIDs">Not implemented</param>
-        /// <param name="infoTypes">Not implemented</param>
-        /// <param name="locales">Not implemented</param>
-        /// <param name="deviceAttributes">Not implemented</param>
-        /// <returns>Not implemented</returns>
-        public Task<ExtendedUpdateInfo2> GetExtendedUpdateInfo2Async(Cookie cookie, UpdateIdentity[] updateIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string deviceAttributes)
+        /// <param name="cookie">Access cookie</param>
+        /// <param name="updateIDs">Update IDs for which to get extended information</param>
+        /// <param name="infoTypes">The type of extended information requested</param>
+        /// <param name="locales">The language to use when getting language dependent extended information</param>
+        /// <param name="callerAttributes">Caller attributes; optional</param>
+        /// <returns>Extended update information response.</returns>
+        public Task<ExtendedUpdateInfo2> GetExtendedUpdateInfo2Async(Cookie cookie, UpdateIdentity[] updateIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string callerAttributes)
         {
             throw new NotImplementedException();
         }
@@ -212,7 +213,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             return UpdateXmlTransformer.GetExtendedFragmentFromMetadataXml(xmlReader.ReadToEnd());
         }
 
-        string GetLocalizedProperties(MicrosoftUpdatePackageIdentity updateIdentity, string[] languages)
+        string[] GetLocalizedProperties(MicrosoftUpdatePackageIdentity updateIdentity, string[] languages)
         {
             using var xmlStream = MetadataSource.GetMetadata(updateIdentity);
             using var xmlReader = new StreamReader(xmlStream, Encoding.Unicode);
@@ -227,13 +228,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="revisionIDs">Revision Ids for which to get extended information</param>
         /// <param name="infoTypes">The type of extended information requested</param>
         /// <param name="locales">The language to use when getting language dependent extended information</param>
-        /// <param name="deviceAttributes">Device attributes; unused</param>
+        /// <param name="callerAttributes">Caller attributes; unused</param>
         /// <returns>Extended update information response.</returns>
-        public Task<ExtendedUpdateInfo> GetExtendedUpdateInfoAsync(Cookie cookie, int[] revisionIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string deviceAttributes)
+        public Task<ExtendedUpdateInfo> GetExtendedUpdateInfoAsync(Cookie cookie, int[] revisionIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string callerAttributes)
         {
             MetadataSourceLock.EnterReadLock();
 
-            if (MetadataSource == null)
+            if (MetadataSource is null)
             {
                 throw new FaultException();
             }
@@ -262,26 +263,25 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                     });
                 }
             }
-            
 
             if (infoTypes.Contains(XmlUpdateFragmentType.LocalizedProperties))
             {
                 for (int i = 0; i < requestedUpdates.Count; i++)
                 {
-                    var localizedXml = GetLocalizedProperties(requestedUpdates[i].Id, locales);
+                    var localizedXmlArr = GetLocalizedProperties(requestedUpdates[i].Id, locales);
 
-                    if (!string.IsNullOrEmpty(localizedXml))
+                    foreach (var localizedXml in localizedXmlArr)
                     {
                         updateDataList.Add(new UpdateData()
                         {
                             ID = revisionIDs[i],
-                            Xml = GetLocalizedProperties(requestedUpdates[i].Id, locales)
+                            Xml = localizedXml
                         });
                     }
                 }
             }
 
-            var files = requestedUpdates.Where(u => u.Files != null && u.Files.Any()).SelectMany(u => u.Files.OfType<UpdateFile>()).Distinct().ToList();
+            var files = requestedUpdates.Where(u => u.Files?.Any() ?? false).SelectMany(u => u.Files.OfType<UpdateFile>()).Distinct().ToList();
             var fileList = new List<FileLocation>();
             for (int i = 0; i < files.Count; i++)
             {
@@ -298,7 +298,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             {
                 response.Updates = updateDataList.ToArray();
             }
-            
+
             if (fileList.Count > 0)
             {
                 response.FileLocations = fileList.ToArray();
@@ -387,15 +387,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             if (parameters.SkipSoftwareSync)
             {
-                return DoDriversSync(parameters);   
+                return DoDriversSync(parameters);
             }
             else
             {
                 return DoSoftwareUpdateSync(parameters);
             }
         }
-
-        
 
         /// <summary>
         /// Converts the a list of client supplied update indexes into a list of update identities
@@ -405,7 +403,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         private List<MicrosoftUpdatePackageIdentity> GetUpdateIdentitiesFromClientIndexes(int[] clientIndexes)
         {
             var updateIdentities = new List<MicrosoftUpdatePackageIdentity>();
-            if (clientIndexes != null)
+            if (clientIndexes is not null)
             {
                 foreach (var nonLeafRevision in clientIndexes)
                 {

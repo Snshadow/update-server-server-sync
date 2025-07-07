@@ -36,7 +36,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
             var resultantArray = new byte[inputHex.Length / 2];
             for (var i = 0; i < resultantArray.Length; i++)
             {
-                resultantArray[i] = System.Convert.ToByte(inputHex.Substring(i * 2, 2), 16);
+                resultantArray[i] = Convert.ToByte(inputHex.Substring(i * 2, 2), 16);
             }
             return resultantArray;
         }
@@ -46,7 +46,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
             byte[] hashHex = HexStringToHex(name);
             if (hashHex.Length == 32)
             {
-                return  new ContentFileDigest("SHA256", Convert.ToBase64String(hashHex));
+                return new ContentFileDigest("SHA256", Convert.ToBase64String(hashHex));
             }
             else if (hashHex.Length == 20)
             {
@@ -66,7 +66,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
         [HttpGet]
         public IActionResult GetMicrosoftUpdateContent(string contentHash)
         {
-            if (ContentStore == null)
+            if (ContentStore is null)
             {
                 return NotFound();
             }
@@ -76,7 +76,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
             {
                 parsedContentHash = GetContentFileDigestFromUriPart(contentHash);
             }
-            catch(Exception)
+            catch (Exception)
             {
                 return BadRequest();
             }
@@ -84,7 +84,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
             if (ContentStore.Contains(parsedContentHash, out var fileName))
             {
                 var typedHeaders = Request.GetTypedHeaders();
-                if (typedHeaders.Range != null)
+                if (typedHeaders.Range is not null)
                 {
                     ContentLogger.LogInformation($"Requested {fileName}, range {typedHeaders.Range.Ranges.First().From} -> {typedHeaders.Range.Ranges.First().To}");
                 }
@@ -112,7 +112,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
         [HttpHead]
         public void GetMicrosoftUpdateContentHead(string contentHash)
         {
-            if (ContentStore == null)
+            if (ContentStore is null)
             {
                 HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
                 return;

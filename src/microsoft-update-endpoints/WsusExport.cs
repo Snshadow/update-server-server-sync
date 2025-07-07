@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Compression;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.UpdateServices.WebServices.ServerSync;
 using System;
@@ -185,7 +184,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
         private static XElement CreateFilesElement(IEnumerable<MicrosoftUpdatePackage> updates)
         {
-            var filesToExport = updates.Where(u => u.Files != null).SelectMany(u => u.Files).Distinct();
+            var filesToExport = updates.Where(u => u.Files is not null).SelectMany(u => u.Files).Distinct();
 
             // Add all the files
             // Get the distinct list of files to export
@@ -254,7 +253,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
                 // Add the update's files
                 var filesElement = new XElement("Files");
-                if (update.Files != null)
+                if (update.Files is not null)
                 {
                     foreach (var file in update.Files)
                     {
@@ -268,7 +267,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 // Add the update's categories
                 var categoriesElement = new XElement("Categories");
                 var products = update.GetCategories(ProductsLookup);
-                if (products != null)
+                if (products is not null)
                 {
                     foreach (var product in products)
                     {
@@ -282,7 +281,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 // Add the update's classifications
                 var classificationsElement = new XElement("Classifications");
                 var classifications = update.GetCategories(ClassificationsLookup);
-                if (classifications != null)
+                if (classifications is not null)
                 {
                     foreach (var classification in classifications)
                     {
@@ -315,7 +314,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 foreach (var selectedUpdate in updatesToExport)
                 {
                     if (selectedUpdate is SoftwareUpdate softwareUpdate
-                        && softwareUpdate.BundledUpdates != null)
+                        && softwareUpdate.BundledUpdates is not null)
                     {
                         foreach (var bundledUpdate in softwareUpdate.BundledUpdates)
                         {

@@ -9,7 +9,6 @@ using Microsoft.PackageGraph.Storage;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 
@@ -24,7 +23,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void PrintMicrosoftUpdatePackages(QueryMetadataOptions options, IMetadataStore metadataStore, PackageType packageType)
         {
             var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options as IMetadataFilterOptions);
-            if (filter == null)
+            if (filter is null)
             {
                 return;
             }
@@ -82,11 +81,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     using (var targetJsonFile = File.Create(options.JsonOutPath))
                     {
                         var serializer = JsonSerializer.Create(new JsonSerializerSettings() { Formatting = Formatting.Indented });
-                        using (var jsonWriter = new StreamWriter(targetJsonFile))
-                        {
-                            serializer.Serialize(jsonWriter, packagesList);
-                        }
-
+                        using var jsonWriter = new StreamWriter(targetJsonFile);
+                        serializer.Serialize(jsonWriter, packagesList);
                     }
 
                     Console.WriteLine($"Query result saved to {options.JsonOutPath}.");
@@ -130,7 +126,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             Console.WriteLine("    Description    : {0}", update.Description);
 
             var categories = update.GetCategories(categoriesLookup);
-            if (categories != null)
+            if (categories is not null)
             {
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
                 Console.WriteLine("    Categories:");
@@ -148,7 +144,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 }
             }
 
-            if (update.Handler != null)
+            if (update.Handler is not null)
             {
                 PrintHandlerMetadata(update.Handler);
             }
@@ -163,7 +159,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 PrintSoftwareUpdateMetadata(softwareUpdate, source, updatesLookup);
             }
 
-            if (update.Files != null)
+            if (update.Files is not null)
             {
                 PrintFileDetails(update.Files.Cast<UpdateFile>());
             }
@@ -174,12 +170,12 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         static void PrintHandlerMetadata(HandlerMetadata handler)
         {
             Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine( "    Handler :");
+            Console.WriteLine("    Handler :");
             Console.ResetColor();
 
             Type handlerType = handler.GetType();
             var handlerProperties = handlerType.GetProperties();
-            foreach(var property in handlerProperties)
+            foreach (var property in handlerProperties)
             {
                 Console.WriteLine("{0,8}{1,-20} : {2}", " ", property.Name, property.GetValue(handler, null));
             }
@@ -205,7 +201,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         {
             const string localWhiteSpaceIndent = "    ";
 
-            if (softwareUpdate.BundledWithUpdates != null)
+            if (softwareUpdate.BundledWithUpdates is not null)
             {
                 foreach (var parentBundleID in softwareUpdate.BundledWithUpdates)
                 {
@@ -230,7 +226,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         static void PrintDriverMetadata(DriverUpdate driverUpdate)
         {
             var driverMetadataList = driverUpdate.GetDriverMetadata();
-            if (driverMetadataList != null)
+            if (driverMetadataList is not null)
             {
                 foreach (var driverMetadata in driverMetadataList)
                 {
@@ -289,7 +285,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             Console.WriteLine("        Support URL    : {0}", softwareUpdate.SupportUrl);
             Console.WriteLine("        KB Article     : {0}", softwareUpdate.KBArticleId);
 
-            if (softwareUpdate.IsSupersededBy != null)
+            if (softwareUpdate.IsSupersededBy is not null)
             {
                 Console.WriteLine("        Superseded by");
                 foreach (var supersedingUpdate in softwareUpdate.IsSupersededBy.OfType<MicrosoftUpdatePackageIdentity>())
@@ -300,7 +296,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 }
             }
 
-            if (softwareUpdate.SupersededUpdates != null)
+            if (softwareUpdate.SupersededUpdates is not null)
             {
                 Console.WriteLine("        Superseds");
                 foreach (var supersededGuid in softwareUpdate.SupersededUpdates)
@@ -365,7 +361,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         static void PrintBundledUpdates(SoftwareUpdate softwareUpdate, IMetadataStore source)
         {
-            if (softwareUpdate.BundledUpdates != null)
+            if (softwareUpdate.BundledUpdates is not null)
             {
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
                 Console.WriteLine("    Bundled updates:");
@@ -386,7 +382,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         static void PrintPrerequisites(MicrosoftUpdatePackage update, ILookup<Guid, MicrosoftUpdatePackage> updatesLookup)
         {
-            if (update.Prerequisites != null && update.Prerequisites.Count > 0)
+            if (update.Prerequisites is not null && update.Prerequisites.Count > 0)
             {
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
                 Console.WriteLine("    Prerequisites:");

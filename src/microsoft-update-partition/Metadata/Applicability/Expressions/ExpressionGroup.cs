@@ -70,7 +70,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                 }
             }
 
-            if ((newGroup.GroupType != ExpressionGroupType.And && newGroup.GroupType != ExpressionGroupType.Or)
+            if (newGroup.GroupType != ExpressionGroupType.And && newGroup.GroupType != ExpressionGroupType.Or
                 && (newGroup.Expressions.Count > 1 || newGroup.SubGroups.Count > 1))
             {
                 throw new Exception("Logical operator not supported with multiple expressions or groups");

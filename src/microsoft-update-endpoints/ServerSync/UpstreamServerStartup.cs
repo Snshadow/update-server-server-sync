@@ -1,19 +1,19 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
-using SoapCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.AspNetCore.Hosting;
-using System.Reflection;
-using Microsoft.UpdateServices.WebServices.ServerSync;
-using Newtonsoft.Json;
-using System.IO;
+using Microsoft.Extensions.Hosting;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
+using Microsoft.UpdateServices.WebServices.ServerSync;
+using Newtonsoft.Json;
+using SoapCore;
+using System.Reflection;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
 {
@@ -80,7 +80,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             services.TryAddSingleton<AuthenticationWebService>();
             services.TryAddSingleton<ReportingWebService>();
 
-            if (LocalContentSource != null)
+            if (LocalContentSource is not null)
             {
                 // Enable the content controller if serving content
                 // Add your content controller here
@@ -98,7 +98,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
         /// </param>
         /// <param name="env">Hosting environment.</param>
         /// <param name="loggerFactory">Logging factory.</param>
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {

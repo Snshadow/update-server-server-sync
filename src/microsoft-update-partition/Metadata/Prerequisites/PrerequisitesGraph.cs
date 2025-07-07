@@ -31,7 +31,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
             var graph = new Dictionary<Guid, PrerequisiteGraphNode>();
 
             var allMicrosoftUpdatePackages = source.OfType<MicrosoftUpdatePackage>();
-            var updatesWithPrerequisites = allMicrosoftUpdatePackages.Where(update => update.Prerequisites != null && update.Prerequisites.Count > 0);
+            var updatesWithPrerequisites = allMicrosoftUpdatePackages.Where(update => update.Prerequisites is not null && update.Prerequisites.Count > 0);
 
             foreach (var updateWithPrerequisites in updatesWithPrerequisites)
             {

@@ -526,6 +526,11 @@
             Expression that evaluates the presence of a camera
             </summary>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability.ExpressionType.DeviceAttribute">
+            <summary>
+            Expression that evaluates the device attribute
+            </summary>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability.ExpressionType.ProductReleaseInstalled">
             <summary>
             Expression that evaluates whether a release is installed
@@ -790,7 +795,7 @@
         </member>
         <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content.UpdateFile.Size">
             <summary>
-            Ges the file size, in bytes.
+            Get the file size, in bytes.
             </summary>
             <value>File size</value>
         </member>
@@ -1817,12 +1822,6 @@
             <param name="id">Update GUID</param>
             <param name="revision">Update revision</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity.OnDeserializedMethod(System.Runtime.Serialization.StreamingContext)">
-            <summary>
-            Re-creates the quick lookup keys after this object is deserialized. The keys are not serialized to save storage space
-            </summary>
-            <param name="context">Deserialization context. Not used.</param>
-        </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity.GenerateQuickLookupKeys">
             <summary>
             Packs the GUID and Revision into integer values for quick comparison
@@ -2591,7 +2590,7 @@
         <member name="P:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.QueuedCount">
             <inheritdoc cref="P:Microsoft.PackageGraph.Storage.IContentStore.QueuedCount"/>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.OpenOrCreate(Microsoft.Azure.Storage.Blob.CloudBlobClient,System.String)">
+        <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.OpenOrCreate(Azure.Storage.Blobs.BlobServiceClient,System.String)">
             <summary>
             Opens an exiting or creates a new <see cref="T:Microsoft.PackageGraph.Storage.IContentStore"/> with storage in the specified Azure Blob account and container
             </summary>
@@ -2637,7 +2636,7 @@
             Creates an instance of <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> that stores metadata in Azure Blob Storage
             </summary>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(Microsoft.Azure.Storage.Blob.CloudBlobClient,System.String)">
+        <member name="M:Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(Azure.Storage.Blobs.BlobServiceClient,System.String)">
             <summary>
             Opens an existing <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> from the specified Blob storage account and container name
             </summary>
@@ -2645,21 +2644,21 @@
             <param name="containerName">Container name that contains the metadata store</param>
             <returns>An instance of IMetadataStore</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Azure.PackageStore.Erase(Microsoft.Azure.Storage.Blob.CloudBlobClient,System.String)">
+        <member name="M:Microsoft.PackageGraph.Storage.Azure.PackageStore.Erase(Azure.Storage.Blobs.BlobServiceClient,System.String)">
             <summary>
             Permanently deletes a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> stored in the specified Azure Blob account and container
             </summary>
             <param name="client">Azure blob client</param>
             <param name="containerName">Container name that contains the metadata store</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(Microsoft.Azure.Storage.Blob.CloudBlobContainer)">
+        <member name="M:Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(Azure.Storage.Blobs.BlobContainerClient)">
             <summary>
             Opens an existing <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> from the specified blob storage container reference
             </summary>
             <param name="storeContainer">Reference to the container from which to open the metadata store</param>
             <returns>An instance of IMetadataStore</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Azure.PackageStore.OpenOrCreate(Microsoft.Azure.Storage.Blob.CloudBlobClient,System.String)">
+        <member name="M:Microsoft.PackageGraph.Storage.Azure.PackageStore.OpenOrCreate(Azure.Storage.Blobs.BlobServiceClient,System.String)">
             <summary>
             Opens or create a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> from the specified blob storage container reference
             </summary>
@@ -2667,7 +2666,7 @@
             <param name="containerName">Container name that contains the metadata store</param>
             <returns>An instance of IMetadataStore</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Azure.PackageStore.Exists(Microsoft.Azure.Storage.Blob.CloudBlobClient,Microsoft.Azure.Storage.Blob.CloudBlobContainer)">
+        <member name="M:Microsoft.PackageGraph.Storage.Azure.PackageStore.Exists(Azure.Storage.Blobs.BlobServiceClient,Azure.Storage.Blobs.BlobContainerClient)">
             <summary>
             Checks if a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> exists in the specified Azure Blob account and container
             </summary>

@@ -26,7 +26,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
             if (package is DriverUpdate driverUpdate)
             {
                 var driverMetadata = driverUpdate.GetDriverMetadata().ToList();
-                if (driverMetadata != null && driverMetadata.Count > 0)
+                if (driverMetadata is not null && driverMetadata.Count > 0)
                 {
                     Add(packageIndex, driverMetadata);
                 }

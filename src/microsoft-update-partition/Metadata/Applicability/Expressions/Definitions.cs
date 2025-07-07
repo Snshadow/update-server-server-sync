@@ -329,6 +329,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
         Camera,
 
         /// <summary>
+        /// Expression that evaluates the device attribute
+        /// </summary>
+        DeviceAttribute,
+
+        /// <summary>
         /// Expression that evaluates whether a release is installed
         /// </summary>
         ProductReleaseInstalled,
@@ -888,7 +893,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                 "bar:SensorById",
                 new List<TokenDefinition>()
                 {
-                     new TokenDefinition("Id", TokenRequirements.Required, typeof(string))
+                    new TokenDefinition("Id", TokenRequirements.Required, typeof(string))
                 }
             },
             {
@@ -906,7 +911,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                 }
             },
             {
-                "ProductReleaseInstalled",
+                "upd:ProductReleaseInstalled",
                 new List<TokenDefinition>()
                 {
                     new TokenDefinition("Version", TokenRequirements.Required, typeof(string)),
@@ -1020,6 +1025,16 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                     new TokenDefinition("Suffix", TokenRequirements.Optional, typeof(string)),
                 }
             },
+            {
+                "DeviceAttribute",
+                new List<TokenDefinition>()
+                {
+                    new TokenDefinition("Name", TokenRequirements.Required, typeof(string)),
+                    new TokenDefinition("Type", TokenRequirements.Required, typeof(string)),
+                    new TokenDefinition("Comparison", TokenRequirements.Required, typeof(ComparisonOperator)),
+                    new TokenDefinition("Value", TokenRequirements.Required, typeof(string))
+                }
+            }
         };
 
         public static Dictionary<string, ExpressionType> NameToTypeMap = new()
@@ -1035,7 +1050,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
             { "bar:RegSz",ExpressionType.RegSz },
             { "bar:RegExpandSz",ExpressionType.RegExpandSz },
             { "bar:RegDword",ExpressionType.RegDword },
-            {  "bar:RegKeyExists",ExpressionType.RegKeyExists },
+            { "bar:RegKeyExists",ExpressionType.RegKeyExists },
             { "bar:RegKeyLoop",ExpressionType.RegKeyLoop },
             { "bar:WUv4RegKeySubstring",ExpressionType.WUv4RegKeySubstring },
             { "bar:WUv4RegKeyValue",ExpressionType.WUv4RegKeyValue },
@@ -1080,7 +1095,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
             { "bar:SensorById", ExpressionType.SensorById },
             { "bar:NFC", ExpressionType.NFC },
             { "bar:Camera", ExpressionType.Camera },
-            { "ProductReleaseInstalled", ExpressionType.ProductReleaseInstalled },
+            { "upd:ProductReleaseInstalled", ExpressionType.ProductReleaseInstalled },
             { "upd:ProductReleaseVersion", ExpressionType.ProductReleaseVersion },
             { "drv:WindowsDriverInstalled", ExpressionType.WindowsDriverInstalled },
             { "drv:WindowsDriverSuperseded", ExpressionType.WindowsDriverSuperseded },
@@ -1094,6 +1109,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
             { "drv:InstalledVersionRange", ExpressionType.InstalledVersionRange },
             { "bar:ClusteredOS", ExpressionType.ClusteredOS },
             { "bar:ClusterResourceOwner", ExpressionType.ClusterResourceOwner },
+            { "DeviceAttribute", ExpressionType.DeviceAttribute },
         };
     }
 }

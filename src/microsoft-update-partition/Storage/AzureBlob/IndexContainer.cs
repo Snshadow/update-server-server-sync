@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using ICSharpCode.SharpZipLib.Zip;
-using Microsoft.Azure.Storage.Blob;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Microsoft.PackageGraph.Storage.Index;
@@ -42,9 +42,9 @@ namespace Microsoft.PackageGraph.Storage.Azure
             MissingIndexes,
         }
 
-        readonly CloudBlobContainer ParentContainer;
+        readonly BlobContainerClient ParentContainer;
 
-        public IndexContainer(CloudBlobContainer container)
+        public IndexContainer(BlobContainerClient container)
         {
             ParentContainer = container;
             ReadTableOfContents();
@@ -56,22 +56,22 @@ namespace Microsoft.PackageGraph.Storage.Azure
             CreateAllKnownIndexes();
         }
 
-        public static void Erase(CloudBlobContainer container)
+        public static void Erase(BlobContainerClient container)
         {
             var registeredIndexes = GetRegisteredIndexes();
-            foreach(var registeredIndex in registeredIndexes)
+            foreach (var registeredIndex in registeredIndexes)
             {
-                var indexBlob = container.GetBlockBlobReference(GetIndexBlobNameFromDefinition(registeredIndex));
+                var indexBlob = container.GetBlockBlobClient(GetIndexBlobNameFromDefinition(registeredIndex));
                 indexBlob.DeleteIfExists();
             }
 
-            var tocBlob = container.GetBlockBlobReference(TocBlobName);
+            var tocBlob = container.GetBlockBlobClient(TocBlobName);
             tocBlob.DeleteIfExists();
         }
 
         private void CreateAllKnownIndexes()
         {
-            foreach(var partition in PartitionRegistration.GetAllPartitions())
+            foreach (var partition in PartitionRegistration.GetAllPartitions())
             {
                 foreach (var knownIndex in partition.Indexes)
                 {
@@ -100,8 +100,8 @@ namespace Microsoft.PackageGraph.Storage.Azure
             {
                 if (index.IsDirty)
                 {
-                    var indexBlob = ParentContainer.GetBlockBlobReference(GetIndexBlobNameFromDefinition(index.Definition));
-                    using var indexStream = indexBlob.OpenWrite();
+                    var indexBlob = ParentContainer.GetBlockBlobClient(GetIndexBlobNameFromDefinition(index.Definition));
+                    using var indexStream = indexBlob.OpenWrite(true);
                     using var compressor = new GZipStream(indexStream, CompressionLevel.Optimal, true);
                     index.Save(compressor);
                     indexesChanged = true;
@@ -112,8 +112,8 @@ namespace Microsoft.PackageGraph.Storage.Azure
             {
                 TOC.ContainedIndexes = Indexes.Select(index => index.Value.Definition).ToList();
 
-                var tocBlob = ParentContainer.GetBlockBlobReference(TocBlobName);
-                using var tocStream = tocBlob.OpenWrite();
+                var tocBlob = ParentContainer.GetBlockBlobClient(TocBlobName);
+                using var tocStream = tocBlob.OpenWrite(true);
                 using var tocWriter = new StreamWriter(tocStream, Encoding.UTF8, 4096, true);
                 var serializer = new JsonSerializer();
                 serializer.Serialize(tocWriter, TOC);
@@ -139,7 +139,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         private void ReadTableOfContents()
         {
-            var tocBlob = ParentContainer.GetBlockBlobReference(TocBlobName);
+            var tocBlob = ParentContainer.GetBlockBlobClient(TocBlobName);
             if (!tocBlob.Exists())
             {
                 ResetIndex();
@@ -161,7 +161,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
             }
             catch (Exception) { toc = null; }
 
-            if (toc != null)
+            if (toc is not null)
             {
                 var registeredIndexes = GetRegisteredIndexes();
 
@@ -202,7 +202,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public bool TryGetIndexReadStream(IndexDefinition index, out Stream indexStream)
         {
-            var indexBlob = ParentContainer.GetBlockBlobReference(GetIndexBlobNameFromDefinition(index));
+            var indexBlob = ParentContainer.GetBlockBlobClient(GetIndexBlobNameFromDefinition(index));
             if (indexBlob.Exists())
             {
                 indexStream = new GZipStream(indexBlob.OpenRead(), CompressionMode.Decompress);
@@ -232,7 +232,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public void IndexPackage(IPackage package, int packageIndex)
         {
-            foreach(var index in Indexes.Values)
+            foreach (var index in Indexes.Values)
             {
                 if (string.IsNullOrEmpty(index.Definition.PartitionName) ||
                     PartitionRegistration.TryGetPartition(index.Definition.PartitionName, out var _))

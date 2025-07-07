@@ -77,7 +77,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
                 File.Delete(xmlTempFile);
             }
 
-            if (inMemoryStream != null)
+            if (inMemoryStream is not null)
             {
                 return inMemoryStream.ToArray();
             }
@@ -92,6 +92,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
             // We use temporary files to write the in-memory cabinet,
             // Then run cabextract on it with --pipe output
             var cabTempFile = Path.GetTempFileName();
+            var xmlTempFile = Path.GetTempFileName();
 
             var inMemoryStream = new MemoryStream();
             try
@@ -108,13 +109,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
                 var expandProcess = Process.Start(startInfo);
 
                 // Read the decompressed data from the pipe
-                var text = expandProcess.StandardOutput.ReadToEnd();
-                expandProcess.WaitForExit();
+                if (expandProcess is not null)
+                {
+                    using var writer = new StreamWriter(xmlTempFile);
+                    expandProcess.StandardOutput.BaseStream.CopyTo(writer.BaseStream);
+
+                    expandProcess.WaitForExit();
+                }
 
                 // Recompress the XML with GZIP as UTF8
+                using var decompressor = File.OpenRead(xmlTempFile);
                 using var recompressor = new GZipStream(inMemoryStream, CompressionLevel.Fastest, true);
-                recompressor.Write(Encoding.UTF8.GetBytes(text));
-
+                decompressor.CopyTo(recompressor);
             }
             catch (Exception)
             {
@@ -126,14 +132,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
                 File.Delete(cabTempFile);
             }
 
-            if (inMemoryStream != null)
+            if (File.Exists(xmlTempFile))
             {
-                return inMemoryStream.ToArray();
+                File.Delete(xmlTempFile);
             }
-            else
-            {
-                return null;
-            }
+
+            return inMemoryStream?.ToArray();
         }
 
         /// <summary>
@@ -197,8 +201,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
             textWriter.WriteLine(".Set MaxCabinetSize=0");
             textWriter.WriteLine(".Set MaxDiskFileCount=0");
             textWriter.WriteLine(".Set MaxDiskSize=0");
-            
-            foreach(var file in files)
+
+            foreach (var file in files)
             {
                 textWriter.WriteLine("\"{0}\"", file);
             }

@@ -2,9 +2,7 @@
 // Licensed under the MIT License.
 
 using Newtonsoft.Json;
-using System;
 using System.Xml;
-using System.Xml.Linq;
 using System.Xml.XPath;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers

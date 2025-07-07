@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate.Source;
+using Microsoft.PackageGraph.Storage;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using Newtonsoft.Json;
 using System.Threading;
-using Microsoft.PackageGraph.MicrosoftUpdate.Source;
-using Microsoft.PackageGraph.Storage;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
@@ -40,12 +40,12 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void ReIndex(ReindexStoreOptions options)
         {
             var sourceToUpdate = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
-            if (sourceToUpdate == null)
+            if (sourceToUpdate is null)
             {
                 return;
             }
 
-            using(sourceToUpdate)
+            using (sourceToUpdate)
             {
                 if (sourceToUpdate.IsMetadataIndexingSupported)
                 {
@@ -87,7 +87,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
 
             var destinationStore = MetadataStoreCreator.CreateFromOptions(options as IMetadataStoreOptions);
-            if (destinationStore == null)
+            if (destinationStore is null)
             {
                 return;
             }
@@ -98,8 +98,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 var microsoftUpdateCategoriesSource = new UpstreamCategoriesSource(upstreamEndpoint);
                 microsoftUpdateCategoriesSource.MetadataCopyProgress += Program.OnPackageCopyProgress;
-                var cancellationToken = new CancellationTokenSource();
-                microsoftUpdateCategoriesSource.CopyTo(destinationStore, cancellationToken.Token);
+                microsoftUpdateCategoriesSource.CopyTo(destinationStore, CancellationToken.None);
             }
 
             Console.WriteLine();
@@ -109,7 +108,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void FetchPackagesUpdates(FetchPackagesOptions options)
         {
             var store = MetadataStoreCreator.CreateFromOptions(options as IMetadataStoreOptions);
-            if (store == null)
+            if (store is null)
             {
                 return;
             }
@@ -142,8 +141,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 Console.WriteLine($"Getting list of categories. This might take up to 1 minute ...");
 
                 microsoftUpdateCategoriesSource.MetadataCopyProgress += Program.OnPackageCopyProgress;
-                var cancellationToken = new CancellationTokenSource();
-                microsoftUpdateCategoriesSource.CopyTo(store, cancellationToken.Token);
+                microsoftUpdateCategoriesSource.CopyTo(store, CancellationToken.None);
 
                 if (options.Ids.Any())
                 {
@@ -156,7 +154,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                             Console.WriteLine();
                             Console.Write($"Searching for package {updateId}");
                             var foundPackage = server.TryGetExpiredUpdate(updateIdGuid, 300, 100).GetAwaiter().GetResult();
-                            if (foundPackage == null)
+                            if (foundPackage is null)
                             {
                                 ConsoleOutput.WriteRed($" Not found!");
                             }
@@ -193,7 +191,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     Console.WriteLine($"Getting list of updates. This might take up to 1 minute ...");
                     var microsoftUpdateSource = new UpstreamUpdatesSource(upstreamEndpoint, sourceFilter);
                     microsoftUpdateSource.MetadataCopyProgress += Program.OnPackageCopyProgress;
-                    microsoftUpdateSource.CopyTo(store, cancellationToken.Token);
+                    microsoftUpdateSource.CopyTo(store, CancellationToken.None);
 
                     Console.WriteLine();
                     Console.WriteLine("Done!");
@@ -290,7 +288,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         private static UpstreamSourceFilter CreateValidFilterFromOptions(FetchPackagesOptions options, IMetadataStore metadataSource)
         {
             List<Guid> productFilter = CreateFilterListForCategory<ProductCategory>(
-                options.ProductsFilter, 
+                options.ProductsFilter,
                 metadataSource);
 
             List<Guid> classificationFilter = CreateFilterListForCategory<ClassificationCategory>(

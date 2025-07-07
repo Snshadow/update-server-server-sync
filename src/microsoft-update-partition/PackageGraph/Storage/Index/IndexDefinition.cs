@@ -8,12 +8,16 @@ namespace Microsoft.PackageGraph.Storage.Index
 {
     class IndexDefinition
     {
+        [JsonProperty]
         public string Name;
 
+        [JsonProperty]
         public int Version;
 
+        [JsonProperty]
         public string PartitionName;
 
+        [JsonProperty]
         public string Tag;
 
         [JsonIgnore]

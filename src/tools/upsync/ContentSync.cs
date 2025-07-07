@@ -1,16 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Blob;
+using Azure.Storage.Blobs;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.ObjectModel;
+using Microsoft.PackageGraph.Storage;
+using Microsoft.PackageGraph.Storage.Local;
 using System.Linq;
 using System.Threading;
 using System;
-using Microsoft.PackageGraph.ObjectModel;
-using Microsoft.PackageGraph.Storage;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using System.Collections.Generic;
-using Microsoft.PackageGraph.Storage.Local;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
@@ -19,28 +18,28 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void SyncContent(ContentSyncOptions options)
         {
             var metadataSource = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
-            if (metadataSource == null)
+            if (metadataSource is null)
             {
                 return;
             }
 
             var contentStore = GetContentStoreFromOptions(options);
-            if (contentStore == null)
+            if (contentStore is null)
             {
                 return;
             }
 
             var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options as IMetadataFilterOptions);
-            if (filter == null)
+            if (filter is null)
             {
                 return;
             }
 
             var filteredPackages = filter.Apply(metadataSource);
 
-            var filesToDownload = filteredPackages.Where(p => p.Files != null).SelectMany(p => p.Files).ToList();
+            var filesToDownload = filteredPackages.Where(p => p.Files is not null).SelectMany(p => p.Files).ToList();
 
-            foreach(var microsoftUpdatePackage in filteredPackages.OfType<MicrosoftUpdatePackage>())
+            foreach (var microsoftUpdatePackage in filteredPackages.OfType<MicrosoftUpdatePackage>())
             {
                 filesToDownload.AddRange(GetAllUpdateFiles(metadataSource, microsoftUpdatePackage));
             }
@@ -66,12 +65,12 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         private static List<IContentFile> GetAllUpdateFiles(IMetadataStore metadataSource, MicrosoftUpdatePackage update)
         {
             var filesList = new List<IContentFile>();
-            if (update.Files != null)
+            if (update.Files is not null)
             {
                 filesList.AddRange(update.Files);
             }
 
-            if (update is SoftwareUpdate softwareUpdate && softwareUpdate.BundledUpdates != null)
+            if (update is SoftwareUpdate softwareUpdate && softwareUpdate.BundledUpdates is not null)
             {
                 foreach (var bundledUpdate in softwareUpdate.BundledUpdates)
                 {
@@ -107,9 +106,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 ContentSyncLastFileDigest = e.File.Digest.DigestBase64;
             }
 
-            switch(e.CurrentOperation)
+            switch (e.CurrentOperation)
             {
-                case ObjectModel.PackagesOperationType.DownloadFileProgress:
+                case PackagesOperationType.DownloadFileProgress:
                     UpdateConsoleForMessageRefresh();
                     Console.Write("Sync'ing update content [{0}]: {1:000.00}%", e.Maximum, e.PercentDone);
                     break;
@@ -118,26 +117,22 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         private static IContentStore GetContentStoreFromOptions(ContentSyncOptions options)
         {
-            switch(options.ContentStoreType)
+            switch (options.ContentStoreType)
             {
                 case "local":
                     return new FileSystemContentStore(options.ContentPath);
 
                 case "azure":
-                    if (string.IsNullOrEmpty(options.ContentStoreConnectionString))
+                    try
                     {
-                        ConsoleOutput.WriteRed("Connection string required for Azure stores");
+                        var blobClient = new BlobServiceClient(options.ContentStoreConnectionString);
+                        return Storage.Azure.BlobContentStore.OpenOrCreate(blobClient, options.ContentPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        ConsoleOutput.WriteRed($"Failed to get azure content store: {ex.Message}");
                         return null;
                     }
-
-                    if (!CloudStorageAccount.TryParse(options.ContentStoreConnectionString, out var storageAccount))
-                    {
-                        ConsoleOutput.WriteRed("Invalid connection string");
-                        return null;
-                    }
-
-                    var blobClient = storageAccount.CreateCloudBlobClient();
-                    return Storage.Azure.BlobContentStore.OpenOrCreate(blobClient, options.ContentPath);
 
                 default:
                     ConsoleOutput.WriteRed("Content store type not supported.");

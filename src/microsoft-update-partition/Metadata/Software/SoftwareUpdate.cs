@@ -47,7 +47,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     return _KBArticleId;
                 }
 
-                if (_FastLookupSource != null)
+                if (_FastLookupSource is not null)
                 {
                     _FastLookupSource.TrySimpleKeyLookup<string>(this._Id, AvailableIndexes.KbArticleIndexName, out _KBArticleId);
                     _KBArticleIdLoaded = true;
@@ -92,9 +92,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _IsSupersededBy;
                 }
-                else if (_FastLookupSource != null)
+                else
                 {
-                    _FastLookupSource.TryPackageListLookupByCustomKey<Guid>(Id.ID, AvailableIndexes.IsSupersededIndexName, out _IsSupersededBy);
+                    _FastLookupSource?.TryPackageListLookupByCustomKey<Guid>(Id.ID, AvailableIndexes.IsSupersededIndexName, out _IsSupersededBy);
                 }
 
                 _IsSupersededByLoaded = true;
@@ -116,7 +116,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _SupersededUpdates;
                 }
-                else if (_FastLookupSource != null)
+                else if (_FastLookupSource is not null)
                 {
                     _FastLookupSource.TryListKeyLookup<Guid>(_Id, AvailableIndexes.IsSupersedingIndexName, out _SupersededUpdates);
                     _SupersededUpdatesLoaded = true;
@@ -143,7 +143,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _BundledUpdates;
                 }
-                else if (_FastLookupSource != null)
+                else if (_FastLookupSource is not null)
                 {
                     _FastLookupSource.TryListKeyLookup<MicrosoftUpdatePackageIdentity>(_Id, AvailableIndexes.IsBundleIndexName, out _BundledUpdates);
                     _BundledUpdatesLoaded = true;
@@ -166,7 +166,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _BundledWithUpdates;
                 }
-                else if (_FastLookupSource != null)
+                else if (_FastLookupSource is not null)
                 {
                     _FastLookupSource.TryPackageListLookupByCustomKey<MicrosoftUpdatePackageIdentity>(_Id, AvailableIndexes.BundledWithIndexName, out _BundledWithUpdates);
                     _BundledWithUpdatesLoaded = true;

@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 using Microsoft.UpdateServices.WebServices.ServerSync;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 {
@@ -132,20 +132,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <returns>An update if a revision was found, null otherwise</returns>
         public async Task<MicrosoftUpdatePackage> TryGetExpiredUpdate(Guid partialId, int revisionHint, int searchSpaceWindow)
         {
-            if (AccessToken == null || AccessToken.ExpiresIn(TimeSpan.FromMinutes(2)))
+            if (AccessToken is null || AccessToken.ExpiresIn(TimeSpan.FromMinutes(2)))
             {
                 await RefreshAccessToken(null, null);
             }
 
             // If no configuration is known, query it now
-            if (ConfigData == null)
+            if (ConfigData is null)
             {
                 await RefreshServerConfigData();
             }
 
             var (updateData, _) = TryGetExpiredUpdateInternal(partialId, revisionHint, searchSpaceWindow);
 
-            if (updateData != null)
+            if (updateData is not null)
             {
                 return InMemoryUpdateFactory.FromServerSyncData(updateData, null);
             }
@@ -165,7 +165,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             };
 
             var configDataReply = await ServerSyncClient.GetConfigDataAsync(configDataRequest);
-            if (configDataReply == null || configDataReply.GetConfigDataResponse1 == null || configDataReply.GetConfigDataResponse1.GetConfigDataResult == null)
+            if (configDataReply is null || configDataReply.GetConfigDataResponse1 is null || configDataReply.GetConfigDataResponse1.GetConfigDataResult is null)
             {
                 throw new Exception("Failed to get config data.");
             }
@@ -175,13 +175,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
         internal IEnumerable<MicrosoftUpdatePackageIdentity> GetCategoryIds(out string newAnchor, string oldAnchor = null)
         {
-            if (AccessToken == null || AccessToken.ExpiresIn(TimeSpan.FromMinutes(2)))
+            if (AccessToken is null || AccessToken.ExpiresIn(TimeSpan.FromMinutes(2)))
             {
                 RefreshAccessToken(null, null).GetAwaiter().GetResult();
             }
 
             // If no configuration is known, query it now
-            if (ConfigData == null)
+            if (ConfigData is null)
             {
                 RefreshServerConfigData().GetAwaiter().GetResult();
             }
@@ -205,9 +205,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             revisionIdRequest.GetRevisionIdList.filter.GetConfig = true;
 
             var revisionsIdReply = ServerSyncClient.GetRevisionIdListAsync(revisionIdRequest).GetAwaiter().GetResult();
-            if (revisionsIdReply == null || 
-                revisionsIdReply.GetRevisionIdListResponse1 == null || 
-                revisionsIdReply.GetRevisionIdListResponse1.GetRevisionIdListResult == null)
+            if (revisionsIdReply is null ||
+                revisionsIdReply.GetRevisionIdListResponse1 is null ||
+                revisionsIdReply.GetRevisionIdListResponse1.GetRevisionIdListResult is null)
             {
                 throw new Exception("Failed to get revision ID list");
             }
@@ -225,13 +225,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
         internal IEnumerable<MicrosoftUpdatePackageIdentity> GetUpdateIds(UpstreamSourceFilter updatesFilter, out string newAnchor)
         {
-            if (AccessToken == null || AccessToken.ExpiresIn(TimeSpan.FromMinutes(2)))
+            if (AccessToken is null || AccessToken.ExpiresIn(TimeSpan.FromMinutes(2)))
             {
                 RefreshAccessToken(null, null).GetAwaiter().GetResult();
             }
 
             // If no configuration is known, query it now
-            if (ConfigData == null)
+            if (ConfigData is null)
             {
                 RefreshServerConfigData().GetAwaiter().GetResult();
             }
@@ -250,7 +250,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             revisionIdRequest.GetRevisionIdList.filter.GetConfig = false;
 
             var revisionsIdReply = ServerSyncClient.GetRevisionIdListAsync(revisionIdRequest).GetAwaiter().GetResult();
-            if (revisionsIdReply == null || revisionsIdReply.GetRevisionIdListResponse1 == null || revisionsIdReply.GetRevisionIdListResponse1.GetRevisionIdListResult == null)
+            if (revisionsIdReply is null || revisionsIdReply.GetRevisionIdListResponse1 is null || revisionsIdReply.GetRevisionIdListResponse1.GetRevisionIdListResult is null)
             {
                 throw new Exception("Failed to get revision ID list");
             }
@@ -268,13 +268,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <param name="updateIds">The ids to retrieve data for</param>
         internal List<MicrosoftUpdatePackage> GetUpdateDataForIds(List<MicrosoftUpdatePackageIdentity> updateIds)
         {
-            if (AccessToken == null || AccessToken.ExpiresIn(TimeSpan.FromMinutes(2)))
+            if (AccessToken is null || AccessToken.ExpiresIn(TimeSpan.FromMinutes(2)))
             {
                 RefreshAccessToken(null, null).GetAwaiter().GetResult();
             }
 
             // If no configuration is known, query it now
-            if (ConfigData == null)
+            if (ConfigData is null)
             {
                 RefreshServerConfigData().GetAwaiter().GetResult();
             }
@@ -312,15 +312,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     {
                         updateDataReply = null;
                     }
-                    catch(Exception)
+                    catch (Exception)
                     {
                         System.Threading.Thread.Sleep(5000);
                         updateDataReply = null;
                     }
                     retryCount++;
-                } while (updateDataReply == null && retryCount < 10);
+                } while (updateDataReply is null && retryCount < 10);
 
-                if (updateDataReply == null || updateDataReply.GetUpdateDataResponse1 == null || updateDataReply.GetUpdateDataResponse1.GetUpdateDataResult == null)
+                if (updateDataReply is null || updateDataReply.GetUpdateDataResponse1 is null || updateDataReply.GetUpdateDataResponse1.GetUpdateDataResult is null)
                 {
                     throw new Exception("Failed to get update metadata");
                 }
@@ -358,10 +358,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                         cookie = AccessToken.AccessCookie,
                         updateIds = new UpdateIdentity[]
                         {
-                            new UpdateIdentity() 
-                            { 
-                                UpdateID = partialUpdateId, 
-                                RevisionNumber = currentRevision 
+                            new UpdateIdentity()
+                            {
+                                UpdateID = partialUpdateId,
+                                RevisionNumber = currentRevision
                             }
                         }
                     }
@@ -379,15 +379,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     {
                         updateDataReply = null;
                     }
-                    catch(System.ServiceModel.FaultException)
+                    catch (System.ServiceModel.FaultException)
                     {
                         updateDataReply = null;
                         break;
                     }
                     retryCount++;
-                } while (updateDataReply == null && retryCount < 10);
+                } while (updateDataReply is null && retryCount < 10);
 
-                if (updateDataReply == null || updateDataReply.GetUpdateDataResponse1 == null || updateDataReply.GetUpdateDataResponse1.GetUpdateDataResult == null)
+                if (updateDataReply is null || updateDataReply.GetUpdateDataResponse1 is null || updateDataReply.GetUpdateDataResponse1.GetUpdateDataResult is null)
                 {
                     currentRevision--;
                 }

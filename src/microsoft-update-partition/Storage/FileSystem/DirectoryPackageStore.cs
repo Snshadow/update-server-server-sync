@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Microsoft.PackageGraph.Storage.Index;
@@ -8,6 +10,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel.Design.Serialization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -60,13 +63,14 @@ namespace Microsoft.PackageGraph.Storage.Local
 #pragma warning restore 0067
 
         public event EventHandler<PackageStoreEventArgs> PackageIndexingProgress;
-        
+
 
         private readonly List<IPackage> PendingPackages = new();
 
         public DirectoryPackageStore(string path, FileMode mode)
         {
             TargetPath = path;
+            TOC = new TableOfContent();
 
             if (Directory.Exists(path) && IsValidDirectory(path))
             {
@@ -77,18 +81,15 @@ namespace Microsoft.PackageGraph.Storage.Local
                 if (File.Exists(indexContainerPath))
                 {
                     Indexes = ZipStreamIndexContainer.Open(File.OpenRead(indexContainerPath));
-                    if (Indexes.GetStatus() != ZipStreamIndexContainer.IndexContainerStatus.Valid)
-                    {
-                        _IsReindexingRequired = true;
-                    }
                 }
                 else
                 {
-                    Indexes = ZipStreamIndexContainer.Create();
-                    if (_IdentityToIndexMap.Count > 0)
-                    {
-                        _IsReindexingRequired = true;
-                    }
+                    Indexes = ZipStreamIndexContainer.Open(null);
+                }
+
+                if (Indexes.GetStatus() != ZipStreamIndexContainer.IndexContainerStatus.Valid)
+                {
+                    _IsReindexingRequired = true;
                 }
             }
             else
@@ -152,7 +153,10 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             var indexContainerPath = Path.Combine(TargetPath, IndexesContainerFileName);
             var tempIndexContainerPath = indexContainerPath + ".tmp";
-            Indexes.Save(File.Create(tempIndexContainerPath));
+            using (var fileStream = File.Create(tempIndexContainerPath))
+            {
+                Indexes.Save(fileStream);
+            }
 
             Indexes.CloseInput();
 
@@ -168,8 +172,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using (var tocFileStream = File.OpenText(Path.Combine(TargetPath, TableOfContentsFileName)))
             {
-                var deserializer = new JsonSerializer();
-                TOC = deserializer.Deserialize(tocFileStream, typeof(TableOfContent)) as TableOfContent;
+                var serializer = new JsonSerializer();
+                TOC = serializer.Deserialize(tocFileStream, typeof(TableOfContent)) as TableOfContent;
             }
 
             if (TOC.TocVersion != TableOfContent.CurrentVersion)
@@ -216,8 +220,8 @@ namespace Microsoft.PackageGraph.Storage.Local
             var typesFile = Path.Combine(TargetPath, TypesFileName);
             using (var typesFileReader = File.OpenText(typesFile))
             {
-                var deserializer = new JsonSerializer();
-                _PackageTypeIndex = deserializer.Deserialize(typesFileReader, typeof(Dictionary<int, int>)) as Dictionary<int, int>;
+                var serializer = new JsonSerializer();
+                _PackageTypeIndex = serializer.Deserialize(typesFileReader, typeof(Dictionary<int, int>)) as Dictionary<int, int>;
             }
 
             _IdentityToIndexMap = _IndexToIdentityMap.ToDictionary(pair => pair.Value, pair => pair.Key);
@@ -231,7 +235,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         public void CopyTo(IMetadataSink destination, CancellationToken cancelToken)
         {
             var packagesIdsToCopy = _IdentityToIndexMap.Keys.ToList();
-            
+
             if (destination is IMetadataStore destinationPackageStore)
             {
                 packagesIdsToCopy = packagesIdsToCopy.Except(destinationPackageStore.GetPackageIdentities()).ToList();
@@ -243,7 +247,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void Dispose()
         {
-            lock(WriteLock)
+            lock (WriteLock)
             {
                 if (!IsDisposed)
                 {
@@ -268,7 +272,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 WriteToc();
 
-                foreach(var partitionEntry in PartitionRegistration.GetAllPartitions())
+                foreach (var partitionEntry in PartitionRegistration.GetAllPartitions())
                 {
                     if (!partitionEntry.HandlesIdentities)
                     {
@@ -305,13 +309,14 @@ namespace Microsoft.PackageGraph.Storage.Local
             else if (IsIndexDirty)
             {
                 WriteIndexes();
-                IsIndexDirty = false;
             }
+
+            IsIndexDirty = false;
         }
 
         private void CheckIndex(bool forceReindex = false)
         {
-            lock(WriteLock)
+            lock (WriteLock)
             {
                 if (!_IsReindexingRequired && !forceReindex)
                 {
@@ -320,15 +325,15 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 Indexes.ResetIndex();
 
-                PackageStoreEventArgs progressEvent = new() 
-                { 
-                    Total = _IdentityToIndexMap.Count, 
-                    Current = 0 
+                PackageStoreEventArgs progressEvent = new()
+                {
+                    Total = _IdentityToIndexMap.Count,
+                    Current = 0
                 };
 
-                foreach(var deltaStore in DeltaMetadataStores)
+                foreach (var deltaStore in DeltaMetadataStores)
                 {
-                    foreach(var parsedPackage in deltaStore)
+                    foreach (var parsedPackage in deltaStore)
                     {
                         Indexes.IndexPackage(parsedPackage, _IdentityToIndexMap[parsedPackage.Id]);
 
@@ -354,20 +359,25 @@ namespace Microsoft.PackageGraph.Storage.Local
                 return;
             }
 
-            lock(WriteLock)
+            lock (WriteLock)
             {
                 if (!NewDeltaSubdirectoryCreated)
                 {
                     DeltaMetadataStores.Add(CompressedMetadataStore.CreateNew(Path.Combine(TargetPath, $"{TOC.DeltaSectionCount}.zip")));
                     TOC.DeltaSectionCount++;
 
-                    if (TOC.DeltaSectionPackageCount == null)
+                    if (TOC.DeltaSectionPackageCount is null)
                     {
-                        TOC.DeltaSectionPackageCount = new List<long> { 0 };
+                        TOC.DeltaSectionPackageCount = new List<long>();
+                    }
+
+                    if (TOC.DeltaSectionPackageCount.Any())
+                    {
+                        TOC.DeltaSectionPackageCount.Add(TOC.DeltaSectionPackageCount.Last());
                     }
                     else
                     {
-                        TOC.DeltaSectionPackageCount.Add(TOC.DeltaSectionPackageCount.Last());
+                        TOC.DeltaSectionPackageCount.Add(0);
                     }
 
                     NewDeltaSubdirectoryCreated = true;

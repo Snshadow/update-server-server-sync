@@ -1,10 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Threading.Tasks;
-using Microsoft.UpdateServices.WebServices.ServerReporting;
-using System.ServiceModel;
-
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
 {
     /// <summary>

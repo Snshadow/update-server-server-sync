@@ -47,12 +47,18 @@ namespace Microsoft.PackageGraph.Storage.Local
         public static ZipStreamIndexContainer Open(Stream source)
         {
             var indexContainer = new ZipStreamIndexContainer();
+            if (source is null)
+            {
+                indexContainer.ResetIndex();
+                return indexContainer;
+            }
+
             try
             {
                 indexContainer.InputFile = new ZipFile(source, false);
                 indexContainer.ReadTableOfContents();
             }
-            catch(Exception)
+            catch (Exception)
             {
                 indexContainer.Status = IndexContainerStatus.Corrupt;
                 indexContainer.ResetIndex();
@@ -71,7 +77,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void ResetIndex()
         {
-            if (InputFile != null)
+            if (InputFile is not null)
             {
                 InputFile.Close();
                 InputFile = null;
@@ -83,7 +89,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private void CreateAllKnownIndexes()
         {
-            foreach(var partition in PartitionRegistration.GetAllPartitions())
+            foreach (var partition in PartitionRegistration.GetAllPartitions())
             {
                 foreach (var knownIndex in partition.Indexes)
                 {
@@ -94,7 +100,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void CloseInput()
         {
-            if (InputFile != null)
+            if (InputFile is not null)
             {
                 InputFile.Close();
                 InputFile = null;
@@ -200,7 +206,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public bool TryGetIndexReadStream(IndexDefinition index, out Stream indexStream)
         {
-            if (InputFile == null)
+            if (InputFile is null)
             {
                 indexStream = null;
                 return false;
@@ -240,7 +246,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void IndexPackage(IPackage package, int packageIndex)
         {
-            foreach(var index in Indexes.Values)
+            foreach (var index in Indexes.Values)
             {
                 if (string.IsNullOrEmpty(index.Definition.PartitionName) ||
                     (PartitionRegistration.TryGetPartition(index.Definition.PartitionName, out _) &&
