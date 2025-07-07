@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Azure.Storage.Blob;
+using Azure.Storage.Blobs;
 using System;
 
 namespace Microsoft.PackageGraph.Storage.Azure
@@ -17,7 +17,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         /// <param name="client">Azure blob client</param>
         /// <param name="containerName">Container name that contains the metadata store</param>
         /// <returns>An instance of IMetadataStore</returns>
-        public static IMetadataStore Open(CloudBlobClient client, string containerName)
+        public static IMetadataStore Open(BlobServiceClient client, string containerName)
         {
             return ContainerPackageStore.OpenExisting(client, containerName);
         }
@@ -27,7 +27,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         /// </summary>
         /// <param name="client">Azure blob client</param>
         /// <param name="containerName">Container name that contains the metadata store</param>
-        public static void Erase(CloudBlobClient client, string containerName)
+        public static void Erase(BlobServiceClient client, string containerName)
         {
             ContainerPackageStore.Erase(client, containerName);
         }
@@ -37,7 +37,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         /// </summary>
         /// <param name="storeContainer">Reference to the container from which to open the metadata store</param>
         /// <returns>An instance of IMetadataStore</returns>
-        public static IMetadataStore Open(CloudBlobContainer storeContainer)
+        public static IMetadataStore Open(BlobContainerClient storeContainer)
         {
             return ContainerPackageStore.OpenExisting(storeContainer);
         }
@@ -48,7 +48,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         /// <param name="client">Azure blob client</param>
         /// <param name="containerName">Container name that contains the metadata store</param>
         /// <returns>An instance of IMetadataStore</returns>
-        public static IMetadataStore OpenOrCreate(CloudBlobClient client, string containerName)
+        public static IMetadataStore OpenOrCreate(BlobServiceClient client, string containerName)
         {
             return ContainerPackageStore.OpenOrCreate(client, containerName);
         }
@@ -59,9 +59,9 @@ namespace Microsoft.PackageGraph.Storage.Azure
         /// <param name="client">Azure blob client</param>
         /// <param name="container">Container name that contains the metadata store</param>
         /// <returns>True if the metadata store exists, false otherwise</returns>
-        public static bool Exists(CloudBlobClient client, CloudBlobContainer container)
+        public static bool Exists(BlobServiceClient client, BlobContainerClient container)
         {
-            throw new NotImplementedException();
+            return container.Exists();
         }
     }
 }

@@ -5,7 +5,7 @@ using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Microsoft.PackageGraph.Storage.Index;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -129,8 +129,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             compressor.PutNextEntry(new ZipEntry(TocFileName));
             using (var tocWriter = new StreamWriter(compressor, Encoding.UTF8, 4096, true))
             {
-                var serializer = new JsonSerializer();
-                serializer.Serialize(tocWriter, TOC);
+                tocWriter.Write(JsonSerializer.Serialize(TOC));
             }
             compressor.CloseEntry();
         }
@@ -157,8 +156,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             var tocEntry = InputFile.GetInputStream(entryIndex);
             using var tocReader = new StreamReader(tocEntry);
-            var jsonSerializer = new JsonSerializer();
-            var toc = jsonSerializer.Deserialize(tocReader, typeof(IndexTableOfContents)) as IndexTableOfContents;
+            var toc = JsonSerializer.Deserialize<IndexTableOfContents>(tocReader.ReadToEnd());
             if (toc.Version == IndexTableOfContents.CurrentVersion)
             {
                 var registeredIndexes = GetRegisteredIndexes();

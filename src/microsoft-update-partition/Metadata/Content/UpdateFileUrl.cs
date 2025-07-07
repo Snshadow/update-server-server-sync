@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content
 {
@@ -14,7 +14,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content
         /// Gets the digest of the file content
         /// </summary>
         /// <value>SHA256 digest, base64 encoded string.</value>
-        [JsonProperty]
+        [JsonPropertyName("DigestBase64")]
         public string DigestBase64 { get; private set; }
 
         /// <summary>
@@ -23,7 +23,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content
         /// Microsoft upstream server.</para>
         /// </summary>
         /// <value>URL string</value>
-        [JsonProperty]
+        [JsonPropertyName("MuUrl")]
         public string MuUrl { get; private set; }
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content
         /// <para>This property is set if the update containing his file was queries from a WSUS upstream server.</para>
         /// </summary>
         /// <value>URL string</value>
-        [JsonProperty]
+        [JsonPropertyName("UssUrl")]
         public string UssUrl { get; private set; }
 
         /// <summary>

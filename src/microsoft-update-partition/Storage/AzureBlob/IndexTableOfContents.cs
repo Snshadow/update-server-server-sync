@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.Storage.Index;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
 namespace Microsoft.PackageGraph.Storage.Azure

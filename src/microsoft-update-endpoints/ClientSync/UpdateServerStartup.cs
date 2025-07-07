@@ -12,7 +12,7 @@ using Microsoft.UpdateServices.WebServices.ClientSync;
 using System.Reflection;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System.ServiceModel;
 using System.Text;
 
@@ -51,7 +51,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             var metadataPath = config.GetValue<string>("metadata-path");
             MetadataSource = PackageStore.Open(metadataPath);
 
-            UpdateServiceConfiguration = JsonConvert.DeserializeObject<Config>(config.GetValue<string>("service-config-json"));
+            UpdateServiceConfiguration = JsonSerializer.Deserialize<Config>(config.GetValue<string>("service-config-json"));
 
             // A file that contains mapping of update identity to a 32 bit, locally assigned revision ID.
             var contentPath = config.GetValue<string>("content-path");

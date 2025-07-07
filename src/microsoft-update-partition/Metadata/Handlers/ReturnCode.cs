@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System;
 using System.Xml;
 using System.Xml.XPath;
@@ -16,25 +16,25 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// Whether a return code indicates reboot required
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("Reboot")]
         public bool? Reboot { get; private set; }
 
         /// <summary>
         /// The numerical return code
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("Code")]
         public int? Code { get; private set; }
 
         /// <summary>
         /// Corresponding result string
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("Result")]
         public string Result { get; private set; }
 
         /// <summary>
         /// Localized result string
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("DefaultLocalizedDescription")]
         public string DefaultLocalizedDescription { get; private set; }
 
         [JsonConstructor]

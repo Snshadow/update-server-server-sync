@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Xml;
 using System.Xml.XPath;
 
@@ -15,7 +15,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// The initial module to load in order to start the update process
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("InitialModule")]
         public string InitialModule { get; private set; }
 
         [JsonConstructor]

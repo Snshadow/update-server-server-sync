@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 {
@@ -24,7 +24,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <value>
         /// Absolute URI string to upstream server.
         /// </value>
-        [JsonProperty]
+        [JsonPropertyName("URI")]
         public readonly string URI;
 
         /// <summary>

@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 using System;
-using Microsoft.Azure.Storage.Blob;
+using Azure.Storage.Blobs;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
 using System.IO;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System.Linq;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
@@ -42,7 +42,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             if (store != null)
             {
                 storeAliases.Add(storeOptions);
-                File.WriteAllText(StoreAliasesConfigFile, JsonConvert.SerializeObject(storeAliases));
+                File.WriteAllText(StoreAliasesConfigFile, JsonSerializer.Serialize(storeAliases));
             }
         }
 
@@ -58,7 +58,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 if (storeAliases.RemoveAll(alias => alias.Alias == options.Alias) > 0)
                 {
-                    File.WriteAllText(StoreAliasesConfigFile, JsonConvert.SerializeObject(storeAliases));
+                    File.WriteAllText(StoreAliasesConfigFile, JsonSerializer.Serialize(storeAliases));
                     Console.WriteLine($"Alias {options.Alias} deleted");
                 }
                 else
@@ -99,7 +99,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 try
                 {
-                    return JsonConvert.DeserializeObject<List<StoreAliasCreateOptions>>(File.ReadAllText(path));
+                    return JsonSerializer.Deserialize<List<StoreAliasCreateOptions>>(File.ReadAllText(path));
                 }
                 catch (Exception) { }
             }
@@ -152,18 +152,13 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 if (string.IsNullOrEmpty(sourceOptions.StoreConnectionString))
                 {
-                    var azureContainer = new CloudBlobContainer(new Uri(sourceOptions.Path));
+                    var azureContainer = new BlobContainerClient(new Uri(sourceOptions.Path));
                     return Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(azureContainer);
-                }
-                else if (Azure.Storage.CloudStorageAccount.TryParse(sourceOptions.StoreConnectionString, out var storageAccount))
-                {
-                    var blobClient = storageAccount.CreateCloudBlobClient();
-                    return Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(blobClient, sourceOptions.Path);
                 }
                 else
                 {
-                    ConsoleOutput.WriteRed($"The connection string is invalid: {sourceOptions.StoreConnectionString}");
-                    return null;
+                    var blobClient = new BlobServiceClient(sourceOptions.StoreConnectionString);
+                    return Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(blobClient, sourceOptions.Path);
                 }
             }
             else
@@ -217,16 +212,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     return null;
                 }
 
-                if (Azure.Storage.CloudStorageAccount.TryParse(sourceOptions.StoreConnectionString, out var storageAccount))
-                {
-                    var blobClient = storageAccount.CreateCloudBlobClient();
-                    return Microsoft.PackageGraph.Storage.Azure.PackageStore.OpenOrCreate(blobClient, sourceOptions.Path);
-                }
-                else
-                {
-                    ConsoleOutput.WriteRed($"The connection string is invalid: {sourceOptions.StoreConnectionString}");
-                    return null;
-                }
+                var blobClient = new BlobServiceClient(sourceOptions.StoreConnectionString);
+                return Microsoft.PackageGraph.Storage.Azure.PackageStore.OpenOrCreate(blobClient, sourceOptions.Path);
             }
             else
             {

@@ -8,7 +8,7 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -159,7 +159,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Get the category or update description
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("Description")]
         public string Description
         {
             get

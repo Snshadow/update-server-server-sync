@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Azure.Storage.Blob;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Microsoft.PackageGraph.Storage.Index;
@@ -31,7 +32,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public event EventHandler<PackageStoreEventArgs> PackagesAddProgress;
 
-        readonly CloudBlobContainer ParentContainer;
+        readonly BlobContainerClient ParentContainer;
 
         readonly MetadataStore Metadata;
 
@@ -52,9 +53,9 @@ namespace Microsoft.PackageGraph.Storage.Azure
         /// <inheritdoc cref="IMetadataStore.IsMetadataIndexingSupported"/>
         public bool IsMetadataIndexingSupported { get; private set; } = true;
 
-        private ContainerPackageStore(CloudBlobContainer container, AzurePackageStoreInitializeMode mode)
+        private ContainerPackageStore(BlobContainerClient container, AzurePackageStoreInitializeMode mode)
         {
-            if (!container.Exists())
+            if (!container.ExistsAsync().Result)
             {
                 throw new Exception("Container does not exist");
             }
@@ -95,32 +96,32 @@ namespace Microsoft.PackageGraph.Storage.Azure
             }
         }
 
-        public static ContainerPackageStore OpenExisting(CloudBlobContainer container)
+        public static ContainerPackageStore OpenExisting(BlobContainerClient container)
         {
             return new ContainerPackageStore(container, AzurePackageStoreInitializeMode.FailOnIndexCorruption);
         }
 
-        public static ContainerPackageStore OpenExisting(CloudBlobClient client, string containerName)
+        public static ContainerPackageStore OpenExisting(BlobServiceClient client, string containerName)
         {
-            var container = client.GetContainerReference(containerName);
+            var container = client.GetBlobContainerClient(containerName);
 
             return new ContainerPackageStore(container, AzurePackageStoreInitializeMode.FailOnIndexCorruption);
         }
 
-        public static void Erase(CloudBlobClient client, string containerName)
+        public static void Erase(BlobServiceClient client, string containerName)
         {
-            var containerRef = client.GetContainerReference(containerName);
-            if (containerRef.Exists())
+            var containerRef = client.GetBlobContainerClient(containerName);
+            if (containerRef.ExistsAsync().Result)
             {
-                var tocReference = containerRef.GetBlockBlobReference(TocBlobName);
-                tocReference.DeleteIfExists();
+                var tocReference = containerRef.GetBlockBlobClient(TocBlobName);
+                tocReference.DeleteIfExistsAsync().Wait();
 
                 for (int i = 0; i < int.MaxValue; i++)
                 {
-                    var metadataRef = containerRef.GetPageBlobReference(MetadataBlobName + i.ToString());
-                    if (metadataRef.Exists())
+                    var metadataRef = containerRef.GetPageBlobClient(MetadataBlobName + i.ToString());
+                    if (metadataRef.ExistsAsync().Result)
                     {
-                        metadataRef.Delete();
+                        metadataRef.DeleteAsync().Wait();
                     }
                     else
                     {
@@ -133,18 +134,18 @@ namespace Microsoft.PackageGraph.Storage.Azure
             }
         }
 
-        public static ContainerPackageStore OpenOrCreate(CloudBlobClient client, string containerName)
+        public static ContainerPackageStore OpenOrCreate(BlobServiceClient client, string containerName)
         {
-            var container = client.GetContainerReference(containerName);
-            container.CreateIfNotExists();
+            var container = client.GetBlobContainerClient(containerName);
+            container.CreateIfNotExistsAsync().Wait();
 
             return new ContainerPackageStore(container, AzurePackageStoreInitializeMode.ResetOnIndexCorruption);
         }
 
-        public static bool Exists(CloudBlobClient client, string containerName)
+        public static bool Exists(BlobServiceClient client, string containerName)
         {
-            var container = client.GetContainerReference(containerName);
-            return container.Exists();
+            var container = client.GetBlobContainerClient(containerName);
+            return container.ExistsAsync().Result;
         }
 
         public bool ContainsMetadata(IPackageIdentity packageIdentity)

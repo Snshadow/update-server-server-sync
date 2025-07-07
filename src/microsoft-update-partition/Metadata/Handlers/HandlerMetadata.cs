@@ -1,8 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -65,8 +64,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// The handler type.
         /// </summary>
-        [JsonProperty]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public UpdateHandlerType HandlerType { get; set; }
 
         [JsonConstructor]

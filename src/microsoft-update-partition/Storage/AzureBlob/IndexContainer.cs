@@ -2,11 +2,13 @@
 // Licensed under the MIT License.
 
 using ICSharpCode.SharpZipLib.Zip;
-using Microsoft.Azure.Storage.Blob;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs.Specialized;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Microsoft.PackageGraph.Storage.Index;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -42,9 +44,9 @@ namespace Microsoft.PackageGraph.Storage.Azure
             MissingIndexes,
         }
 
-        readonly CloudBlobContainer ParentContainer;
+        readonly BlobContainerClient ParentContainer;
 
-        public IndexContainer(CloudBlobContainer container)
+        public IndexContainer(BlobContainerClient container)
         {
             ParentContainer = container;
             ReadTableOfContents();
@@ -56,17 +58,17 @@ namespace Microsoft.PackageGraph.Storage.Azure
             CreateAllKnownIndexes();
         }
 
-        public static void Erase(CloudBlobContainer container)
+        public static void Erase(BlobContainerClient container)
         {
             var registeredIndexes = GetRegisteredIndexes();
             foreach(var registeredIndex in registeredIndexes)
             {
-                var indexBlob = container.GetBlockBlobReference(GetIndexBlobNameFromDefinition(registeredIndex));
-                indexBlob.DeleteIfExists();
+                var indexBlob = container.GetBlockBlobClient(GetIndexBlobNameFromDefinition(registeredIndex));
+                indexBlob.DeleteIfExistsAsync().Wait();
             }
 
-            var tocBlob = container.GetBlockBlobReference(TocBlobName);
-            tocBlob.DeleteIfExists();
+            var tocBlob = container.GetBlockBlobClient(TocBlobName);
+            tocBlob.DeleteIfExistsAsync().Wait();
         }
 
         private void CreateAllKnownIndexes()
@@ -100,10 +102,14 @@ namespace Microsoft.PackageGraph.Storage.Azure
             {
                 if (index.IsDirty)
                 {
-                    var indexBlob = ParentContainer.GetBlockBlobReference(GetIndexBlobNameFromDefinition(index.Definition));
-                    using var indexStream = indexBlob.OpenWrite();
-                    using var compressor = new GZipStream(indexStream, CompressionLevel.Optimal, true);
-                    index.Save(compressor);
+                    var indexBlob = ParentContainer.GetBlockBlobClient(GetIndexBlobNameFromDefinition(index.Definition));
+                    using var indexStream = new MemoryStream();
+                    using (var compressor = new GZipStream(indexStream, CompressionLevel.Optimal, true))
+                    {
+                        index.Save(compressor);
+                    }
+                    indexStream.Position = 0;
+                    indexBlob.UploadAsync(indexStream, new BlobUploadOptions { HttpHeaders = new BlobHttpHeaders { ContentType = "application/octet-stream" } }).Wait();
                     indexesChanged = true;
                 }
             }
@@ -112,11 +118,14 @@ namespace Microsoft.PackageGraph.Storage.Azure
             {
                 TOC.ContainedIndexes = Indexes.Select(index => index.Value.Definition).ToList();
 
-                var tocBlob = ParentContainer.GetBlockBlobReference(TocBlobName);
-                using var tocStream = tocBlob.OpenWrite();
-                using var tocWriter = new StreamWriter(tocStream, Encoding.UTF8, 4096, true);
-                var serializer = new JsonSerializer();
-                serializer.Serialize(tocWriter, TOC);
+                var tocBlob = ParentContainer.GetBlockBlobClient(TocBlobName);
+                using var tocStream = new MemoryStream();
+                using (var tocWriter = new StreamWriter(tocStream, Encoding.UTF8, 4096, true))
+                {
+                    tocWriter.Write(JsonSerializer.Serialize(TOC));
+                }
+                tocStream.Position = 0;
+                tocBlob.UploadAsync(tocStream, new BlobUploadOptions { HttpHeaders = new BlobHttpHeaders { ContentType = "application/json" } }).Wait();
             }
         }
 
@@ -139,21 +148,20 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         private void ReadTableOfContents()
         {
-            var tocBlob = ParentContainer.GetBlockBlobReference(TocBlobName);
-            if (!tocBlob.Exists())
+            var tocBlob = ParentContainer.GetBlockBlobClient(TocBlobName);
+            if (!tocBlob.ExistsAsync().Result)
             {
                 ResetIndex();
                 return;
             }
 
-            using var blobReadStream = tocBlob.OpenRead();
+            using var blobReadStream = tocBlob.OpenReadAsync().Result;
             using var blobReader = new StreamReader(blobReadStream);
-            var jsonSerializer = new JsonSerializer();
             IndexTableOfContents toc;
 
             try
             {
-                toc = jsonSerializer.Deserialize(blobReader, typeof(IndexTableOfContents)) as IndexTableOfContents;
+                toc = JsonSerializer.Deserialize<IndexTableOfContents>(blobReader.ReadToEnd());
                 if (toc.Version != IndexTableOfContents.CurrentVersion)
                 {
                     toc = null;
@@ -202,10 +210,10 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public bool TryGetIndexReadStream(IndexDefinition index, out Stream indexStream)
         {
-            var indexBlob = ParentContainer.GetBlockBlobReference(GetIndexBlobNameFromDefinition(index));
-            if (indexBlob.Exists())
+            var indexBlob = ParentContainer.GetBlockBlobClient(GetIndexBlobNameFromDefinition(index));
+            if (indexBlob.ExistsAsync().Result)
             {
-                indexStream = new GZipStream(indexBlob.OpenRead(), CompressionMode.Decompress);
+                indexStream = new GZipStream(indexBlob.OpenReadAsync().Result, CompressionMode.Decompress);
                 return true;
             }
             else

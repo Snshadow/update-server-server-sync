@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.UpdateServices.WebServices.ServerSync;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
@@ -16,19 +17,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <summary>
         /// Authentication data received from an update server
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("AuthenticationInfo")]
         internal List<AuthPlugInInfo> AuthenticationInfo { get; set; }
 
         /// <summary>
         /// Authorization cookie received from a DSS
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("AuthCookie")]
         internal UpdateServices.WebServices.DssAuthentication.AuthorizationCookie AuthCookie { get; set; }
 
         /// <summary>
         /// Access cookie received from the upstream update server
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("AccessCookie")]
         internal Cookie AccessCookie { get; set; }
 
         internal ServiceAccessToken()
@@ -57,7 +58,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <returns>JSON string</returns>
         public string ToJson()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonSerializer.Serialize(this);
         }
 
         /// <summary>
@@ -67,7 +68,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <returns>Deserialiazed ServiceAccessToken</returns>
         public static ServiceAccessToken FromJson(string json)
         {
-            return JsonConvert.DeserializeObject<ServiceAccessToken>(json);
+            return JsonSerializer.Deserialize<ServiceAccessToken>(json);
         }
     }
 }

@@ -1,8 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,20 +18,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
         /// <summary>
         /// List of expressions in the group
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("Expressions")]
         public List<Expression> Expressions { get; private set; }
 
         /// <summary>
         /// Sub-groups of this group
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("SubGroups")]
         public List<ExpressionGroup> SubGroups { get; private set; }
 
         /// <summary>
         /// The type of boolean operator to apply between expressions in this group
         /// </summary>
-        [JsonProperty]
-        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public ExpressionGroupType GroupType { get; private set; }
 
         private ExpressionGroup(ExpressionGroupType groupType)

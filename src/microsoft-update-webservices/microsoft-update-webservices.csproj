@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <AssemblyName>microsoft-update-webservices</AssemblyName>
     <RootNamespace>Microsoft.UpdateServices.WebServices</RootNamespace>
     <PackageId>Microsoft.PackageGraph.MicrosoftUpdate.WebServices</PackageId>

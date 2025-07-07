@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
 using System.Xml;
 using System.Xml.XPath;
@@ -16,31 +16,31 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// The program to invoke in order to perform the updates
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("Program")]
         public string Program {get; private set; }
 
         /// <summary>
         /// The arguments to pass to the update program
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("Arguments")]
         public string Arguments { get; private set; }
 
         /// <summary>
         /// Whether to reboot the device, regardless of the return code
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("RebootByDefault")]
         public bool? RebootByDefault { get; private set; }
 
         /// <summary>
         /// The default result code expected from the update program
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("DefaultResult")]
         public string DefaultResult { get; private set; }
 
         /// <summary>
         /// Expected result codes
         /// </summary>
-        [JsonProperty]
+        [JsonPropertyName("ReturnCodes")]
         public List<ReturnCode> ReturnCodes { get; private set; }
 
         [JsonConstructor]
