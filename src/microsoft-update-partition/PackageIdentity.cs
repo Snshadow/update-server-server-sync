@@ -4,8 +4,6 @@
 using Microsoft.PackageGraph.ObjectModel;
 using System.Text.Json.Serialization;
 using System;
-using System.Linq;
-using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -40,67 +38,24 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
         /// <inheritdoc cref="IPackageIdentity.OpenIdHex"/>
         [JsonIgnore]
-        public string OpenIdHex => BitConverter.ToString(OpenId).Replace("-", "");
-
-        // Keys used for fast equality comparison.
-
-        /// <summary>
-        /// Last 64 bits of the ID guid
-        /// </summary>
-        private UInt64 Key1;
-
-        /// <summary>
-        /// First 64 bits of the ID guid
-        /// </summary>
-        private UInt64 Key2;
-
-        /// <summary>
-        /// Revision number
-        /// </summary>
-        private Int32 Key3;
-
-        [JsonConstructor]
-        private MicrosoftUpdatePackageIdentity() { }
+        public string OpenIdHex => Convert.ToHexString(OpenId).Replace("-", "");
 
         /// <summary>
         /// Create an update identity from GUID and revision
         /// </summary>
         /// <param name="id">Update GUID</param>
         /// <param name="revision">Update revision</param>
+        [JsonConstructor]
         public MicrosoftUpdatePackageIdentity(Guid id, int revision)
         {
             ID = id;
             Revision = revision;
             GenerateOpenId();
-            GenerateQuickLookupKeys();
         }
 
         private void GenerateOpenId()
         {
-            using var sha512 = SHA512.Create();
-            OpenId = sha512.ComputeHash(Encoding.UTF8.GetBytes($"{Partition}-{ID}-{Revision}"));
-        }
-
-        /// <summary>
-        /// Re-creates the quick lookup keys after this object is deserialized. The keys are not serialized to save storage space
-        /// </summary>
-        /// <param name="context">Deserialization context. Not used.</param>
-        [OnDeserialized]
-        internal void OnDeserializedMethod(StreamingContext context)
-        {
-            GenerateQuickLookupKeys();
-            GenerateOpenId();
-        }
-
-        /// <summary>
-        /// Packs the GUID and Revision into integer values for quick comparison
-        /// </summary>
-        private void GenerateQuickLookupKeys()
-        {
-            var idBytes = ID.ToByteArray().Select(b => (ulong)b).ToList();
-            Key1 = (idBytes[0] << 56) | (idBytes[1] << 48) | (idBytes[2] << 40) | (idBytes[3] << 32) | (idBytes[4] << 24) | (idBytes[5] << 16) | (idBytes[6] << 8) | idBytes[7];
-            Key2 = (idBytes[8] << 56) | (idBytes[9] << 48) | (idBytes[10] << 40) | (idBytes[11] << 32) | (idBytes[12] << 24) | (idBytes[13] << 16) | (idBytes[14] << 8) | idBytes[15];
-            Key3 = Revision;
+            OpenId = SHA512.HashData(Encoding.UTF8.GetBytes($"{Partition}-{ID}-{Revision}"));
         }
 
         /// <summary>
@@ -114,27 +69,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// </returns>
         public int CompareTo(object obj)
         {
-            if (obj is not MicrosoftUpdatePackageIdentity)
+            if (obj is not MicrosoftUpdatePackageIdentity other)
             {
                 return -1;
             }
 
-            var other = obj as MicrosoftUpdatePackageIdentity;
+            var idComparison = ID.CompareTo(other.ID);
+            if (idComparison != 0)
+            {
+                return idComparison;
+            }
 
-            if ((this.Key1 > other.Key1) ||
-                (this.Key1 == other.Key1 && this.Key2 > other.Key2) ||
-                (this.Key1 == other.Key1 && this.Key2 == other.Key2 && this.Key3 > other.Key3))
-            {
-                return 1;
-            }
-            else if (this.Key1 == other.Key1 && this.Key2 == other.Key2 && this.Key3 == other.Key3)
-            {
-                return 0;
-            }
-            else
-            {
-                return -1;
-            }
+            return Revision.CompareTo(other.Revision);
         }
 
         /// <summary>
@@ -144,13 +90,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <returns>True if identities are equal, false otherwise</returns>
         public override bool Equals(object obj)
         {
-            if (obj is null || obj is not MicrosoftUpdatePackageIdentity)
+            if (obj is not MicrosoftUpdatePackageIdentity other)
             {
                 return false;
             }
 
-            var other = obj as MicrosoftUpdatePackageIdentity;
-            return this.Key1 == other.Key1 && this.Key2 == other.Key2 && this.Key3 == other.Key3;
+            return ID.Equals(other.ID) && Revision.Equals(other.Revision);
         }
 
         /// <summary>
@@ -188,7 +133,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <returns>Hash code</returns>
         public override int GetHashCode()
         {
-            return ID.GetHashCode() | Revision;
+            return HashCode.Combine(ID, Revision);
         }
 
         /// <summary>
@@ -208,7 +153,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <exception cref="FormatException">If the string does not have the required format</exception>
         public static MicrosoftUpdatePackageIdentity FromString(string packageIdentityString)
         {
-            var split = packageIdentityString.Split(new char[] { ':' }, 3);
+            var split = packageIdentityString.Split([':'], 3);
             if (split.Length != 3 ||
                 split[0] != MicrosoftUpdatePartitionRegistration.MicrosoftUpdatePartitionName ||
                 !Guid.TryParse(split[1], out var id) ||

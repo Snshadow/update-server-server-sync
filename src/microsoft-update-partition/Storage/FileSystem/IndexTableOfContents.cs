@@ -9,8 +9,10 @@ namespace Microsoft.PackageGraph.Storage.Local
 {
     class IndexTableOfContents
     {
+        [JsonInclude]
         public int Version;
 
+        [JsonInclude]
         public List<IndexDefinition> ContainedIndexes;
 
         [JsonIgnore]

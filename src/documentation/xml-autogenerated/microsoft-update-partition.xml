@@ -1795,38 +1795,12 @@
         <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity.OpenIdHex">
             <inheritdoc cref="P:Microsoft.PackageGraph.ObjectModel.IPackageIdentity.OpenIdHex"/>
         </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity.Key1">
-            <summary>
-            Last 64 bits of the ID guid
-            </summary>
-        </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity.Key2">
-            <summary>
-            First 64 bits of the ID guid
-            </summary>
-        </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity.Key3">
-            <summary>
-            Revision number
-            </summary>
-        </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity.#ctor(System.Guid,System.Int32)">
             <summary>
             Create an update identity from GUID and revision
             </summary>
             <param name="id">Update GUID</param>
             <param name="revision">Update revision</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity.OnDeserializedMethod(System.Runtime.Serialization.StreamingContext)">
-            <summary>
-            Re-creates the quick lookup keys after this object is deserialized. The keys are not serialized to save storage space
-            </summary>
-            <param name="context">Deserialization context. Not used.</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity.GenerateQuickLookupKeys">
-            <summary>
-            Packs the GUID and Revision into integer values for quick comparison
-            </summary>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity.CompareTo(System.Object)">
             <summary>

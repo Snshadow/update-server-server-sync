@@ -8,11 +8,19 @@ namespace Microsoft.PackageGraph.Storage.Local
 {
     class TableOfContent
     {
-        public int TocVersion;
-        public int DeltaSectionCount;
-        public List<long> DeltaSectionPackageCount;
+        [JsonInclude]
+        public int TocVersion { get; set; }
+        [JsonInclude]
+        public int DeltaSectionCount { get; set; }
+        [JsonInclude]
+        public List<long> DeltaSectionPackageCount { get; set; }
 
         [JsonIgnore]
         public const int CurrentVersion = 0;
+
+        public TableOfContent()
+        {
+            DeltaSectionPackageCount = new List<long>();
+        }
     }
 }

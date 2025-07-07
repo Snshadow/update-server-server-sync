@@ -47,6 +47,12 @@ namespace Microsoft.PackageGraph.Storage.Local
         public static ZipStreamIndexContainer Open(Stream source)
         {
             var indexContainer = new ZipStreamIndexContainer();
+            if (source == null)
+            {
+                indexContainer.ResetIndex();
+                return indexContainer;
+            }
+
             try
             {
                 indexContainer.InputFile = new ZipFile(source, false);

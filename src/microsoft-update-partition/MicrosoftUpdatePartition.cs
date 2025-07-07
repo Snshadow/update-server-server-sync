@@ -76,8 +76,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate
         {
             var deserializedList = JsonSerializer.Deserialize<List<KeyValuePair<int, MicrosoftUpdatePackageIdentity>>>(jsonStream.ReadToEnd());
 
-            return deserializedList
-                .Select(pair => new KeyValuePair<int, IPackageIdentity>(pair.Key, pair.Value as IPackageIdentity));
+            return deserializedList.Select(pair => new KeyValuePair<int, IPackageIdentity>(pair.Key, pair.Value));
         }
 
         public IPackageIdentity IdentityFromString(string packageIdentityString)

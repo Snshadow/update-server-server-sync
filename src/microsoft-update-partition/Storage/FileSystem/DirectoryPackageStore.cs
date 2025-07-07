@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Microsoft.PackageGraph.Storage.Index;
@@ -67,6 +69,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         public DirectoryPackageStore(string path, FileMode mode)
         {
             TargetPath = path;
+            TOC = new TableOfContent();
 
             if (Directory.Exists(path) && IsValidDirectory(path))
             {
@@ -77,18 +80,15 @@ namespace Microsoft.PackageGraph.Storage.Local
                 if (File.Exists(indexContainerPath))
                 {
                     Indexes = ZipStreamIndexContainer.Open(File.OpenRead(indexContainerPath));
-                    if (Indexes.GetStatus() != ZipStreamIndexContainer.IndexContainerStatus.Valid)
-                    {
-                        _IsReindexingRequired = true;
-                    }
                 }
                 else
                 {
-                    Indexes = ZipStreamIndexContainer.Create();
-                    if (_IdentityToIndexMap.Count > 0)
-                    {
-                        _IsReindexingRequired = true;
-                    }
+                    Indexes = ZipStreamIndexContainer.Open(null);
+                }
+
+                if (Indexes.GetStatus() != ZipStreamIndexContainer.IndexContainerStatus.Valid)
+                {
+                    _IsReindexingRequired = true;
                 }
             }
             else
@@ -152,7 +152,10 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             var indexContainerPath = Path.Combine(TargetPath, IndexesContainerFileName);
             var tempIndexContainerPath = indexContainerPath + ".tmp";
-            Indexes.Save(File.Create(tempIndexContainerPath));
+            using (var fileStream = File.Create(tempIndexContainerPath))
+            {
+                Indexes.Save(fileStream);
+            }
 
             Indexes.CloseInput();
 
@@ -282,7 +285,14 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                     var partitionIdentitiesFile = Path.Combine(partitionDirectoryPath, IdentitiesFileName);
                     using var identitiesWriter = File.CreateText(partitionIdentitiesFile);
-                    identitiesWriter.Write(JsonSerializer.Serialize(partitionIdentites));
+
+                    object objectToSerialize = partitionIdentites;
+                    if (partitionEntry.Factory is MicrosoftUpdatePartition)
+                    {
+                        objectToSerialize = partitionIdentites.Select(p => new KeyValuePair<int, MicrosoftUpdatePackageIdentity>(p.Key, p.Value as MicrosoftUpdatePackageIdentity));
+                    }
+
+                    identitiesWriter.Write(JsonSerializer.Serialize(objectToSerialize));
                 }
 
                 var packageTypesFile = Path.Combine(TargetPath, TypesFileName);
@@ -300,8 +310,9 @@ namespace Microsoft.PackageGraph.Storage.Local
             else if (IsIndexDirty)
             {
                 WriteIndexes();
-                IsIndexDirty = false;
             }
+
+            IsIndexDirty = false;
         }
 
         private void CheckIndex(bool forceReindex = false)
@@ -358,11 +369,16 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                     if (TOC.DeltaSectionPackageCount == null)
                     {
-                        TOC.DeltaSectionPackageCount = new List<long> { 0 };
+                        TOC.DeltaSectionPackageCount = new List<long>();
+                    }
+
+                    if (TOC.DeltaSectionPackageCount.Any())
+                    {
+                        TOC.DeltaSectionPackageCount.Add(TOC.DeltaSectionPackageCount.Last());
                     }
                     else
                     {
-                        TOC.DeltaSectionPackageCount.Add(TOC.DeltaSectionPackageCount.Last());
+                        TOC.DeltaSectionPackageCount.Add(0);
                     }
 
                     NewDeltaSubdirectoryCreated = true;

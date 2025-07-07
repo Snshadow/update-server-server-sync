@@ -14,11 +14,11 @@
     <AssemblyVersion>3.0.3.0</AssemblyVersion>
     <ProductVersion>3.0.3.0</ProductVersion>
     <!-- AOT Configuration -->
-    <PublishAot>true</PublishAot>
+    <!-- <PublishAot>true</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
     <TrimMode>full</TrimMode>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-    <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+    <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings> -->
   </PropertyGroup>
 
   <ItemGroup>
