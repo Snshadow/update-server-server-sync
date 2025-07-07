@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 using SoapCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System.Reflection;
@@ -103,7 +104,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="app">App builder to configure</param>
         /// <param name="env">Hosting environment</param>
         /// <param name="loggerFactory">Logging factory</param>
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {
