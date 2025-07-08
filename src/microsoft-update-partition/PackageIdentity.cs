@@ -4,6 +4,7 @@
 using Microsoft.PackageGraph.ObjectModel;
 using System.Text.Json.Serialization;
 using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -38,7 +39,24 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
         /// <inheritdoc cref="IPackageIdentity.OpenIdHex"/>
         [JsonIgnore]
-        public string OpenIdHex => Convert.ToHexString(OpenId).Replace("-", "");
+        public string OpenIdHex => Convert.ToHexString(OpenId);
+
+        // Keys used for fast equality comparison.
+
+        /// <summary>
+        /// Last 64 bits of the ID guid
+        /// </summary>
+        private UInt64 Key1;
+
+        /// <summary>
+        /// First 64 bits of the ID guid
+        /// </summary>
+        private UInt64 Key2;
+
+        /// <summary>
+        /// Revision number
+        /// </summary>
+        private Int32 Key3;
 
         /// <summary>
         /// Create an update identity from GUID and revision
@@ -51,11 +69,23 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             ID = id;
             Revision = revision;
             GenerateOpenId();
+            GenerateQuickLookupKeys();
         }
 
         private void GenerateOpenId()
         {
             OpenId = SHA512.HashData(Encoding.UTF8.GetBytes($"{Partition}-{ID}-{Revision}"));
+        }
+
+        /// <summary>
+        /// Packs the GUID and Revision into integer values for quick comparison
+        /// </summary>
+        private void GenerateQuickLookupKeys()
+        {
+            var idBytes = ID.ToByteArray().Select(b => (ulong)b).ToList();
+            Key1 = (idBytes[0] << 56) | (idBytes[1] << 48) | (idBytes[2] << 40) | (idBytes[3] << 32) | (idBytes[4] << 24) | (idBytes[5] << 16) | (idBytes[6] << 8) | idBytes[7];
+            Key2 = (idBytes[8] << 56) | (idBytes[9] << 48) | (idBytes[10] << 40) | (idBytes[11] << 32) | (idBytes[12] << 24) | (idBytes[13] << 16) | (idBytes[14] << 8) | idBytes[15];
+            Key3 = Revision;
         }
 
         /// <summary>
@@ -74,13 +104,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 return -1;
             }
 
-            var idComparison = ID.CompareTo(other.ID);
-            if (idComparison != 0)
+            if ((this.Key1 > other.Key1) ||
+                (this.Key1 == other.Key1 && this.Key2 > other.Key2) ||
+                (this.Key1 == other.Key1 && this.Key2 == other.Key2 && this.Key3 > other.Key3))
             {
-                return idComparison;
+                return 1;
             }
-
-            return Revision.CompareTo(other.Revision);
+            else if (this.Key1 == other.Key1 && this.Key2 == other.Key2 && this.Key3 == other.Key3)
+            {
+                return 0;
+            }
+            else
+            {
+                return -1;
+            }
         }
 
         /// <summary>
@@ -95,7 +132,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 return false;
             }
 
-            return ID.Equals(other.ID) && Revision.Equals(other.Revision);
+            return this.Key1 == other.Key1 && this.Key2 == other.Key2 && this.Key3 == other.Key3;
         }
 
         /// <summary>
@@ -133,7 +170,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <returns>Hash code</returns>
         public override int GetHashCode()
         {
-            return HashCode.Combine(ID, Revision);
+            return ID.GetHashCode() | Revision;
         }
 
         /// <summary>

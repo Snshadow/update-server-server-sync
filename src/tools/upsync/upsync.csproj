@@ -13,12 +13,6 @@
     <FileVersion>3.0.3.0</FileVersion>
     <AssemblyVersion>3.0.3.0</AssemblyVersion>
     <ProductVersion>3.0.3.0</ProductVersion>
-    <!-- AOT Configuration -->
-    <!-- <PublishAot>true</PublishAot>
-    <InvariantGlobalization>true</InvariantGlobalization>
-    <TrimMode>full</TrimMode>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-    <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings> -->
   </PropertyGroup>
 
   <ItemGroup>

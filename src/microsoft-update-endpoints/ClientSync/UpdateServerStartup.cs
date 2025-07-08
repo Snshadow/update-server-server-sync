@@ -1,21 +1,20 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Logging;
-using SoapCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.UpdateServices.WebServices.ClientSync;
-using System.Reflection;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
-using System.Text.Json;
-using System.ServiceModel;
+using Microsoft.UpdateServices.WebServices.ClientSync;
+using SoapCore;
+using System.Reflection;
 using System.Text;
+using System.Text.Json;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {
@@ -92,7 +91,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             // Enable the content controller if serving content
             if (ContentSource != null)
             {
-                services.AddSingleton(ContentSource as IContentStore);
+                services.AddSingleton<IContentStore>(ContentSource);
                 // Add ContentController from this assembly
                 services.AddMvc().AddApplicationPart(Assembly.GetExecutingAssembly()).AddControllersAsServices();
             }
@@ -125,7 +124,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             // Wire the upstream WCF services
             app.UseSoapEndpoint<ClientSyncWebService>(
-                "/ClientWebService/client.asmx", 
+                "/ClientWebService/client.asmx",
                 new SoapEncoderOptions() { WriteEncoding = new UTF8Encoding(false) },
                 SoapSerializer.XmlSerializer);
 

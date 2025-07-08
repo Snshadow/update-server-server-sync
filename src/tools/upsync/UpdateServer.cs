@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync;
-using Microsoft.PackageGraph.Storage.Local;
 using System.Collections.Generic;
 using System.IO;
 
@@ -64,6 +63,6 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 .Build();
 
             host.Run();
-        }   
+        }
     }
 }

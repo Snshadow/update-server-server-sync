@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
+using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
-using Microsoft.UpdateServices.WebServices.ClientSync;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {
@@ -98,7 +98,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 }
             }
 
-            if(unapprovedDriversMatched.Count > 0)
+            if (unapprovedDriversMatched.Count > 0)
             {
                 OnUnApprovedDriverUpdatesRequested?.Invoke(unapprovedDriversMatched);
             }
@@ -156,7 +156,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                         return installedDriverComputerMatchIndex < matchedDriverComputerMatchIndex;
                     }
                 }
-            } else if (matchResult.MatchedComputerHardwareId.HasValue)
+            }
+            else if (matchResult.MatchedComputerHardwareId.HasValue)
             {
                 // The installed driver did not match a computer hardware id but the match result did match
                 return true;

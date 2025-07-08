@@ -1,5 +1,6 @@
-﻿
-using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Source;
 using Microsoft.PackageGraph.ObjectModel;
@@ -47,7 +48,7 @@ namespace Microsoft.PackageGraph.Samples
             // Find the "Windows 11" product that is a child of "Windows"
             var windows11Product = packageStore
                 .OfType<ProductCategory>()
-                .First(category => category.Categories.Contains(windowsProduct.Id.ID) && 
+                .First(category => category.Categories.Contains(windowsProduct.Id.ID) &&
                 category.Title.Equals("Windows 11"));
             updatesFilter.ProductsFilter.Add(windows11Product.Id.ID);
 
@@ -76,7 +77,7 @@ namespace Microsoft.PackageGraph.Samples
             // Grab the first cumulative update that is superseded by another update
             var firstUpdateAvailable = packageStore
                 .OfType<SoftwareUpdate>()
-                .FirstOrDefault(update => update.IsSupersededBy?.Count > 0 && 
+                .FirstOrDefault(update => update.IsSupersededBy?.Count > 0 &&
                 update.Title.Contains("cumulative", StringComparison.OrdinalIgnoreCase));
 
             if (firstUpdateAvailable is null)

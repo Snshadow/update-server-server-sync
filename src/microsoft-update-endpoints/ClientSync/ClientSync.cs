@@ -1,20 +1,20 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
-using Microsoft.UpdateServices.WebServices.ClientSync;
-using System.IO;
-using System.Threading;
-using System.ServiceModel;
-using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
+using Microsoft.PackageGraph.Storage;
+using Microsoft.UpdateServices.WebServices.ClientSync;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.ServiceModel;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {
@@ -117,7 +117,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
                 // Get the mapping of update index to identity that is used in the metadata source.
                 MetadataSourceIndex = new Dictionary<int, MicrosoftUpdatePackageIdentity>();
-                foreach(var package in MetadataSource.OfType<MicrosoftUpdatePackage>())
+                foreach (var package in MetadataSource.OfType<MicrosoftUpdatePackage>())
                 {
                     MetadataSourceIndex.Add(MetadataSource.GetPackageIndex(package.Id), package.Id);
                 }
@@ -262,7 +262,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                     });
                 }
             }
-            
+
 
             if (infoTypes.Contains(XmlUpdateFragmentType.LocalizedProperties))
             {
@@ -298,7 +298,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             {
                 response.Updates = updateDataList.ToArray();
             }
-            
+
             if (fileList.Count > 0)
             {
                 response.FileLocations = fileList.ToArray();
@@ -387,7 +387,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             if (parameters.SkipSoftwareSync)
             {
-                return DoDriversSync(parameters);   
+                return DoDriversSync(parameters);
             }
             else
             {
@@ -395,7 +395,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             }
         }
 
-        
+
 
         /// <summary>
         /// Converts the a list of client supplied update indexes into a list of update identities
