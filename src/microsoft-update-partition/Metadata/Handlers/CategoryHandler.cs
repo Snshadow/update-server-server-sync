@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System.Xml;
 using System.Xml.XPath;
 
@@ -15,31 +15,31 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// Category type
         /// </summary>
-        [JsonPropertyName("CategoryType")]
+        [JsonProperty]
         public string CategoryType { get; private set; }
 
         /// <summary>
         /// Sub-categories are prohibited for this category
         /// </summary>
-        [JsonPropertyName("ProhibitsSubcategories")]
+        [JsonProperty]
         public bool? ProhibitsSubcategories { get; private set; }
 
         /// <summary>
         /// Does not have carry updates
         /// </summary>
-        [JsonPropertyName("ProhibitsUpdates")]
+        [JsonProperty]
         public bool? ProhibitsUpdates { get; private set; }
 
         /// <summary>
         /// Display order
         /// </summary>
-        [JsonPropertyName("DisplayOrder")]
+        [JsonProperty]
         public int? DisplayOrder { get; private set; }
 
         /// <summary>
         /// Excluded by default
         /// </summary>
-        [JsonPropertyName("ExcludedByDefault")]
+        [JsonProperty]
         public bool? ExcludedByDefault { get; private set; }
 
         [JsonConstructor]

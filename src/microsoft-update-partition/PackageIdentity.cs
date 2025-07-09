@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.ObjectModel;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
@@ -19,18 +19,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// Gets the ID part of the identity
         /// </summary>
         /// <value>GUID identity</value>
-        [JsonPropertyName("ID")]
+        [JsonProperty]
         public Guid ID { get; private set; }
 
         /// <summary>
         /// Gets the revision part of the identity
         /// </summary>
         /// <value>Revision integer</value>
-        [JsonPropertyName("Revision")]
+        [JsonProperty]
         public int Revision { get; private set; }
 
         /// <inheritdoc cref="IPackageIdentity.Partition"/>
-        [JsonPropertyName("Partition")]
+        [JsonProperty]
         public string Partition => MicrosoftUpdatePartitionRegistration.MicrosoftUpdatePartitionName;
 
         /// <inheritdoc cref="IPackageIdentity.OpenId"/>

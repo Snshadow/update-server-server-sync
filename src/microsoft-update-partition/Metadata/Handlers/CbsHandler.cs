@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System.Xml;
 using System.Xml.XPath;
 
@@ -15,7 +15,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// The identity of the package being updated
         /// </summary>
-        [JsonPropertyName("PackageIdentity")]
+        [JsonProperty]
         public string PackageIdentity { get; private set; }
 
         [JsonConstructor]

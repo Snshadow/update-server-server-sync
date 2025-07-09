@@ -2,22 +2,22 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.Partitions;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace Microsoft.PackageGraph.Storage.Index
 {
     class IndexDefinition
     {
-        [JsonInclude]
+        [JsonProperty]
         public string Name;
 
-        [JsonInclude]
+        [JsonProperty]
         public int Version;
 
-        [JsonInclude]
+        [JsonProperty]
         public string PartitionName;
 
-        [JsonInclude]
+        [JsonProperty]
         public string Tag;
 
         [JsonIgnore]

@@ -7,7 +7,7 @@ using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
-using System.Text.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -46,7 +46,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         public static void Erase(BlobContainerClient container)
         {
             var indexBlob = container.GetBlockBlobClient(IdentitiesIndexBlobName);
-            indexBlob.DeleteIfExistsAsync().Wait();
+            indexBlob.DeleteIfExists();
         }
 
         public void Reset()
@@ -65,13 +65,13 @@ namespace Microsoft.PackageGraph.Storage.Azure
             StoreEntries = new Dictionary<int, PackageStoreEntry>();
 
             var indexBlob = ParentContainer.GetBlockBlobClient(IdentitiesIndexBlobName);
-            if (indexBlob.ExistsAsync().Result)
+            if (indexBlob.Exists())
             {
-                ConcurrencyEtag = indexBlob.GetPropertiesAsync().Result.Value.ETag.ToString();
+                ConcurrencyEtag = indexBlob.GetProperties().Value.ETag.ToString();
                 using var indexStream = new MemoryStream();
-                indexBlob.DownloadToAsync(indexStream).Wait();
+                indexBlob.DownloadTo(indexStream);
 
-                var blockList = indexBlob.GetBlockListAsync(BlockListTypes.Committed).Result.Value.CommittedBlocks;
+                var blockList = indexBlob.GetBlockList(BlockListTypes.Committed).Value.CommittedBlocks;
                 long currentOffset = 0;
 
                 foreach (var block in blockList)
@@ -82,7 +82,8 @@ namespace Microsoft.PackageGraph.Storage.Azure
                     {
                         zipStream.IsStreamOwner = false;
                         using var jsonReader = new StreamReader(zipStream, Encoding.UTF8);
-                        var deserializedIntries = JsonSerializer.Deserialize<List<PackageStoreEntry>>(jsonReader.ReadToEnd());
+                        var jsonDeserializer = new JsonSerializer();
+                        var deserializedIntries = jsonDeserializer.Deserialize(jsonReader, typeof(List<PackageStoreEntry>)) as List<PackageStoreEntry>;
                         deserializedIntries.ForEach(entry =>
                         {
                             if (!PartitionRegistration.TryGetPartition(entry.PartitionName, out var partitionDefinition))
@@ -98,7 +99,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
                         });
                     }
 
-                    currentOffset += block.Size;
+                    currentOffset += block.SizeLong;
                 }
             }
             else
@@ -173,7 +174,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public int AddPackage(IPackage package, PackageStoreEntry packageEntry)
         {
-            lock(_IdentityToIndexMap)
+            lock (_IdentityToIndexMap)
             {
                 var insertIndex = _IdentityToIndexMap.Count;
                 if (!_IdentityToIndexMap.TryAdd(package.Id, insertIndex))
@@ -214,11 +215,11 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public void Save()
         {
-            lock(_IdentityToIndexMap)
+            lock (_IdentityToIndexMap)
             {
                 if (PendingIdentities.Count > 0)
                 {
-                    var pendingIdentitiesJson = JsonSerializer.Serialize(PendingIdentities);
+                    var pendingIdentitiesJson = JsonConvert.SerializeObject(PendingIdentities);
                     using var pendingIdentitiesStream = new MemoryStream();
                     using (var compressor = new GZipOutputStream(pendingIdentitiesStream))
                     {
@@ -231,10 +232,10 @@ namespace Microsoft.PackageGraph.Storage.Azure
                     List<string> blocksList = new();
 
                     string currentEtag = null;
-                    if (indexBlob.ExistsAsync().Result)
+                    if (indexBlob.Exists())
                     {
-                        currentEtag = indexBlob.GetPropertiesAsync().Result.Value.ETag.ToString();
-                        blocksList.AddRange(indexBlob.GetBlockListAsync(BlockListTypes.Committed).Result.Value.CommittedBlocks.Select(block => block.Name));
+                        currentEtag = indexBlob.GetProperties().Value.ETag.ToString();
+                        blocksList.AddRange(indexBlob.GetBlockList(BlockListTypes.Committed).Value.CommittedBlocks.Select(block => block.Name));
                     }
 
                     if (currentEtag != ConcurrencyEtag)
@@ -243,10 +244,10 @@ namespace Microsoft.PackageGraph.Storage.Azure
                     }
 
                     var commitId = GetCommitIdForPackages(PendingIdentities.Select(p => p.PackageId).ToList());
-                    indexBlob.StageBlockAsync(commitId, pendingIdentitiesStream).Wait();
+                    indexBlob.StageBlock(commitId, pendingIdentitiesStream, null);
 
                     blocksList.Add(commitId);
-                    indexBlob.CommitBlockListAsync(blocksList).Wait();
+                    indexBlob.CommitBlockList(blocksList);
 
                     PendingIdentities.Clear();
                 }

@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace Microsoft.PackageGraph.Storage.Azure
 {
     class PackageStoreEntry
     {
         [JsonConstructor]
-        private PackageStoreEntry()
+        public PackageStoreEntry()
         {
         }
 

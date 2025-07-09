@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure.Storage.Blobs.Models;
 using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
-using System.Text.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,7 +21,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         ZipOutputStream OutputFile;
 
         Dictionary<string, long> ZipEntriesIndex;
-        
+
         private bool IsDisposed = false;
 
         readonly object WriteLock = new();
@@ -138,7 +139,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 throw new Exception("Write not supported");
             }
 
-            lock(WriteLock)
+            lock (WriteLock)
             {
                 WritePackageMetadata(package);
 
@@ -166,9 +167,10 @@ namespace Microsoft.PackageGraph.Storage.Local
             var filesFilePath = GetPackageFilesPath(package.Id);
             OutputFile.PutNextEntry(new ZipEntry(filesFilePath));
 
+            var serializer = new JsonSerializer();
             using (var textWriter = new StreamWriter(OutputFile, Encoding.UTF8, 4096, true))
             {
-                textWriter.Write(JsonSerializer.Serialize(package.Files));
+                serializer.Serialize(textWriter, package.Files);
             }
 
             OutputFile.CloseEntry();
@@ -189,7 +191,8 @@ namespace Microsoft.PackageGraph.Storage.Local
                 {
                     using var filesStream = InputFile.GetInputStream(entryIndex);
                     using var filesReader = new StreamReader(filesStream);
-                    return JsonSerializer.Deserialize<List<T>>(filesReader.ReadToEnd());
+                    var serializer = new JsonSerializer();
+                    return serializer.Deserialize(filesReader, typeof(List<T>)) as List<T>;
                 }
             }
 
@@ -198,7 +201,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void AddPackages(IEnumerable<IPackage> packages)
         {
-            foreach(var package in packages)
+            foreach (var package in packages)
             {
                 AddPackage(package);
             }
@@ -208,7 +211,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             if (OutputFile != null)
             {
-                lock(WriteLock)
+                lock (WriteLock)
                 {
                     OutputFile.Flush();
                 }
@@ -223,14 +226,14 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 if (entry is ZipEntry zipEntry)
                 {
-                    foreach(var partitionDefinition in PartitionRegistration.GetAllPartitions())
+                    foreach (var partitionDefinition in PartitionRegistration.GetAllPartitions())
                     {
                         if (zipEntry.Name.StartsWith($"metadata/partitions/{partitionDefinition.Name}/"))
                         {
                             packagePaths.Add(new KeyValuePair<string, PartitionDefinition>(zipEntry.Name, partitionDefinition));
                             break;
                         }
-                    }   
+                    }
                 }
             }
 
@@ -274,7 +277,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 destination.AddPackage(GetPackage(packageEntry.Key, packageEntry.Value.Name));
 
-                lock(progressArgs)
+                lock (progressArgs)
                 {
                     progressArgs.Current++;
                 }

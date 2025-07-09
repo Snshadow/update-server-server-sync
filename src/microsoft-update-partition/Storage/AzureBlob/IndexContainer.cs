@@ -2,12 +2,11 @@
 // Licensed under the MIT License.
 
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Microsoft.PackageGraph.Storage.Index;
-using System.Text.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -102,13 +101,9 @@ namespace Microsoft.PackageGraph.Storage.Azure
                 if (index.IsDirty)
                 {
                     var indexBlob = ParentContainer.GetBlockBlobClient(GetIndexBlobNameFromDefinition(index.Definition));
-                    using var indexStream = new MemoryStream();
-                    using (var compressor = new GZipStream(indexStream, CompressionLevel.Optimal, true))
-                    {
-                        index.Save(compressor);
-                    }
-                    indexStream.Position = 0;
-                    indexBlob.Upload(indexStream, new BlobUploadOptions { HttpHeaders = new BlobHttpHeaders { ContentType = "application/octet-stream" } });
+                    using var indexStream = indexBlob.OpenWrite(true);
+                    using var compressor = new GZipStream(indexStream, CompressionLevel.Optimal, true);
+                    index.Save(compressor);
                     indexesChanged = true;
                 }
             }
@@ -118,13 +113,10 @@ namespace Microsoft.PackageGraph.Storage.Azure
                 TOC.ContainedIndexes = Indexes.Select(index => index.Value.Definition).ToList();
 
                 var tocBlob = ParentContainer.GetBlockBlobClient(TocBlobName);
-                using var tocStream = new MemoryStream();
-                using (var tocWriter = new StreamWriter(tocStream, Encoding.UTF8, 4096, true))
-                {
-                    tocWriter.Write(JsonSerializer.Serialize(TOC));
-                }
-                tocStream.Position = 0;
-                tocBlob.Upload(tocStream, new BlobUploadOptions { HttpHeaders = new BlobHttpHeaders { ContentType = "application/json" } });
+                using var tocStream = tocBlob.OpenWrite(true);
+                using var tocWriter = new StreamWriter(tocStream, Encoding.UTF8, 4096, true);
+                var serializer = new JsonSerializer();
+                serializer.Serialize(tocWriter, TOC);
             }
         }
 
@@ -156,11 +148,12 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
             using var blobReadStream = tocBlob.OpenRead();
             using var blobReader = new StreamReader(blobReadStream);
+            var jsonSerializer = new JsonSerializer();
             IndexTableOfContents toc;
 
             try
             {
-                toc = JsonSerializer.Deserialize<IndexTableOfContents>(blobReader.ReadToEnd());
+                toc = jsonSerializer.Deserialize(blobReader, typeof(IndexTableOfContents)) as IndexTableOfContents;
                 if (toc.Version != IndexTableOfContents.CurrentVersion)
                 {
                     toc = null;

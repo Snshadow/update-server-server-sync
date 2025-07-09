@@ -6,10 +6,9 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.PackageGraph.Storage;
-using System.Text.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 
@@ -81,8 +80,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
                     using (var targetJsonFile = File.Create(options.JsonOutPath))
                     {
-                        var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                        JsonSerializer.Serialize(targetJsonFile, packagesList, jsonOptions);
+                        var serializer = JsonSerializer.Create(new JsonSerializerSettings() { Formatting = Formatting.Indented });
+                        using var jsonWriter = new StreamWriter(targetJsonFile);
+                        serializer.Serialize(jsonWriter, packagesList);
                     }
 
                     Console.WriteLine($"Query result saved to {options.JsonOutPath}.");
@@ -170,12 +170,12 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         static void PrintHandlerMetadata(HandlerMetadata handler)
         {
             Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine( "    Handler :");
+            Console.WriteLine("    Handler :");
             Console.ResetColor();
 
             Type handlerType = handler.GetType();
             var handlerProperties = handlerType.GetProperties();
-            foreach(var property in handlerProperties)
+            foreach (var property in handlerProperties)
             {
                 Console.WriteLine("{0,8}{1,-20} : {2}", " ", property.Name, property.GetValue(handler, null));
             }

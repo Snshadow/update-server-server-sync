@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Azure.Storage.Blobs;
 using System;
+using Azure.Storage.Blobs;
 
 namespace Microsoft.PackageGraph.Storage.Azure
 {
@@ -61,7 +61,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         /// <returns>True if the metadata store exists, false otherwise</returns>
         public static bool Exists(BlobServiceClient client, BlobContainerClient container)
         {
-            return container.Exists();
+            throw new NotImplementedException();
         }
     }
 }

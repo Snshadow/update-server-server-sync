@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Xml;
 using System.Xml.XPath;
@@ -16,31 +16,31 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// The program to invoke in order to perform the updates
         /// </summary>
-        [JsonPropertyName("Program")]
-        public string Program {get; private set; }
+        [JsonProperty]
+        public string Program { get; private set; }
 
         /// <summary>
         /// The arguments to pass to the update program
         /// </summary>
-        [JsonPropertyName("Arguments")]
+        [JsonProperty]
         public string Arguments { get; private set; }
 
         /// <summary>
         /// Whether to reboot the device, regardless of the return code
         /// </summary>
-        [JsonPropertyName("RebootByDefault")]
+        [JsonProperty]
         public bool? RebootByDefault { get; private set; }
 
         /// <summary>
         /// The default result code expected from the update program
         /// </summary>
-        [JsonPropertyName("DefaultResult")]
+        [JsonProperty]
         public string DefaultResult { get; private set; }
 
         /// <summary>
         /// Expected result codes
         /// </summary>
-        [JsonPropertyName("ReturnCodes")]
+        [JsonProperty]
         public List<ReturnCode> ReturnCodes { get; private set; }
 
         [JsonConstructor]
@@ -64,7 +64,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         private void ParseCommandLineMetadata(XPathNavigator handlerMetadataNavigator, XmlNamespaceManager namespaceManager)
         {
             ExtractAttributesFromXml(
-                new string[] { "Program", "Arguments", "RebootByDefault", "DefaultResult"},
+                new string[] { "Program", "Arguments", "RebootByDefault", "DefaultResult" },
                 "cmd:InstallCommand/@*",
                 handlerMetadataNavigator,
                 namespaceManager);

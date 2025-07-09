@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
 using System;
 using System.Xml;
 using System.Xml.XPath;
+using Newtonsoft.Json;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
 {
@@ -16,25 +16,25 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// Whether a return code indicates reboot required
         /// </summary>
-        [JsonPropertyName("Reboot")]
+        [JsonProperty]
         public bool? Reboot { get; private set; }
 
         /// <summary>
         /// The numerical return code
         /// </summary>
-        [JsonPropertyName("Code")]
+        [JsonProperty]
         public int? Code { get; private set; }
 
         /// <summary>
         /// Corresponding result string
         /// </summary>
-        [JsonPropertyName("Result")]
+        [JsonProperty]
         public string Result { get; private set; }
 
         /// <summary>
         /// Localized result string
         /// </summary>
-        [JsonPropertyName("DefaultLocalizedDescription")]
+        [JsonProperty]
         public string DefaultLocalizedDescription { get; private set; }
 
         [JsonConstructor]
@@ -80,7 +80,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
             {
                 throw new NotSupportedException("Missing return code metadata in ReturnCode handler");
             }
-            
+
             return returnCode;
         }
     }

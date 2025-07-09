@@ -6,7 +6,7 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.UpdateServices.WebServices.ServerSync;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +29,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// If this list if empty, no updates will match the filter. Add product IDs to this list to have them match the filter.
         /// </summary>
         /// <value>List of product identities.</value>
-        [JsonPropertyName("ProductsFilter")]
+        [JsonProperty]
         public List<Guid> ProductsFilter { get; internal set; }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// If this list if empty, no updates will match the filter. Add classification IDs to this list to have them match the filter.
         /// </summary>
         /// <value>List of classification identities.</value>
-        [JsonPropertyName("ClassificationsFilter")]
+        [JsonProperty]
         public List<Guid> ClassificationsFilter { get; internal set; }
 
 
@@ -186,7 +186,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         {
             var filteredUpdates = source.OfType<MicrosoftUpdatePackage>();
 
-            return filteredUpdates.Where(u => {
+            return filteredUpdates.Where(u =>
+            {
                 if (u.Prerequisites == null)
                 {
                     return false;

@@ -7,7 +7,7 @@ using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
 using System.IO;
 using System.Collections.Generic;
-using System.Text.Json;
+using Newtonsoft.Json;
 using System.Linq;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
@@ -42,7 +42,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             if (store != null)
             {
                 storeAliases.Add(storeOptions);
-                File.WriteAllText(StoreAliasesConfigFile, JsonSerializer.Serialize(storeAliases));
+                File.WriteAllText(StoreAliasesConfigFile, JsonConvert.SerializeObject(storeAliases));
             }
         }
 
@@ -58,7 +58,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 if (storeAliases.RemoveAll(alias => alias.Alias == options.Alias) > 0)
                 {
-                    File.WriteAllText(StoreAliasesConfigFile, JsonSerializer.Serialize(storeAliases));
+                    File.WriteAllText(StoreAliasesConfigFile, JsonConvert.SerializeObject(storeAliases));
                     Console.WriteLine($"Alias {options.Alias} deleted");
                 }
                 else
@@ -99,7 +99,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 try
                 {
-                    return JsonSerializer.Deserialize<List<StoreAliasCreateOptions>>(File.ReadAllText(path));
+                    return JsonConvert.DeserializeObject<List<StoreAliasCreateOptions>>(File.ReadAllText(path));
                 }
                 catch (Exception) { }
             }

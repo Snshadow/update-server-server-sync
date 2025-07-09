@@ -3,11 +3,10 @@
 
 using Azure;
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
-using System.Text.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -133,7 +132,8 @@ namespace Microsoft.PackageGraph.Storage.Azure
             }
 
             using var filesReader = new StreamReader(inMemoryFilesList);
-            var filesList = JsonSerializer.Deserialize<List<T>>(filesReader.ReadToEnd());
+            var serializer = new JsonSerializer();
+            var filesList = serializer.Deserialize(filesReader, typeof(List<T>)) as List<T>;
 
             return filesList;
         }
@@ -142,10 +142,11 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         private static MemoryStream CreateFileMetadataStream(IPackage package)
         {
+            var serializer = new JsonSerializer();
             var filesMetadata = new MemoryStream();
             using (var textWriter = new StreamWriter(filesMetadata, Encoding.UTF8, 4096, true))
             {
-                textWriter.Write(JsonSerializer.Serialize(package.Files));
+                serializer.Serialize(textWriter, package.Files);
             }
 
             filesMetadata.Seek(0, SeekOrigin.Begin);

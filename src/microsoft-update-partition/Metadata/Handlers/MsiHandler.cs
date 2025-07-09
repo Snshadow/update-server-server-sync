@@ -1,10 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
-using System;
+using Newtonsoft.Json;
 using System.Xml;
-using System.Xml.Linq;
 using System.Xml.XPath;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
@@ -17,19 +15,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// Product code being installed
         /// </summary>
-        [JsonPropertyName("ProductCode")]
+        [JsonProperty]
         public string ProductCode { get; private set; }
 
         /// <summary>
         /// Main MSI file to be installed
         /// </summary>
-        [JsonPropertyName("MsiFile")]
+        [JsonProperty]
         public string MsiFile { get; private set; }
 
         /// <summary>
         /// Command line for launching MSI installation
         /// </summary>
-        [JsonPropertyName("CommandLine")]
+        [JsonProperty]
         public string CommandLine { get; private set; }
 
         [JsonConstructor]

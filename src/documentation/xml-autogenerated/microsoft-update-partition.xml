@@ -790,7 +790,7 @@
         </member>
         <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content.UpdateFile.Size">
             <summary>
-            Ges the file size, in bytes.
+            Get the file size, in bytes.
             </summary>
             <value>File size</value>
         </member>

@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,25 +19,26 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
         /// <summary>
         /// List expression attributes; attributes are key-value pairs
         /// </summary>
-        [JsonPropertyName("Attributes")]
+        [JsonProperty]
         public List<ExpressionToken> Attributes { get; private set; }
 
         /// <summary>
         /// List of sub-expressions of this expression
         /// </summary>
-        [JsonPropertyName("SubExpressions")]
+        [JsonProperty]
         public List<Expression> SubExpressions { get; private set; }
 
         /// <summary>
         /// List of sub-groups in this expression
         /// </summary>
-        [JsonPropertyName("SubGroups")]
+        [JsonProperty]
         public List<ExpressionGroup> SubGroups { get; private set; }
 
         /// <summary>
         /// Expression type
         /// </summary>
-        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public ExpressionType ExpressionType { get; private set; }
 
         [JsonConstructor]

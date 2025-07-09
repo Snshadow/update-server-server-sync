@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
@@ -14,19 +14,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
         /// <summary>
         /// The token name
         /// </summary>
-        [JsonPropertyName("Name")]
+        [JsonProperty]
         public string Name;
 
         /// <summary>
         /// The string value of the token, as read from the metadata XML
         /// </summary>
-        [JsonPropertyName("RawValue")]
+        [JsonProperty]
         public string RawValue;
 
         /// <summary>
         /// The typed value of the token
         /// </summary>
-        [JsonPropertyName("ValueType")]
+        [JsonProperty]
         public readonly Type ValueType;
 
         internal ExpressionToken(string name, string rawValue, Type valueType)

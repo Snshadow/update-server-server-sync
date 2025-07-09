@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Newtonsoft.Json;
 using System;
-using System.Text.Json.Serialization;
 
 namespace Microsoft.PackageGraph.ObjectModel
 {
@@ -12,11 +12,11 @@ namespace Microsoft.PackageGraph.ObjectModel
     public class ContentFileDigest : IContentFileDigest
     {
         /// <inheritdoc cref="IContentFileDigest.Algorithm"/>
-        [JsonPropertyName("Algorithm")]
+        [JsonProperty]
         public string Algorithm { get; private set; }
 
         /// <inheritdoc cref="IContentFileDigest.DigestBase64"/>
-        [JsonPropertyName("DigestBase64")]
+        [JsonProperty]
         public string DigestBase64 { get; private set; }
 
         /// <inheritdoc cref="IContentFileDigest.HexString"/>

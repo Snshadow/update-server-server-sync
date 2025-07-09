@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Xml;
@@ -21,7 +21,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// <value>
         /// Hardware ID string
         /// </value>
-        [JsonPropertyName("HardwareID")]
+        [JsonProperty]
         public string HardwareID { get; private set; }
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// <value>
         /// WHQL driver ID string
         /// </value>
-        [JsonPropertyName("WhqlDriverID")]
+        [JsonProperty]
         public string WhqlDriverID { get; private set; }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// <value>
         /// Manufacturer name
         /// </value>
-        [JsonPropertyName("Manufacturer")]
+        [JsonProperty]
         public string Manufacturer { get; private set; }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// <value>
         /// Company name
         /// </value>
-        [JsonPropertyName("Company")]
+        [JsonProperty]
         public string Company { get; private set; }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// <value>
         /// Driver provider name
         /// </value>
-        [JsonPropertyName("Provider")]
+        [JsonProperty]
         public string Provider { get; private set; }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// <value>
         /// Driver version
         /// </value>
-        [JsonPropertyName("Versioning")]
+        [JsonProperty]
         public DriverVersion Versioning { get; private set; }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// <value>
         /// Driver class (graphics, USB, etc.)
         /// </value>
-        [JsonPropertyName("Class")]
+        [JsonProperty]
         public string Class { get; set; }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// <value>
         /// List of feature scores
         /// </value>
-        [JsonPropertyName("FeatureScores")]
+        [JsonProperty]
         public List<DriverFeatureScore> FeatureScores;
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// <value>
         /// List of distribution computer hardware ids.
         /// </value>
-        [JsonPropertyName("DistributionComputerHardwareId")]
+        [JsonProperty]
         public List<Guid> DistributionComputerHardwareId;
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// <value>
         /// List of target computer hardware ids.
         /// </value>
-        [JsonPropertyName("TargetComputerHardwareId")]
+        [JsonProperty]
         public List<Guid> TargetComputerHardwareId;
 
         [JsonConstructor]
@@ -175,8 +175,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
                 {
                     returnList.Add(new DriverFeatureScore()
                     {
-                        OperatingSystem = featureScoreResult.Current.GetAttribute("OperatingSystem",""),
-                        Score = Convert.ToByte(featureScoreResult.Current.GetAttribute("FeatureScore",""), 16)
+                        OperatingSystem = featureScoreResult.Current.GetAttribute("OperatingSystem", ""),
+                        Score = Convert.ToByte(featureScoreResult.Current.GetAttribute("FeatureScore", ""), 16)
                     });
                 }
             }

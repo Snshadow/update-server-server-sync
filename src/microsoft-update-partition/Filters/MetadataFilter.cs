@@ -6,7 +6,6 @@ using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Linq;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
@@ -81,11 +80,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// Create a filter from JSON
         /// </summary>
         /// <param name="source">The JSON string</param>
-        
+
         /// <returns>A filter for metadata in a updates metadata source</returns>
         public static MetadataFilter FromJson(string source)
         {
-            return JsonSerializer.Deserialize<MetadataFilter>(source);
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<MetadataFilter>(source);
         }
 
         /// <summary>
@@ -94,7 +93,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <returns>The JSON string</returns>
         public string ToJson()
         {
-            return JsonSerializer.Serialize(this);
+            return Newtonsoft.Json.JsonConvert.SerializeObject(this);
         }
 
         /// <summary>
@@ -103,7 +102,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <typeparam name="T">Package type to query. The type must inherit <see cref="MicrosoftUpdatePackage"/></typeparam>
         /// <param name="source">The metadata store to filter</param>
         /// <returns>Matching packages</returns>
-        public IEnumerable<T> Apply<T>(IMetadataStore source)  where T : MicrosoftUpdatePackage
+        public IEnumerable<T> Apply<T>(IMetadataStore source) where T : MicrosoftUpdatePackage
         {
             IEnumerable<T> filteredUpdates;
             var updates = source.OfType<T>();
@@ -172,7 +171,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             if (SkipSuperseded)
             {
                 filteredUpdates = filteredUpdates
-                    .Where(u => u is not SoftwareUpdate || 
+                    .Where(u => u is not SoftwareUpdate ||
                     (u is SoftwareUpdate softwareUpdate && (softwareUpdate.IsSupersededBy == null || softwareUpdate.IsSupersededBy.Count == 0)));
             }
 

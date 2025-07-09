@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System.Xml;
 using System.Xml.XPath;
 
@@ -15,13 +15,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// The entry point for starting the windows feature update process
         /// </summary>
-        [JsonPropertyName("Program")]
-        public string Program {get; private set; }
+        [JsonProperty]
+        public string Program { get; private set; }
 
         /// <summary>
         /// Whether this feature update is setup360 or not
         /// </summary>
-        [JsonPropertyName("IsSetup360")]
+        [JsonProperty]
         public bool? IsSetup360 { get; private set; }
 
         [JsonConstructor]

@@ -8,7 +8,7 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -159,7 +159,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Get the category or update description
         /// </summary>
-        [JsonPropertyName("Description")]
+        [JsonProperty]
         public string Description
         {
             get
@@ -561,7 +561,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
         internal void LoadNonIndexedMetadataBase()
         {
-            lock(this)
+            lock (this)
             {
                 if (_MetadataLoaded || _MetadataSource == null)
                 {
@@ -583,7 +583,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     manager.AddNamespace("cbs", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/Cbs");
                     manager.AddNamespace("msp", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsInstaller");
                     manager.AddNamespace("wsi", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsSetup");
-                
+
                     _Description = UpdateParser.GetDescription(navigator, manager);
                     _Title = UpdateParser.GetTitle(navigator, manager);
 

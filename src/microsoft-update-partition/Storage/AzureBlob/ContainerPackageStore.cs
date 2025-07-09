@@ -55,7 +55,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         private ContainerPackageStore(BlobContainerClient container, AzurePackageStoreInitializeMode mode)
         {
-            if (!container.ExistsAsync().Result)
+            if (!container.Exists())
             {
                 throw new Exception("Container does not exist");
             }
@@ -111,17 +111,17 @@ namespace Microsoft.PackageGraph.Storage.Azure
         public static void Erase(BlobServiceClient client, string containerName)
         {
             var containerRef = client.GetBlobContainerClient(containerName);
-            if (containerRef.ExistsAsync().Result)
+            if (containerRef.Exists())
             {
                 var tocReference = containerRef.GetBlockBlobClient(TocBlobName);
-                tocReference.DeleteIfExistsAsync().Wait();
+                tocReference.DeleteIfExists();
 
                 for (int i = 0; i < int.MaxValue; i++)
                 {
                     var metadataRef = containerRef.GetPageBlobClient(MetadataBlobName + i.ToString());
-                    if (metadataRef.ExistsAsync().Result)
+                    if (metadataRef.Exists())
                     {
-                        metadataRef.DeleteAsync().Wait();
+                        metadataRef.Delete();
                     }
                     else
                     {
@@ -137,7 +137,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         public static ContainerPackageStore OpenOrCreate(BlobServiceClient client, string containerName)
         {
             var container = client.GetBlobContainerClient(containerName);
-            container.CreateIfNotExistsAsync().Wait();
+            container.CreateIfNotExists();
 
             return new ContainerPackageStore(container, AzurePackageStoreInitializeMode.ResetOnIndexCorruption);
         }
@@ -145,7 +145,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         public static bool Exists(BlobServiceClient client, string containerName)
         {
             var container = client.GetBlobContainerClient(containerName);
-            return container.ExistsAsync().Result;
+            return container.Exists();
         }
 
         public bool ContainsMetadata(IPackageIdentity packageIdentity)

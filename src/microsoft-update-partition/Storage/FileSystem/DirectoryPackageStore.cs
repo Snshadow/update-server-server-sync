@@ -6,10 +6,11 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Microsoft.PackageGraph.Storage.Index;
-using System.Text.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel.Design.Serialization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -62,7 +63,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 #pragma warning restore 0067
 
         public event EventHandler<PackageStoreEventArgs> PackageIndexingProgress;
-        
+
 
         private readonly List<IPackage> PendingPackages = new();
 
@@ -171,7 +172,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using (var tocFileStream = File.OpenText(Path.Combine(TargetPath, TableOfContentsFileName)))
             {
-                TOC = JsonSerializer.Deserialize<TableOfContent>(tocFileStream.ReadToEnd());
+                var serializer = new JsonSerializer();
+                TOC = serializer.Deserialize(tocFileStream, typeof(TableOfContent)) as TableOfContent;
             }
 
             if (TOC.TocVersion != TableOfContent.CurrentVersion)
@@ -189,7 +191,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         private void WriteToc()
         {
             using var tocFileStream = File.CreateText(Path.Combine(TargetPath, TableOfContentsFileName));
-            tocFileStream.Write(JsonSerializer.Serialize(TOC));
+            var serializer = new JsonSerializer();
+            serializer.Serialize(tocFileStream, TOC);
         }
 
         private void ReadIdentities()
@@ -217,7 +220,8 @@ namespace Microsoft.PackageGraph.Storage.Local
             var typesFile = Path.Combine(TargetPath, TypesFileName);
             using (var typesFileReader = File.OpenText(typesFile))
             {
-                _PackageTypeIndex = JsonSerializer.Deserialize<Dictionary<int, int>>(typesFileReader.ReadToEnd());
+                var serializer = new JsonSerializer();
+                _PackageTypeIndex = serializer.Deserialize(typesFileReader, typeof(Dictionary<int, int>)) as Dictionary<int, int>;
             }
 
             _IdentityToIndexMap = _IndexToIdentityMap.ToDictionary(pair => pair.Value, pair => pair.Key);
@@ -231,7 +235,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         public void CopyTo(IMetadataSink destination, CancellationToken cancelToken)
         {
             var packagesIdsToCopy = _IdentityToIndexMap.Keys.ToList();
-            
+
             if (destination is IMetadataStore destinationPackageStore)
             {
                 packagesIdsToCopy = packagesIdsToCopy.Except(destinationPackageStore.GetPackageIdentities()).ToList();
@@ -243,7 +247,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void Dispose()
         {
-            lock(WriteLock)
+            lock (WriteLock)
             {
                 if (!IsDisposed)
                 {
@@ -268,7 +272,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 WriteToc();
 
-                foreach(var partitionEntry in PartitionRegistration.GetAllPartitions())
+                foreach (var partitionEntry in PartitionRegistration.GetAllPartitions())
                 {
                     if (!partitionEntry.HandlesIdentities)
                     {
@@ -285,20 +289,15 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                     var partitionIdentitiesFile = Path.Combine(partitionDirectoryPath, IdentitiesFileName);
                     using var identitiesWriter = File.CreateText(partitionIdentitiesFile);
-
-                    object objectToSerialize = partitionIdentites;
-                    if (partitionEntry.Factory is MicrosoftUpdatePartition)
-                    {
-                        objectToSerialize = partitionIdentites.Select(p => new KeyValuePair<int, MicrosoftUpdatePackageIdentity>(p.Key, p.Value as MicrosoftUpdatePackageIdentity));
-                    }
-
-                    identitiesWriter.Write(JsonSerializer.Serialize(objectToSerialize));
+                    var serializer = new JsonSerializer();
+                    serializer.Serialize(identitiesWriter, partitionIdentites);
                 }
 
                 var packageTypesFile = Path.Combine(TargetPath, TypesFileName);
                 using (var typesWriter = File.CreateText(packageTypesFile))
                 {
-                    typesWriter.Write(JsonSerializer.Serialize(_PackageTypeIndex));
+                    var serializer = new JsonSerializer();
+                    serializer.Serialize(typesWriter, _PackageTypeIndex);
                 }
 
                 WriteIndexes();
@@ -317,7 +316,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private void CheckIndex(bool forceReindex = false)
         {
-            lock(WriteLock)
+            lock (WriteLock)
             {
                 if (!_IsReindexingRequired && !forceReindex)
                 {
@@ -326,15 +325,15 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 Indexes.ResetIndex();
 
-                PackageStoreEventArgs progressEvent = new() 
-                { 
-                    Total = _IdentityToIndexMap.Count, 
-                    Current = 0 
+                PackageStoreEventArgs progressEvent = new()
+                {
+                    Total = _IdentityToIndexMap.Count,
+                    Current = 0
                 };
 
-                foreach(var deltaStore in DeltaMetadataStores)
+                foreach (var deltaStore in DeltaMetadataStores)
                 {
-                    foreach(var parsedPackage in deltaStore)
+                    foreach (var parsedPackage in deltaStore)
                     {
                         Indexes.IndexPackage(parsedPackage, _IdentityToIndexMap[parsedPackage.Id]);
 
@@ -360,7 +359,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 return;
             }
 
-            lock(WriteLock)
+            lock (WriteLock)
             {
                 if (!NewDeltaSubdirectoryCreated)
                 {

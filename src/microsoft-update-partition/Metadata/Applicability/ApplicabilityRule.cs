@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Xml;
@@ -17,30 +18,31 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
         /// <summary>
         /// The type of applicability rule
         /// </summary>
-        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [JsonProperty]
+        [JsonConverter(typeof(StringEnumConverter))]
         public ApplicabilityRuleType RuleType { get; private set; }
 
         /// <summary>
         /// List of expression groups. Rules are joined together by boolean operators in a group; a rule can have multiple groups.
         /// </summary>
-        [JsonPropertyName("ExpressionGroups")]
+        [JsonProperty]
         public List<ExpressionGroup> ExpressionGroups { get; private set; }
 
         /// <summary>
         /// A single expression to evaluate.
         /// </summary>
-        [JsonPropertyName("Expression")]
+        [JsonProperty]
         public Expression Expression { get; private set; }
 
         /// <summary>
         /// Set to true if this rule only stores metadata for other rules
         /// </summary>
-        [JsonPropertyName("IsMetadataOnlyRule")]
+        [JsonProperty]
         public bool IsMetadataOnlyRule { get; private set; }
 
         [JsonConstructor]
         private ApplicabilityRule()
-        { 
+        {
         }
 
         internal static List<ApplicabilityRule> FromXml(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager)
@@ -58,16 +60,16 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                     case "upd:IsInstalled":
                         returnList.Add(
                             new ApplicabilityRule(applicabilityRulesQueryResult.Current, namespaceManager, IsMetadataRule.No)
-                            { 
+                            {
                                 RuleType = ApplicabilityRuleType.IsInstalled
                             });
                         break;
 
                     case "upd:IsInstallable":
                         returnList.Add(
-                            new ApplicabilityRule(applicabilityRulesQueryResult.Current, namespaceManager, IsMetadataRule.No) 
-                            { 
-                                RuleType = ApplicabilityRuleType.IsInstallable 
+                            new ApplicabilityRule(applicabilityRulesQueryResult.Current, namespaceManager, IsMetadataRule.No)
+                            {
+                                RuleType = ApplicabilityRuleType.IsInstallable
                             });
                         break;
 
@@ -78,8 +80,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                     case "b.WindowsVersion":
                         returnList.Add(
                             new ApplicabilityRule(applicabilityRulesQueryResult.Current, namespaceManager, IsMetadataRule.No)
-                            { 
-                                RuleType = ApplicabilityRuleType.WindowsVersion 
+                            {
+                                RuleType = ApplicabilityRuleType.WindowsVersion
                             });
                         break;
 
@@ -125,7 +127,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                                     RuleType = ApplicabilityRuleType.CbsPackageApplicabilityMetadata
                                 });
                         }
-                        
+
                         break;
 
                     case "mar:MsiPatchMetadata":
@@ -167,7 +169,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                                     RuleType = ApplicabilityRuleType.WindowsDriverMetadata
                                 });
                         }
-                        
+
                         break;
 
                     case "drv:WindowsDriver":

@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System.Xml;
 using System.Xml.XPath;
 
@@ -15,13 +15,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
         /// <summary>
         /// Install parameters for the patch
         /// </summary>
-        [JsonPropertyName("InstallParameters")]
-        public string InstallParameters {get; private set; }
+        [JsonProperty]
+        public string InstallParameters { get; private set; }
 
         /// <summary>
         /// Unpacking parameters for the patch
         /// </summary>
-        [JsonPropertyName("UnpackParameters")]
+        [JsonProperty]
         public string UnpackParameters { get; private set; }
 
         [JsonConstructor]

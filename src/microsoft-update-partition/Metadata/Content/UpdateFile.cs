@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.ObjectModel;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,42 +21,42 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content
         /// <value>
         /// File name
         /// </value>
-        [JsonPropertyName("FileName")]
+        [JsonProperty]
         public string FileName { get; set; }
 
         /// <summary>
-        /// Ges the file size, in bytes.
+        /// Get the file size, in bytes.
         /// </summary>
         /// <value>File size</value>
-        [JsonPropertyName("Size")]
+        [JsonProperty]
         public UInt64 Size { get; set; }
 
         /// <summary>
         /// Gets the last modified timestamp for the file
         /// </summary>
         /// <value>Last modified DateTime</value>
-        [JsonPropertyName("ModifiedDate")]
+        [JsonProperty]
         public DateTime ModifiedDate { get; set; }
 
         /// <summary>
         /// Gets the list of file digests. Multiple hashing algorithms might be used.
         /// </summary>
         /// <value>List of file digests, one per algorithm.</value>
-        [JsonPropertyName("Digests")]
+        [JsonProperty]
         public List<ContentFileDigest> Digests { get; set; }
 
         /// <summary>
         /// Gets the type of patching this file provides
         /// </summary>
         /// <value>Patchin type string</value>
-        [JsonPropertyName("PatchingType")]
+        [JsonProperty]
         public string PatchingType { get; set; }
 
         /// <summary>
         /// Gets the list of URLs for the file.
         /// </summary>
         /// <value>List of URLs.</value>
-        [JsonPropertyName("Urls")]
+        [JsonProperty]
         public List<UpdateFileUrl> Urls { get; set; }
 
         /// <summary>

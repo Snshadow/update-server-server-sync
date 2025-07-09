@@ -11,9 +11,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
 using Microsoft.UpdateServices.WebServices.ServerSync;
+using Newtonsoft.Json;
 using SoapCore;
 using System.Reflection;
-using System.Text.Json;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
 {
@@ -48,7 +48,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             PackageSource = PackageStore.Open(metadataPath);
 
             var serviceConfigJson = config.GetValue<string>("service-config-json");
-            ServiceConfiguration = JsonSerializer.Deserialize<ServerSyncConfigData>(serviceConfigJson);
+            ServiceConfiguration = JsonConvert.DeserializeObject<ServerSyncConfigData>(serviceConfigJson);
 
             if (!string.IsNullOrEmpty(contentPath))
             {

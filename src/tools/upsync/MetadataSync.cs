@@ -5,11 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using System.Text.Json;
 using System.Threading;
 using Microsoft.PackageGraph.MicrosoftUpdate.Source;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Newtonsoft.Json;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
@@ -34,7 +34,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             server.MetadataQueryProgress += Server_MetadataQueryProgress;
             var configData = server.GetServerConfigData().GetAwaiter().GetResult();
 
-            File.WriteAllText(options.OutFile, JsonSerializer.Serialize(configData));
+            File.WriteAllText(options.OutFile, JsonConvert.SerializeObject(configData));
         }
 
         public static void ReIndex(ReindexStoreOptions options)

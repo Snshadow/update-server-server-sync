@@ -5,7 +5,7 @@ using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Microsoft.PackageGraph.Storage.Index;
-using System.Text.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -58,7 +58,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 indexContainer.InputFile = new ZipFile(source, false);
                 indexContainer.ReadTableOfContents();
             }
-            catch(Exception)
+            catch (Exception)
             {
                 indexContainer.Status = IndexContainerStatus.Corrupt;
                 indexContainer.ResetIndex();
@@ -89,7 +89,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private void CreateAllKnownIndexes()
         {
-            foreach(var partition in PartitionRegistration.GetAllPartitions())
+            foreach (var partition in PartitionRegistration.GetAllPartitions())
             {
                 foreach (var knownIndex in partition.Indexes)
                 {
@@ -135,7 +135,8 @@ namespace Microsoft.PackageGraph.Storage.Local
             compressor.PutNextEntry(new ZipEntry(TocFileName));
             using (var tocWriter = new StreamWriter(compressor, Encoding.UTF8, 4096, true))
             {
-                tocWriter.Write(JsonSerializer.Serialize(TOC));
+                var serializer = new JsonSerializer();
+                serializer.Serialize(tocWriter, TOC);
             }
             compressor.CloseEntry();
         }
@@ -162,7 +163,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             var tocEntry = InputFile.GetInputStream(entryIndex);
             using var tocReader = new StreamReader(tocEntry);
-            var toc = JsonSerializer.Deserialize<IndexTableOfContents>(tocReader.ReadToEnd());
+            var jsonSerializer = new JsonSerializer();
+            var toc = jsonSerializer.Deserialize(tocReader, typeof(IndexTableOfContents)) as IndexTableOfContents;
             if (toc.Version == IndexTableOfContents.CurrentVersion)
             {
                 var registeredIndexes = GetRegisteredIndexes();
@@ -244,7 +246,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void IndexPackage(IPackage package, int packageIndex)
         {
-            foreach(var index in Indexes.Values)
+            foreach (var index in Indexes.Values)
             {
                 if (string.IsNullOrEmpty(index.Definition.PartitionName) ||
                     (PartitionRegistration.TryGetPartition(index.Definition.PartitionName, out _) &&

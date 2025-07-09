@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Text.Json;
 using System.IO;
 using Microsoft.UpdateServices.WebServices.ServerSync;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Newtonsoft.Json;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
@@ -32,7 +32,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             ServerSyncConfigData serverConfig;
             try
             {
-                serverConfig = JsonSerializer.Deserialize<ServerSyncConfigData>(File.ReadAllText(options.ServerConfigFile));
+                serverConfig = JsonConvert.DeserializeObject<ServerSyncConfigData>(File.ReadAllText(options.ServerConfigFile));
             }
             catch(Exception)
             {

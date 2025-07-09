@@ -71,7 +71,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         {
             UpstreamEndpoint = endpoint;
             AccountGuid = accountGuid;
-            
+
             if (!string.IsNullOrEmpty(accountName))
             {
                 AccountName = accountName;
@@ -244,8 +244,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             {
                 GetCookie = new GetCookieRequestBody()
                 {
-                    authCookies = new UpdateServices.WebServices.ServerSync.AuthorizationCookie[] 
-                    { 
+                    authCookies = new UpdateServices.WebServices.ServerSync.AuthorizationCookie[]
+                    {
                         new UpdateServices.WebServices.ServerSync.AuthorizationCookie()
                         {
                             CookieData = authCookie.CookieData,
@@ -268,7 +268,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             {
                 cookieResponse = await serverSyncClient.GetCookieAsync(cookieRequest);
             }
-            catch(System.ServiceModel.FaultException ex)
+            catch (System.ServiceModel.FaultException ex)
             {
                 throw new UpstreamServerException(ex);
             }
