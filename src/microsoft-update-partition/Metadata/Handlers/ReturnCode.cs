@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Newtonsoft.Json;
 using System;
 using System.Xml;
 using System.Xml.XPath;
-using Newtonsoft.Json;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
 {

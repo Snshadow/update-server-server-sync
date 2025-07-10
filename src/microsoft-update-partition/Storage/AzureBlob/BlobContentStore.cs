@@ -71,7 +71,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         public void Download(IEnumerable<IContentFile> files, CancellationToken cancelToken)
         {
             var queuedFiles = new List<IContentFile>();
-            foreach(var file in files)
+            foreach (var file in files)
             {
                 if (PendingFileDownloads.TryAdd(file.Source, file))
                 {
@@ -83,13 +83,10 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
             Interlocked.Add(ref _QueuedSize, queuedFiles.Sum(f => (long)f.Size));
 
-            var cancellationSource = new CancellationTokenSource();
             var progress = new ContentOperationProgress();
-            
 
             Progress?.Invoke(this, progress);
 
-            
             foreach (var file in queuedFiles)
             {
                 progress.Maximum = (long)file.Size;
@@ -129,9 +126,9 @@ namespace Microsoft.PackageGraph.Storage.Azure
                     int startBlock = 0;
                     var blockCount = fileSizeOnServer / BlockSize + (fileSizeOnServer % BlockSize == 0 ? 0 : 1);
                     List<string> blockIdList;
-                    if (fileBlob.ExistsAsync().Result)
+                    if (fileBlob.Exists(cancelToken))
                     {
-                        var fileBlocks = fileBlob.GetBlockListAsync(BlockListTypes.Uncommitted).Result.Value.UncommittedBlocks;
+                        var fileBlocks = fileBlob.GetBlockList(BlockListTypes.Uncommitted, cancellationToken: cancelToken).Value.UncommittedBlocks;
 
                         if (fileBlocks.Count() <= blockCount)
                         {
@@ -148,12 +145,12 @@ namespace Microsoft.PackageGraph.Storage.Azure
                     for (int i = startBlock; i < blockCount; i++)
                     {
                         var startOffset = i * BlockSize;
-                        var blockSize = (fileSizeOnServer % BlockSize  != 0 && i == (blockCount  -1 )? fileSizeOnServer % BlockSize : BlockSize);
+                        var blockSize = fileSizeOnServer % BlockSize != 0 && i == (blockCount - 1) ? fileSizeOnServer % BlockSize : BlockSize;
 
-                        fileBlob.StageBlockFromUriAsync(new Uri(file.Source), Convert.ToBase64String(BitConverter.GetBytes(i)), new StageBlockFromUriOptions { SourceRange = new HttpRange(startOffset, blockSize) }).Wait();
+                        fileBlob.StageBlockFromUri(new Uri(file.Source), Convert.ToBase64String(BitConverter.GetBytes(i)), new StageBlockFromUriOptions { SourceRange = new HttpRange(startOffset, blockSize) }, CancellationToken.None);
                         blockIdList.Add(Convert.ToBase64String(BitConverter.GetBytes(i)));
 
-                        if (cancellationSource.IsCancellationRequested)
+                        if (cancelToken.IsCancellationRequested)
                         {
                             break;
                         }
@@ -163,11 +160,9 @@ namespace Microsoft.PackageGraph.Storage.Azure
                         Progress?.Invoke(this, progress);
                     }
 
-                    fileBlob.CommitBlockListAsync(blockIdList).Wait();
-                    using var markerStream = new MemoryStream(Convert.FromBase64String(file.Digest.DigestBase64));
-                    GetBlockBlobClientMarkerForFile(file).UploadAsync(markerStream).Wait();
-
-
+                    fileBlob.CommitBlockList(blockIdList, cancellationToken: cancelToken);
+                    using var markerFile = GetBlockBlobClientMarkerForFile(file).OpenWrite(true, cancellationToken: cancelToken);
+                    markerFile.Write(Convert.FromBase64String(file.Digest.DigestBase64));
                 }
 
                 Interlocked.Add(ref _DownloadedSize, (long)file.Size * -1);
@@ -201,16 +196,16 @@ namespace Microsoft.PackageGraph.Storage.Azure
         /// <inheritdoc cref="IContentStore.Contains(IContentFile)"/>
         public bool Contains(IContentFile file)
         {
-            return GetBlockBlobClientMarkerForFile(file).ExistsAsync().Result;
+            return GetBlockBlobClientMarkerForFile(file).Exists();
         }
 
         /// <inheritdoc cref="IContentStore.Get(IContentFile)"/>
         public Stream Get(IContentFile contentFile)
         {
             var doneMarker = GetBlockBlobClientMarkerForFile(contentFile);
-            if (doneMarker.ExistsAsync().Result)
+            if (doneMarker.Exists())
             {
-                return GetBlockBlobClientForFile(contentFile).OpenReadAsync().Result;
+                return GetBlockBlobClientForFile(contentFile).OpenRead();
             }
             else
             {
@@ -247,7 +242,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         {
             var downloadTask = new Task(() =>
             {
-                Download(new List<IContentFile>() { file}, cancelToken);
+                Download(new List<IContentFile>() { file }, cancelToken);
             });
 
             downloadTask.Start();
