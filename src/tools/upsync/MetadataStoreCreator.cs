@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
 using Azure.Storage.Blobs;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
-using System.IO;
-using System.Collections.Generic;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
@@ -71,11 +71,11 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void ListAliases(StoreAliasListOptions options)
         {
             List<StoreAliasCreateOptions> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
-            var aliasesToList = 
-                string.IsNullOrEmpty(options.Alias) ? 
-                storeAliases : 
+            var aliasesToList =
+                string.IsNullOrEmpty(options.Alias) ?
+                storeAliases :
                 storeAliases.Where(alias => alias.Alias == options.Alias);
-            
+
 
             if (aliasesToList.Any())
             {
@@ -223,6 +223,6 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             return source;
         }
 
-        
+
     }
 }

@@ -52,7 +52,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             Console.WriteLine("Copying packages ...");
             source.MetadataCopyProgress += Program.OnPackageCopyProgress;
             destination.PackagesAddProgress += Program.OnPackageCopyProgress;
-            source.CopyTo(destination, filter, new CancellationTokenSource().Token);
+            source.CopyTo(destination, filter, CancellationToken.None);
         }
     }
 }

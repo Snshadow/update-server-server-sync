@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate.Source;
+using Microsoft.PackageGraph.Storage;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Threading;
-using Microsoft.PackageGraph.MicrosoftUpdate.Source;
-using Microsoft.PackageGraph.Storage;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
-using Newtonsoft.Json;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
@@ -98,8 +98,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 var microsoftUpdateCategoriesSource = new UpstreamCategoriesSource(upstreamEndpoint);
                 microsoftUpdateCategoriesSource.MetadataCopyProgress += Program.OnPackageCopyProgress;
-                var cancellationToken = new CancellationTokenSource();
-                microsoftUpdateCategoriesSource.CopyTo(destinationStore, cancellationToken.Token);
+                microsoftUpdateCategoriesSource.CopyTo(destinationStore, CancellationToken.None);
             }
 
             Console.WriteLine();
@@ -142,8 +141,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 Console.WriteLine($"Getting list of categories. This might take up to 1 minute ...");
 
                 microsoftUpdateCategoriesSource.MetadataCopyProgress += Program.OnPackageCopyProgress;
-                var cancellationToken = new CancellationTokenSource();
-                microsoftUpdateCategoriesSource.CopyTo(store, cancellationToken.Token);
+                microsoftUpdateCategoriesSource.CopyTo(store, CancellationToken.None);
 
                 if (options.Ids.Any())
                 {
@@ -193,7 +191,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     Console.WriteLine($"Getting list of updates. This might take up to 1 minute ...");
                     var microsoftUpdateSource = new UpstreamUpdatesSource(upstreamEndpoint, sourceFilter);
                     microsoftUpdateSource.MetadataCopyProgress += Program.OnPackageCopyProgress;
-                    microsoftUpdateSource.CopyTo(store, cancellationToken.Token);
+                    microsoftUpdateSource.CopyTo(store, CancellationToken.None);
 
                     Console.WriteLine();
                     Console.WriteLine("Done!");

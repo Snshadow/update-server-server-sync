@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 using Microsoft.UpdateServices.WebServices.ServerSync;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 {
@@ -205,8 +205,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             revisionIdRequest.GetRevisionIdList.filter.GetConfig = true;
 
             var revisionsIdReply = ServerSyncClient.GetRevisionIdListAsync(revisionIdRequest).GetAwaiter().GetResult();
-            if (revisionsIdReply == null || 
-                revisionsIdReply.GetRevisionIdListResponse1 == null || 
+            if (revisionsIdReply == null ||
+                revisionsIdReply.GetRevisionIdListResponse1 == null ||
                 revisionsIdReply.GetRevisionIdListResponse1.GetRevisionIdListResult == null)
             {
                 throw new Exception("Failed to get revision ID list");
@@ -312,7 +312,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     {
                         updateDataReply = null;
                     }
-                    catch(Exception)
+                    catch (Exception)
                     {
                         System.Threading.Thread.Sleep(5000);
                         updateDataReply = null;
@@ -358,10 +358,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                         cookie = AccessToken.AccessCookie,
                         updateIds = new UpdateIdentity[]
                         {
-                            new UpdateIdentity() 
-                            { 
-                                UpdateID = partialUpdateId, 
-                                RevisionNumber = currentRevision 
+                            new UpdateIdentity()
+                            {
+                                UpdateID = partialUpdateId,
+                                RevisionNumber = currentRevision
                             }
                         }
                     }
@@ -379,7 +379,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     {
                         updateDataReply = null;
                     }
-                    catch(System.ServiceModel.FaultException)
+                    catch (System.ServiceModel.FaultException)
                     {
                         updateDataReply = null;
                         break;

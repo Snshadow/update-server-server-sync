@@ -20,10 +20,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void Run(RunUpstreamServerOptions options)
         {
             var serviceConfigurationJson = File.ReadAllText("./upstream-server-config.json");
-            var bindEndpoint = "localhost";
-            var bindPort = 40080;
-            var metadataPath = "./store";
-            var contentPath = "./content";
+            var bindEndpoint = options.Endpoint;
+            var bindPort = options.Port;
+            var metadataPath = options.Path;
+            var contentPath = options.ContentSourcePath;
 
             var host = new WebHostBuilder()
                 // Bind to a specific IP address or HOST NAME

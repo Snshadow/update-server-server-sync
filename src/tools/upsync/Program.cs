@@ -3,7 +3,6 @@
 
 using System;
 using CommandLine;
-using Microsoft.PackageGraph.MicrosoftUpdate;
 using Microsoft.PackageGraph.Storage;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
@@ -97,7 +96,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         public static void OnPackageIndexingProgress(object sender, PackageStoreEventArgs e)
         {
-            lock(ProgressLock)
+            lock (ProgressLock)
             {
                 UpdateConsoleForMessageRefresh();
 
