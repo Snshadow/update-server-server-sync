@@ -168,10 +168,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public void Dispose()
         {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException("package store");
-            }
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
 
             Flush();
             IsDisposed = true;
@@ -179,17 +176,14 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public void AddPackage(IPackage package)
         {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException("package store");
-            }
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
 
             if (Identities.TryGetPackageIndex(package.Id, out var _))
             {
                 return;
             }
-            
-            lock(Identities)
+
+            lock (Identities)
             {
                 var entry = Metadata.AddPackage(package);
 
@@ -202,10 +196,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
         {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException("package store");
-            }
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
 
             if (Identities.TryGetPackageIndex(packageIdentity, out var packageIndex) &&
                 Identities.TryGetStoreEntry(packageIndex, out var storeEntry))
@@ -220,10 +211,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public void AddPackages(IEnumerable<IPackage> packages)
         {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException("package store");
-            }
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
 
             var progressArgs = new PackageStoreEventArgs() { Current = 0, Total = packages.Count() };
             PackagesAddProgress?.Invoke(this, progressArgs);
@@ -238,10 +226,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         public void Flush()
         {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException("package store");
-            }
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
 
             Identities.Save();
             IndexContainer.Save();

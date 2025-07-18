@@ -32,7 +32,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             }
             else
             { 
-                // If the plain text blob is not availabe, use the compressed XML blob
+                // If the plain text blob is not available, use the compressed XML blob
                 if (serverSyncData.XmlUpdateBlobCompressed == null || serverSyncData.XmlUpdateBlobCompressed.Length == 0)
                 {
                     throw new Exception("Missing XmlUpdateBlobCompressed");

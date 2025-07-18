@@ -526,6 +526,11 @@
             Expression that evaluates the presence of a camera
             </summary>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability.ExpressionType.DeviceAttribute">
+            <summary>
+            Expression that evaluates the device attribute
+            </summary>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability.ExpressionType.ProductReleaseInstalled">
             <summary>
             Expression that evaluates whether a release is installed

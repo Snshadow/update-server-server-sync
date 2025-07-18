@@ -71,14 +71,15 @@
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.GetExtendedUpdateInfo2Async(Microsoft.UpdateServices.WebServices.ClientSync.Cookie,Microsoft.UpdateServices.WebServices.ClientSync.UpdateIdentity[],Microsoft.UpdateServices.WebServices.ClientSync.XmlUpdateFragmentType[],System.String[],System.String)">
             <summary>
-            Not implemented.
+            Handle requests for extended update information. The extended information is extracted from update metadata.
+            Extended information also includes file URLs
             </summary>
-            <param name="cookie">Not implemented</param>
-            <param name="updateIDs">Not implemented</param>
-            <param name="infoTypes">Not implemented</param>
-            <param name="locales">Not implemented</param>
-            <param name="deviceAttributes">Not implemented</param>
-            <returns>Not implemented</returns>
+            <param name="cookie">Access cookie</param>
+            <param name="updateIDs">Update IDs for which to get extended information</param>
+            <param name="infoTypes">The type of extended information requested</param>
+            <param name="locales">The language to use when getting language dependent extended information</param>
+            <param name="callerAttributes">Caller attributes; optional</param>
+            <returns>Extended update information response.</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.GetExtendedUpdateInfoAsync(Microsoft.UpdateServices.WebServices.ClientSync.Cookie,System.Int32[],Microsoft.UpdateServices.WebServices.ClientSync.XmlUpdateFragmentType[],System.String[],System.String)">
             <summary>
@@ -89,7 +90,7 @@
             <param name="revisionIDs">Revision Ids for which to get extended information</param>
             <param name="infoTypes">The type of extended information requested</param>
             <param name="locales">The language to use when getting language dependent extended information</param>
-            <param name="deviceAttributes">Device attributes; unused</param>
+            <param name="callerAttributes">Caller attributes; unused</param>
             <returns>Extended update information response.</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.GetFileLocationsAsync(Microsoft.UpdateServices.WebServices.ClientSync.Cookie,System.Byte[][])">

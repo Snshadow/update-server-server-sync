@@ -540,16 +540,16 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     XPathNavigator navigator = document.CreateNavigator();
 
                     XmlNamespaceManager manager = new(navigator.NameTable);
-                    manager.AddNamespace("upd", "http://schemas.microsoft.com/msus/2002/12/Update");
-                    manager.AddNamespace("cat", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/Category");
-                    manager.AddNamespace("drv", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsDriver");
-                    manager.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
-                    manager.AddNamespace("cmd", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/CommandLineInstallation");
-                    manager.AddNamespace("psf", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsPatch");
                     manager.AddNamespace("cbs", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/Cbs");
+                    manager.AddNamespace("cat", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/Category");
+                    manager.AddNamespace("cmd", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/CommandLineInstallation");
+                    manager.AddNamespace("drv", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsDriver");
+                    manager.AddNamespace("lar", "http://schemas.microsoft.com/msus/2002/12/LogicalApplicabilityRules");
                     manager.AddNamespace("msp", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsInstaller");
+                    manager.AddNamespace("psf", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsPatch");
+                    manager.AddNamespace("upd", "http://schemas.microsoft.com/msus/2002/12/Update");
                     manager.AddNamespace("wsi", "http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/WindowsSetup");
-
+                    manager.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
                     _ApplicabilityRules = ApplicabilityRule.FromXml(navigator, manager);
                     _Handler = HandlerMetadata.FromXml(navigator, manager);
                 }
