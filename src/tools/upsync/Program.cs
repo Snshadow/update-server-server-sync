@@ -72,7 +72,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 }
                 else
                 {
-                    Console.Write($"Copying {e.Total} package(s). {e.Current} {Math.Truncate(((double)e.Current * 100) / e.Total)}%");
+                    Console.Write($"Copying {e.Total} package(s). {e.Current} {Math.Truncate((double)e.Current * 100 / e.Total)}%");
                 }
             }
         }
@@ -89,7 +89,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 }
                 else
                 {
-                    Console.Write($"{e.Current}, {Math.Truncate(((double)e.Current * 100) / e.Total)}%");
+                    Console.Write($"{e.Current}, {Math.Truncate((double)e.Current * 100) / e.Total}%");
                 }
             }
         }
@@ -107,7 +107,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 }
                 else
                 {
-                    Console.Write($"Indexing {e.Total} package(s). {e.Current} {Math.Truncate(((double)e.Current * 100) / e.Total)}%");
+                    Console.Write($"Indexing {e.Total} package(s). {e.Current} {Math.Truncate((double)e.Current * 100) / e.Total}%");
                 }
             }
         }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.UpdateServices.WebServices.ServerSync;
@@ -48,9 +48,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <returns>True if the token will expire before the timespan passes, false otherwise</returns>
         public bool ExpiresIn(TimeSpan timeSpan)
         {
-            // The original code tried to access AccessCookie.Expiration, but AccessCookie is a string.
-            // If you need expiration logic, you must parse the cookie or store expiration separately.
-            return AccessCookie == null; // Placeholder: always false if AccessCookie is present
+            // A token is considered expired if it is null or if the expiration time is within the specified timespan.
+            return AccessCookie == null || AccessCookie.Expiration <= DateTime.Now.Add(timeSpan);
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -63,7 +64,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
         private static void RemoveDriverMetadataNodes(XElement element)
         {
-            foreach(var driverMetadataElement in element.XPathSelectElements("/Update/ApplicabilityRules/Metadata/d.WindowsDriverMetaData"))
+            foreach (var driverMetadataElement in element.XPathSelectElements("/Update/ApplicabilityRules/Metadata/d.WindowsDriverMetaData"))
             {
                 driverMetadataElement.RemoveNodes();
             }
@@ -124,7 +125,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                     XE.Name = XE.Name.LocalName;
                 }
                 // replacing all attributes with attributes that are not namespaces and their names are set to only the localname
-                XE.ReplaceAttributes((from xattrib in XE.Attributes().Where(xa => !xa.IsNamespaceDeclaration) select new XAttribute(xattrib.Name.LocalName, xattrib.Value)));
+                XE.ReplaceAttributes(from xattrib in XE.Attributes().Where(xa => !xa.IsNamespaceDeclaration) select new XAttribute(xattrib.Name.LocalName, xattrib.Value));
             }
         }
 
@@ -153,21 +154,32 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// Gets localized properties fragment from full update metadata
         /// </summary>
         /// <param name="metadataXml">Update metadata XML</param>
-        /// <param name="languages">Language to get the localized properties for</param>
+        /// <param name="languages">Languages to get the localized properties for</param>
         /// <returns>Localized properties fragment</returns>
-        public static string GetLocalizedPropertiesFromMetadataXml(string metadataXml, string[] languages)
+        public static string[] GetLocalizedPropertiesFromMetadataXml(string metadataXml, string[] languages)
         {
             XDocument xml = XDocument.Parse(metadataXml);
             StripNamespacesFromXml(xml);
 
             var localizedProperties = xml.Root.XPathSelectElements("/Update/LocalizedPropertiesCollection/LocalizedProperties");
+            var localizedPropertiesList = new List<string>();
+            string enFallback = null;
 
-            foreach(var localizedProperty in localizedProperties)
+            foreach (var localizedProperty in localizedProperties)
             {
                 var languageElement = localizedProperty.XPathSelectElement("Language");
-                if (languageElement != null && languages.Contains(languageElement.Value))
+                if (languageElement != null)
                 {
-                    return localizedProperty.ToString(SaveOptions.DisableFormatting);
+                    var language = languageElement.Value;
+                    if (languages.Contains(language))
+                    {
+                        localizedPropertiesList.Add(localizedProperty.ToString(SaveOptions.DisableFormatting));
+                    }
+                    else if (language == "en" || language == "en-US")
+                    {
+                        // the service SHOULD return the EN locale extended metadata if no other localized properties exist
+                        enFallback = localizedProperty.ToString(SaveOptions.DisableFormatting);
+                    }
                 }
                 else
                 {
@@ -175,7 +187,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 }
             }
 
-            return null;
+            if (localizedPropertiesList.Count == 0 && !string.IsNullOrEmpty(enFallback))
+            {
+                localizedPropertiesList.Add(enFallback);
+            }
+
+            return localizedPropertiesList.ToArray();
         }
     }
 }

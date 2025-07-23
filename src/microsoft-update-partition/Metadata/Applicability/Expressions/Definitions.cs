@@ -911,16 +911,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                 }
             },
             {
-                "upd:DeviceAttribute",
-                new List<TokenDefinition>()
-                {
-                    new TokenDefinition("Name", TokenRequirements.Required, typeof(string)),
-                    new TokenDefinition("Type", TokenRequirements.Required, typeof(string)),
-                    new TokenDefinition("Comparison", TokenRequirements.Required, typeof(ComparisonOperator)),
-                    new TokenDefinition("Value", TokenRequirements.Required, typeof(string))
-                }
-            },
-            {
                 "upd:ProductReleaseInstalled",
                 new List<TokenDefinition>()
                 {
@@ -1035,6 +1025,16 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                     new TokenDefinition("Suffix", TokenRequirements.Optional, typeof(string)),
                 }
             },
+            {
+                "DeviceAttribute",
+                new List<TokenDefinition>()
+                {
+                    new TokenDefinition("Name", TokenRequirements.Required, typeof(string)),
+                    new TokenDefinition("Type", TokenRequirements.Required, typeof(string)),
+                    new TokenDefinition("Comparison", TokenRequirements.Required, typeof(ComparisonOperator)),
+                    new TokenDefinition("Value", TokenRequirements.Required, typeof(string))
+                }
+            }
         };
 
         public static Dictionary<string, ExpressionType> NameToTypeMap = new()
@@ -1095,7 +1095,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
             { "bar:SensorById", ExpressionType.SensorById },
             { "bar:NFC", ExpressionType.NFC },
             { "bar:Camera", ExpressionType.Camera },
-            { "upd:DeviceAttribute", ExpressionType.DeviceAttribute },
             { "upd:ProductReleaseInstalled", ExpressionType.ProductReleaseInstalled },
             { "upd:ProductReleaseVersion", ExpressionType.ProductReleaseVersion },
             { "drv:WindowsDriverInstalled", ExpressionType.WindowsDriverInstalled },
@@ -1110,6 +1109,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
             { "drv:InstalledVersionRange", ExpressionType.InstalledVersionRange },
             { "bar:ClusteredOS", ExpressionType.ClusteredOS },
             { "bar:ClusterResourceOwner", ExpressionType.ClusterResourceOwner },
+            { "DeviceAttribute", ExpressionType.DeviceAttribute },
         };
     }
 }

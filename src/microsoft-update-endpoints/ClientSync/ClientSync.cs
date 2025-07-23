@@ -196,99 +196,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>Extended update information response.</returns>
         public Task<ExtendedUpdateInfo2> GetExtendedUpdateInfo2Async(Cookie cookie, UpdateIdentity[] updateIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string callerAttributes)
         {
-            // MetadataSourceLock.EnterReadLock();
-
-            // if (MetadataSource == null)
-            // {
-            //     throw new FaultException();
-            // }
-
-            // List<MicrosoftUpdatePackage> requestedUpdates = new();
-            // foreach (var requestedId in updateIDs)
-            // {
-            //     var id = new MicrosoftUpdatePackageIdentity(requestedId.UpdateID, requestedId.RevisionNumber);
-            //     if (!MetadataSource.ContainsPackage(id))
-            //     {
-            //         throw new Exception("Update not found");
-            //     }
-
-            //     requestedUpdates.Add(MetadataSource.GetPackage(id) as MicrosoftUpdatePackage);
-            // }
-
-            // var updateDataList = new List<UpdateData>();
-
-            // if (infoTypes.Contains(XmlUpdateFragmentType.Extended))
-            // {
-            //     for (int i = 0; i < requestedUpdates.Count; i++)
-            //     {
-            //         updateDataList.Add(new UpdateData()
-            //         {
-            //             ID = IdToRevisionMap[requestedUpdates[i].Id.ID],
-            //             Xml = GetCoreFragment(requestedUpdates[i].Id)
-            //         });
-            //     }
-            // }
-
-            // if (infoTypes.Contains(XmlUpdateFragmentType.Core))
-            // {
-            //     for (int i = 0; i < requestedUpdates.Count; i++)
-            //     {
-            //         updateDataList.Add(new UpdateData()
-            //         {
-            //             ID = IdToRevisionMap[requestedUpdates[i].Id.ID
-            //             ],
-            //             Xml = GetCoreFragment(requestedUpdates[i].Id)
-            //         });
-            //     }
-            // }
-
-            // if (infoTypes.Contains(XmlUpdateFragmentType.LocalizedProperties))
-            // {
-            //     for (int i = 0; i < requestedUpdates.Count; i++)
-            //     {
-            //         var localizedXml = GetLocalizedProperties(requestedUpdates[i].Id, locales);
-
-            //         if (!string.IsNullOrEmpty(localizedXml))
-            //         {
-            //             updateDataList.Add(new UpdateData()
-            //             {
-            //                 ID = IdToRevisionMap[requestedUpdates[i].Id.ID],
-            //                 Xml = GetLocalizedProperties(requestedUpdates[i].Id, locales)
-            //             });
-            //         }
-            //     }
-            // }
-
-            // var files = requestedUpdates
-            //     .Where(u => u.Files != null && u.Files.Any())
-            //     .SelectMany(u => u.Files.OfType<UpdateFile>())
-            //     .Distinct()
-            //     .ToList();
-            // var fileList = new List<FileLocation>();
-            // for (int i = 0; i < files.Count; i++)
-            // {
-            //     fileList.Add(new FileLocation()
-            //     {
-            //         FileDigest = Convert.FromBase64String(files[i].Digest.DigestBase64),
-            //         Url = string.IsNullOrEmpty(ContentRoot) ? files[i].Urls[0].MuUrl : $"{ContentRoot}/{files[i].Digest.HexString.ToLower()}"
-            //     });
-            // }
-
-            // var response = new ExtendedUpdateInfo2();
-
-            // if (updateDataList.Count > 0)
-            // {
-            //     response.Updates = updateDataList.ToArray();
-            // }
-
-            // if (fileList.Count > 0)
-            // {
-            //     response.FileLocations = fileList.ToArray();
-            // }
-
-            // MetadataSourceLock.ExitReadLock();
-
-            // return Task.FromResult(response);
             throw new NotImplementedException();
         }
 
@@ -306,7 +213,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             return UpdateXmlTransformer.GetExtendedFragmentFromMetadataXml(xmlReader.ReadToEnd());
         }
 
-        string GetLocalizedProperties(MicrosoftUpdatePackageIdentity updateIdentity, string[] languages)
+        string[] GetLocalizedProperties(MicrosoftUpdatePackageIdentity updateIdentity, string[] languages)
         {
             using var xmlStream = MetadataSource.GetMetadata(updateIdentity);
             using var xmlReader = new StreamReader(xmlStream, Encoding.Unicode);
@@ -357,19 +264,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 }
             }
 
-
             if (infoTypes.Contains(XmlUpdateFragmentType.LocalizedProperties))
             {
                 for (int i = 0; i < requestedUpdates.Count; i++)
                 {
-                    var localizedXml = GetLocalizedProperties(requestedUpdates[i].Id, locales);
+                    var localizedXmlArr = GetLocalizedProperties(requestedUpdates[i].Id, locales);
 
-                    if (!string.IsNullOrEmpty(localizedXml))
+                    foreach (var localizedXml in localizedXmlArr)
                     {
                         updateDataList.Add(new UpdateData()
                         {
                             ID = revisionIDs[i],
-                            Xml = GetLocalizedProperties(requestedUpdates[i].Id, locales)
+                            Xml = localizedXml
                         });
                     }
                 }
@@ -488,8 +394,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 return DoSoftwareUpdateSync(parameters);
             }
         }
-
-
 
         /// <summary>
         /// Converts the a list of client supplied update indexes into a list of update identities

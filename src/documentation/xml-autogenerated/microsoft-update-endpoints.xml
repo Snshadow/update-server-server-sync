@@ -498,7 +498,7 @@
             Gets localized properties fragment from full update metadata
             </summary>
             <param name="metadataXml">Update metadata XML</param>
-            <param name="languages">Language to get the localized properties for</param>
+            <param name="languages">Languages to get the localized properties for</param>
             <returns>Localized properties fragment</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content.MicrosoftUpdateContentController">

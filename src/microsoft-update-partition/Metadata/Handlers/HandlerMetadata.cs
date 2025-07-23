@@ -84,6 +84,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers
             while (handlerSpecificDataResult.MoveNext())
             {
                 var type = handlerSpecificDataResult.Current.GetAttribute("type", "http://www.w3.org/2001/XMLSchema-instance");
+                if (string.IsNullOrEmpty(type))
+                {
+                    type = handlerSpecificDataResult.Current.GetAttribute("type", "");
+                }
                 return type switch
                 {
                     "cmd:CommandLineInstallation" => CommandLineHandler.FromXml(handlerSpecificDataResult.Current, namespaceManager),
