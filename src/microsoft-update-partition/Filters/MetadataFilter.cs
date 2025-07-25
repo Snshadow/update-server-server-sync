@@ -138,7 +138,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
             if (CategoryFilter?.Count > 0)
             {
-                filteredUpdates = filteredUpdates.Where(u => u.Prerequisites != null);
+                filteredUpdates = filteredUpdates.Where(u => u.Prerequisites is not null);
 
                 filteredUpdates = filteredUpdates
                     .Where(u =>
@@ -172,7 +172,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             {
                 filteredUpdates = filteredUpdates
                     .Where(u => u is not SoftwareUpdate ||
-                    (u is SoftwareUpdate softwareUpdate && (softwareUpdate.IsSupersededBy == null || softwareUpdate.IsSupersededBy.Count == 0)));
+                    (u is SoftwareUpdate softwareUpdate && (softwareUpdate.IsSupersededBy is null || softwareUpdate.IsSupersededBy.Count == 0)));
             }
 
             // Return first X matches, if requested

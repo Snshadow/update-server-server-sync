@@ -18,26 +18,26 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void SyncContent(ContentSyncOptions options)
         {
             var metadataSource = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
-            if (metadataSource == null)
+            if (metadataSource is null)
             {
                 return;
             }
 
             var contentStore = GetContentStoreFromOptions(options);
-            if (contentStore == null)
+            if (contentStore is null)
             {
                 return;
             }
 
             var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options as IMetadataFilterOptions);
-            if (filter == null)
+            if (filter is null)
             {
                 return;
             }
 
             var filteredPackages = filter.Apply(metadataSource);
 
-            var filesToDownload = filteredPackages.Where(p => p.Files != null).SelectMany(p => p.Files).ToList();
+            var filesToDownload = filteredPackages.Where(p => p.Files is not null).SelectMany(p => p.Files).ToList();
 
             foreach (var microsoftUpdatePackage in filteredPackages.OfType<MicrosoftUpdatePackage>())
             {
@@ -65,12 +65,12 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         private static List<IContentFile> GetAllUpdateFiles(IMetadataStore metadataSource, MicrosoftUpdatePackage update)
         {
             var filesList = new List<IContentFile>();
-            if (update.Files != null)
+            if (update.Files is not null)
             {
                 filesList.AddRange(update.Files);
             }
 
-            if (update is SoftwareUpdate softwareUpdate && softwareUpdate.BundledUpdates != null)
+            if (update is SoftwareUpdate softwareUpdate && softwareUpdate.BundledUpdates is not null)
             {
                 foreach (var bundledUpdate in softwareUpdate.BundledUpdates)
                 {

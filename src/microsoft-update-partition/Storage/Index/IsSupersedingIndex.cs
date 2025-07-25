@@ -25,7 +25,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
             if (package is SoftwareUpdate softwareUpdate)
             {
                 var supersededUpdates = softwareUpdate.SupersededUpdates;
-                if (supersededUpdates != null && supersededUpdates.Count > 0)
+                if (supersededUpdates is not null && supersededUpdates.Count > 0)
                 {
                     base.Add(packageIndex, new List<Guid>(softwareUpdate.SupersededUpdates));
                 }

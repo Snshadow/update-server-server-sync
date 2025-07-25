@@ -48,7 +48,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         {
             lock (this)
             {
-                if (_Identities == null)
+                if (_Identities is null)
                 {
                     _Identities = _Client.GetUpdateIds(_Filter, out var _).ToList();
                     _Identities.Sort();

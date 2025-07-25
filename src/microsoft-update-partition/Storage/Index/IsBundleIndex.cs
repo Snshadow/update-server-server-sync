@@ -24,7 +24,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
         {
             if (package is SoftwareUpdate softwareUpdate)
             {
-                if (softwareUpdate.BundledUpdates != null && softwareUpdate.BundledUpdates.Count > 0)
+                if (softwareUpdate.BundledUpdates is not null && softwareUpdate.BundledUpdates.Count > 0)
                 {
                     base.Add(packageIndex, softwareUpdate.BundledUpdates.ToList());
                 }

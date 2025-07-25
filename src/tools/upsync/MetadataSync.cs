@@ -40,7 +40,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void ReIndex(ReindexStoreOptions options)
         {
             var sourceToUpdate = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
-            if (sourceToUpdate == null)
+            if (sourceToUpdate is null)
             {
                 return;
             }
@@ -87,7 +87,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
 
             var destinationStore = MetadataStoreCreator.CreateFromOptions(options as IMetadataStoreOptions);
-            if (destinationStore == null)
+            if (destinationStore is null)
             {
                 return;
             }
@@ -108,7 +108,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void FetchPackagesUpdates(FetchPackagesOptions options)
         {
             var store = MetadataStoreCreator.CreateFromOptions(options as IMetadataStoreOptions);
-            if (store == null)
+            if (store is null)
             {
                 return;
             }
@@ -154,7 +154,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                             Console.WriteLine();
                             Console.Write($"Searching for package {updateId}");
                             var foundPackage = server.TryGetExpiredUpdate(updateIdGuid, 300, 100).GetAwaiter().GetResult();
-                            if (foundPackage == null)
+                            if (foundPackage is null)
                             {
                                 ConsoleOutput.WriteRed($" Not found!");
                             }

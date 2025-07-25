@@ -74,7 +74,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             ProductsIndex = new Dictionary<Guid, List<MicrosoftUpdatePackage>>();
             ClassificationsIndex = new Dictionary<Guid, List<MicrosoftUpdatePackage>>();
 
-            if (PackageStore != null)
+            if (PackageStore is not null)
             {
                 Categories.AddRange(packageSource.OfType<ProductCategory>());
                 Categories.AddRange(packageSource.OfType<ClassificationCategory>());
@@ -101,7 +101,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
 
                 foreach (var update in Updates.Values)
                 {
-                    if (update.Prerequisites != null)
+                    if (update.Prerequisites is not null)
                     {
                         foreach (var prerequisite in update.Prerequisites.OfType<AtLeastOne>().SelectMany(p => p.Simple))
                         {
@@ -210,8 +210,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     var productsFilter = request.GetRevisionIdList.filter.Categories;
                     var classificationsFilter = request.GetRevisionIdList.filter.Classifications;
 
-                    var effectiveProductsFilter = productsFilter == null ? ProductsIndex.Keys : productsFilter.Select(p => p.Id);
-                    var effectiveClassificationsFilter = classificationsFilter == null ? ClassificationsIndex.Keys : classificationsFilter.Select(c => c.Id);
+                    var effectiveProductsFilter = productsFilter is null ? ProductsIndex.Keys : productsFilter.Select(p => p.Id);
+                    var effectiveClassificationsFilter = classificationsFilter is null ? ClassificationsIndex.Keys : classificationsFilter.Select(c => c.Id);
 
                     var filteredByProduct = new List<MicrosoftUpdatePackageIdentity>();
                     foreach (var product in effectiveProductsFilter)
@@ -238,7 +238,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     {
                         if (Updates[result] is SoftwareUpdate softwareUpdate)
                         {
-                            if (softwareUpdate.BundledUpdates != null)
+                            if (softwareUpdate.BundledUpdates is not null)
                             {
                                 bundledUpdates.AddRange(softwareUpdate.BundledUpdates);
                             }
@@ -274,12 +274,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             serviceConfiguration = ServiceConfiguration;
             ServiceConfigurationLock.ReleaseReaderLock();
 
-            if (serviceConfiguration == null)
+            if (serviceConfiguration is null)
             {
                 return Task.FromResult(response);
             }
 
-            if (PackageStore == null)
+            if (PackageStore is null)
             {
                 return Task.FromResult(response);
             }
@@ -308,7 +308,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     }
 
                     var update = PackageStore.GetPackage(updateIdentity) as MicrosoftUpdatePackage;
-                    if (update.Files != null)
+                    if (update.Files is not null)
                     {
                         // if update contains files, we must also gather file information
                         foreach (var updateFile in update.Files)

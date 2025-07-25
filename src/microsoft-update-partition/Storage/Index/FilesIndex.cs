@@ -24,7 +24,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
         public override void IndexPackage(IPackage package, int packageIndex)
         {
             if (package is MicrosoftUpdatePackage microsoftUpdatePackage &&
-                microsoftUpdatePackage.Files != null &&
+                microsoftUpdatePackage.Files is not null &&
                 microsoftUpdatePackage.Files.Any())
             {
                 base.Add(packageIndex, microsoftUpdatePackage.Files.OfType<UpdateFile>().ToList());

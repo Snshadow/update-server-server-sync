@@ -161,7 +161,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
             }
             catch (Exception) { toc = null; }
 
-            if (toc != null)
+            if (toc is not null)
             {
                 var registeredIndexes = GetRegisteredIndexes();
 

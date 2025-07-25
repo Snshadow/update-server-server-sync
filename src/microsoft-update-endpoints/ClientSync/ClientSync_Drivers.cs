@@ -35,7 +35,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 Truncated = false
             };
 
-            List<Guid> computerHardwareIds = parameters.ComputerSpec.HardwareIDs != null ? parameters.ComputerSpec.HardwareIDs.ToList() : new List<Guid>();
+            List<Guid> computerHardwareIds = parameters.ComputerSpec.HardwareIDs is not null ? parameters.ComputerSpec.HardwareIDs.ToList() : new List<Guid>();
 
             List<UpdateInfo> driverUpdates = new();
 
@@ -47,7 +47,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 // Combine the list hardware ids and compatible hwids; we will
                 // match them in this order, from specific to less specific
                 var hardwareIdsToMatch = new List<string>(device.HardwareIDs);
-                if (device.CompatibleIDs != null)
+                if (device.CompatibleIDs is not null)
                 {
                     hardwareIdsToMatch.AddRange(device.CompatibleIDs);
                 }
@@ -56,7 +56,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 var driverMatchResult = DriverMatcher.MatchDriver(hardwareIdsToMatch, computerHardwareIds, installedNonLeafUpdatesGuids);
 
                 // If we have a match and the client does not have it, add it to the list
-                if (driverMatchResult != null &&
+                if (driverMatchResult is not null &&
                     !cachedDrivers.Contains(driverMatchResult.Driver.Id) &&
                     !IsInstalledDriverBetterMatch(device.installedDriver, driverMatchResult, hardwareIdsToMatch, computerHardwareIds))
                 {
@@ -142,7 +142,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                         var installedDriverFeatureScore = (byte)((installedDriver.DriverRank & 0x00FF0000) >> 24);
 
                         // If the match result does not have a feature score, consider the score to be 255
-                        var matchResultEffectiveFeatureScore = matchResult.MatchedFeatureScore == null ? byte.MaxValue : matchResult.MatchedFeatureScore.Score;
+                        var matchResultEffectiveFeatureScore = matchResult.MatchedFeatureScore is null ? byte.MaxValue : matchResult.MatchedFeatureScore.Score;
 
                         if (installedDriverFeatureScore != matchResultEffectiveFeatureScore)
                         {

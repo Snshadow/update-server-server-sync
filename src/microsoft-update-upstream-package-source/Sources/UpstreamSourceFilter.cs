@@ -188,7 +188,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
             return filteredUpdates.Where(u =>
             {
-                if (u.Prerequisites == null)
+                if (u.Prerequisites is null)
                 {
                     return false;
                 }

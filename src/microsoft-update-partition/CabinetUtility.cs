@@ -77,7 +77,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
                 File.Delete(xmlTempFile);
             }
 
-            if (inMemoryStream != null)
+            if (inMemoryStream is not null)
             {
                 return inMemoryStream.ToArray();
             }
@@ -126,7 +126,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
                 File.Delete(cabTempFile);
             }
 
-            if (inMemoryStream != null)
+            if (inMemoryStream is not null)
             {
                 return inMemoryStream.ToArray();
             }

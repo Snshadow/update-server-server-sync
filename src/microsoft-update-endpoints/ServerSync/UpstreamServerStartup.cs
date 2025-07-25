@@ -80,7 +80,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             services.TryAddSingleton<AuthenticationWebService>();
             services.TryAddSingleton<ReportingWebService>();
 
-            if (LocalContentSource != null)
+            if (LocalContentSource is not null)
             {
                 // Enable the content controller if serving content
                 // Add your content controller here

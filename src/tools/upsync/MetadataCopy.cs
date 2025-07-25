@@ -22,7 +22,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     Type = options.SourceType
                 });
 
-            if (source == null)
+            if (source is null)
             {
                 ConsoleOutput.WriteRed("Failed to open source repository");
                 return;
@@ -37,14 +37,14 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     Type = options.DestinationType
                 });
 
-            if (destination == null)
+            if (destination is null)
             {
                 ConsoleOutput.WriteRed("Failed to open or create destination repository");
                 return;
             }
 
             var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options as IMetadataFilterOptions);
-            if (filter == null)
+            if (filter is null)
             {
                 return;
             }

@@ -27,7 +27,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void Query(QueryMetadataOptions options)
         {
             var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
-            if (source == null)
+            if (source is null)
             {
                 return;
             }
@@ -39,7 +39,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void MatchDrivers(MatchDriverOptions options)
         {
             var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
-            if (source == null)
+            if (source is null)
             {
                 return;
             }
@@ -47,14 +47,14 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             using (source)
             {
                 List<Guid> computerHardwareIds = FilterBuilder.StringGuidsToGuids(options.ComputerHardwareIds);
-                if (computerHardwareIds == null)
+                if (computerHardwareIds is null)
                 {
                     ConsoleOutput.WriteRed($"The computer hardware ID must be a GUID");
                     return;
                 }
 
                 var prerequisites = FilterBuilder.StringGuidsToGuids(options.InstalledPrerequisites);
-                if (prerequisites == null)
+                if (prerequisites is null)
                 {
                     ConsoleOutput.WriteRed($"Prerequisites must be a list of GUIDs separated by '+'");
                     return;
@@ -64,7 +64,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
                 var driverMatch = driverMatching.MatchDriver(options.HardwareIds, computerHardwareIds, prerequisites);
 
-                if (driverMatch != null)
+                if (driverMatch is not null)
                 {
                     Console.WriteLine("Matched driver update:");
                     ConsoleOutput.WriteGreen($"    ID      : {driverMatch.Driver.Id.ID}");
@@ -77,7 +77,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                         Console.WriteLine($"    Matched computer hardware ID : {driverMatch.MatchedComputerHardwareId.Value}");
                     }
 
-                    if (driverMatch.MatchedFeatureScore != null)
+                    if (driverMatch.MatchedFeatureScore is not null)
                     {
                         Console.WriteLine($"    Driver feature score         : [OS {driverMatch.MatchedFeatureScore.OperatingSystem}, Score  {driverMatch.MatchedFeatureScore.Score}]");
                     }
@@ -92,7 +92,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void Status(MetadataSourceStatusOptions options)
         {
             var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
-            if (source == null)
+            if (source is null)
             {
                 return;
             }

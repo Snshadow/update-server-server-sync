@@ -39,7 +39,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     StoreConnectionString = storeOptions.StoreConnectionString,
                     Type = storeOptions.Type
                 });
-            if (store != null)
+            if (store is not null)
             {
                 storeAliases.Add(storeOptions);
                 File.WriteAllText(StoreAliasesConfigFile, JsonConvert.SerializeObject(storeAliases));
@@ -114,7 +114,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 List<StoreAliasCreateOptions> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
                 var alias = sourceOptions.Alias;
                 sourceOptions = storeAliases.FirstOrDefault(alias => alias.Alias == sourceOptions.Alias);
-                if (sourceOptions == null)
+                if (sourceOptions is null)
                 {
                     Console.WriteLine($"Alias {alias} not found");
                     return null;
@@ -176,7 +176,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 List<StoreAliasCreateOptions> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
                 var alias = sourceOptions.Alias;
                 sourceOptions = storeAliases.FirstOrDefault(alias => alias.Alias == sourceOptions.Alias);
-                if (sourceOptions == null)
+                if (sourceOptions is null)
                 {
                     Console.WriteLine($"Alias {alias} not found");
                     return null;

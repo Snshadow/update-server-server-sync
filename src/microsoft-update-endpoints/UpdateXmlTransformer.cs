@@ -54,7 +54,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             var relationships = xml.Root.XPathSelectElements("/Update/Relationships").FirstOrDefault();
             var applicabilityRules = xml.Root.XPathSelectElements("/Update/ApplicabilityRules").FirstOrDefault();
 
-            if (applicabilityRules != null)
+            if (applicabilityRules is not null)
             {
                 RemoveDriverMetadataNodes(applicabilityRules);
             }
@@ -151,24 +151,24 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         }
 
         /// <summary>
-        /// Gets localized properties fragment from full update metadata
+        /// Gets localized properties fragments from full update metadata
         /// </summary>
         /// <param name="metadataXml">Update metadata XML</param>
         /// <param name="languages">Languages to get the localized properties for</param>
-        /// <returns>Localized properties fragment</returns>
+        /// <returns>Localized properties fragments</returns>
         public static string[] GetLocalizedPropertiesFromMetadataXml(string metadataXml, string[] languages)
         {
             XDocument xml = XDocument.Parse(metadataXml);
             StripNamespacesFromXml(xml);
 
             var localizedProperties = xml.Root.XPathSelectElements("/Update/LocalizedPropertiesCollection/LocalizedProperties");
-            var localizedPropertiesList = new List<string>();
+            List<string> localizedPropertiesList = new();
             string enFallback = null;
 
             foreach (var localizedProperty in localizedProperties)
             {
                 var languageElement = localizedProperty.XPathSelectElement("Language");
-                if (languageElement != null)
+                if (languageElement is not null)
                 {
                     var language = languageElement.Value;
                     if (languages.Contains(language))

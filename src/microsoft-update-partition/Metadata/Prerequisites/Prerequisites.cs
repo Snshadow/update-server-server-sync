@@ -10,7 +10,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
     {
         public static bool IsApplicable(MicrosoftUpdatePackage update, List<Guid> installedPrerequisites)
         {
-            if (update.Prerequisites == null)
+            if (update.Prerequisites is null)
             {
                 return true;
             }

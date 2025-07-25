@@ -66,7 +66,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
         [HttpGet]
         public IActionResult GetMicrosoftUpdateContent(string contentHash)
         {
-            if (ContentStore == null)
+            if (ContentStore is null)
             {
                 return NotFound();
             }
@@ -84,7 +84,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
             if (ContentStore.Contains(parsedContentHash, out var fileName))
             {
                 var typedHeaders = Request.GetTypedHeaders();
-                if (typedHeaders.Range != null)
+                if (typedHeaders.Range is not null)
                 {
                     ContentLogger.LogInformation($"Requested {fileName}, range {typedHeaders.Range.Ranges.First().From} -> {typedHeaders.Range.Ranges.First().To}");
                 }
@@ -112,7 +112,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
         [HttpHead]
         public void GetMicrosoftUpdateContentHead(string contentHash)
         {
-            if (ContentStore == null)
+            if (ContentStore is null)
             {
                 HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
                 return;

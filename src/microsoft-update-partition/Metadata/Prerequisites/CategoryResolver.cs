@@ -30,7 +30,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
                 foreach (var subCategory in category.Simple)
                 {
                     var matchingProduct = allProducts.FirstOrDefault(p => p.ID == subCategory.UpdateId);
-                    if (matchingProduct != null)
+                    if (matchingProduct is not null)
                     {
                         returnList.Add(matchingProduct.ID);
                     }
@@ -57,7 +57,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
                 foreach (var subCategory in category.Simple)
                 {
                     var matchingProduct = allClassifications.FirstOrDefault(p => p.ID == subCategory.UpdateId);
-                    if (matchingProduct != null)
+                    if (matchingProduct is not null)
                     {
                         returnList.Add(matchingProduct.ID);
                     }

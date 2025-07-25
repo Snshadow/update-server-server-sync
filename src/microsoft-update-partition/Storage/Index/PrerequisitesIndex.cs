@@ -25,7 +25,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
         public override void IndexPackage(IPackage package, int packageIndex)
         {
             if (package is MicrosoftUpdatePackage microsoftUpdate && 
-                microsoftUpdate.Prerequisites != null && 
+                microsoftUpdate.Prerequisites is not null && 
                 microsoftUpdate.Prerequisites.Count > 0)
             {
                 var prerequisiteGuids = new List<List<Guid>>();

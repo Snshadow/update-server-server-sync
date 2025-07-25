@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             MetadataSourceLock.EnterReadLock();
 
-            if (MetadataSource == null)
+            if (MetadataSource is null)
             {
                 throw new FaultException();
             }
@@ -43,20 +44,27 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 DriverSyncNotNeeded = "false"
             };
 
+            _categoryFilter = parameters.FilterCategoryIds?.ToList();
+
+            var allApplicableUpdates = GetApplicableSoftwareUpdates(installedNonLeafUpdatesGuids);
+            var clientCachedUpdateGuids = new HashSet<Guid>(installedNonLeafUpdatesGuids.Concat(otherCachedUpdatesGuids));
+            var outOfScopeGuids = clientCachedUpdateGuids.Except(allApplicableUpdates.Select(u => u.Id.ID)).ToList();
+            response.OutOfScopeRevisionIDs = outOfScopeGuids.Select(g => IdToRevisionMap[g]).ToArray();
+
             // Add root updates first; if any new root updates were added, return the response to the client immediatelly
-            AddMissingRootUpdatesToSyncUpdatesResponse(installedNonLeafUpdatesGuids, otherCachedUpdatesGuids, response, out bool rootUpdatesAdded);
+            AddMissingRootUpdatesToSyncUpdatesResponse(installedNonLeafUpdatesGuids, otherCachedUpdatesGuids, response, allApplicableUpdates, out bool rootUpdatesAdded);
             if (!rootUpdatesAdded)
             {
                 // No root updates were added; add non-leaf updates now
-                AddMissingNonLeafUpdatesToSyncUpdatesResponse(installedNonLeafUpdatesGuids, otherCachedUpdatesGuids, response, out bool nonLeafUpdatesAdded);
+                AddMissingNonLeafUpdatesToSyncUpdatesResponse(installedNonLeafUpdatesGuids, otherCachedUpdatesGuids, response, allApplicableUpdates, out bool nonLeafUpdatesAdded);
                 if (!nonLeafUpdatesAdded)
                 {
                     // No leaf updates were added; add leaf bundle updates now
-                    AddMissingBundleUpdatesToSyncUpdatesResponse(installedNonLeafUpdatesGuids, otherCachedUpdatesGuids, response, out bool bundleUpdatesAdded);
+                    AddMissingBundleUpdatesToSyncUpdatesResponse(installedNonLeafUpdatesGuids, otherCachedUpdatesGuids, response, allApplicableUpdates, out bool bundleUpdatesAdded);
                     if (!bundleUpdatesAdded)
                     {
                         // No bundles were added; finally add leaf software updates
-                        AddMissingSoftwareUpdatesToSyncUpdatesResponse(installedNonLeafUpdatesGuids, otherCachedUpdatesGuids, response, out var _);
+                        AddMissingSoftwareUpdatesToSyncUpdatesResponse(installedNonLeafUpdatesGuids, otherCachedUpdatesGuids, response, allApplicableUpdates, out var _);
                     }
                 }
             }
@@ -66,34 +74,83 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             return Task.FromResult(response);
         }
 
+        private List<MicrosoftUpdatePackage> GetApplicableSoftwareUpdates(List<Guid> installedNonLeaf)
+        {
+            var allApplicableUpdates = new List<MicrosoftUpdatePackage>();
+
+            // Get root updates
+            var rootUpdates = RootUpdates
+                .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
+                .Select(guid => IdToFullIdentityMap[guid]) // Map the GUID to a fully qualified identity
+                .Select(id => MetadataSource.GetPackage(id) as MicrosoftUpdatePackage); // Get the update by identity
+            allApplicableUpdates.AddRange(rootUpdates);
+
+            // Get non-leaf updates
+            var nonLeafUpdates = NonLeafUpdates
+                .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
+                .Select(guid => IdToFullIdentityMap[guid])
+                .Select(id => MetadataSource.GetPackage(id) as MicrosoftUpdatePackage)
+                .Where(u => u.IsApplicable(installedNonLeaf)); // Eliminate not applicable updates
+            allApplicableUpdates.AddRange(nonLeafUpdates);
+
+            // Get leaf updates (software and bundles)
+            var leafUpdates = SoftwareLeafUpdateGuids
+                .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
+                .Select(guid => IdToFullIdentityMap[guid])
+                .Select(id => MetadataSource.GetPackage(id) as SoftwareUpdate)
+                .Where(u => u.IsApplicable(installedNonLeaf));
+            allApplicableUpdates.AddRange(leafUpdates);
+
+            // Filter out unapproved software updates
+            if (!AreAllSoftwareUpdatesApproved)
+            {
+                allApplicableUpdates.RemoveAll(u => u is SoftwareUpdate && !ApprovedSoftwareUpdates.Contains(u.Id));
+            }
+
+            if (_categoryFilter is not null && _categoryFilter.Count > 0)
+            {
+                var categoryGuids = new HashSet<Guid>(_categoryFilter.Select(c => c.Id));
+                allApplicableUpdates.RemoveAll(u =>
+                {
+                    if (u.Prerequisites is not null)
+                    {
+                        foreach (var prereq in u.Prerequisites.OfType<AtLeastOne>().Where(p => p.IsCategory))
+                        {
+                            if (prereq.Simple.Any(s => categoryGuids.Contains(s.UpdateId)))
+                            {
+                                return false;
+                            }
+                        }
+                    }
+
+                    return true;
+                });
+            }
+
+            return allApplicableUpdates;
+        }
+
         /// <summary>
         /// For a client request, gathers applicable root updates (detectoids, categories, etc.) that the client does not have yet
         /// </summary>
         /// <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
         /// <param name="otherCached">List of other updates known to the client</param>
         /// <param name="response">The response  to append new updates to</param>
+        /// <param name="allApplicableUpdates">A list of all applicable updates for the client.</param>
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
-        private void AddMissingRootUpdatesToSyncUpdatesResponse(List<Guid> installedNonLeaf, List<Guid> otherCached, SyncInfo response, out bool updatesAdded)
+        private void AddMissingRootUpdatesToSyncUpdatesResponse(List<Guid> installedNonLeaf, List<Guid> otherCached, SyncInfo response, List<MicrosoftUpdatePackage> allApplicableUpdates, out bool updatesAdded)
         {
-            var missingRootUpdates = RootUpdates
-                .Except(installedNonLeaf)                               // Do not resend installed updates
-                .Except(otherCached)                                    // Do not resend other client known updates
-                .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
-                .Select(guid => IdToFullIdentityMap[guid])              // Map the GUID to a fully qualified identity
-                .Select(id => MetadataSource.GetPackage(id) as MicrosoftUpdatePackage)       // Get the update by identity
-                .Take(MaxUpdatesInResponse + 1)                         // Only take the maximum number of updates allowed + 1 (to see if we truncated)
+            var clientCachedUpdateGuids = new HashSet<Guid>(installedNonLeaf.Concat(otherCached));
+            var missingRootUpdates = allApplicableUpdates
+                .Where(u => RootUpdates.Contains(u.Id.ID) && !clientCachedUpdateGuids.Contains(u.Id.ID))
                 .ToList();
-
-            // Remove all software updates that have not been approved
-            if (!AreAllSoftwareUpdatesApproved)
-            {
-                missingRootUpdates.RemoveAll(u => u is SoftwareUpdate && !ApprovedSoftwareUpdates.Contains(u.Id));
-            }
 
             if (missingRootUpdates.Count > 0)
             {
-                response.NewUpdates = CreateUpdateInfoListFromNonLeafUpdates(missingRootUpdates).ToArray();
-                response.Truncated = true;
+                response.NewUpdates = CreateUpdateInfoListFromNonLeafUpdates(missingRootUpdates.Take(MaxUpdatesInResponse + 1)
+                .ToList())
+                .ToArray();
+                response.Truncated = missingRootUpdates.Count > MaxUpdatesInResponse;
                 updatesAdded = true;
             }
             else
@@ -108,30 +165,21 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
         /// <param name="otherCached">List of other updates known to the client</param>
         /// <param name="response">The response  to append new updates to</param>
+        /// <param name="allApplicableUpdates">A list of all applicable updates for the client.</param>
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
-        private void AddMissingNonLeafUpdatesToSyncUpdatesResponse(List<Guid> installedNonLeaf, List<Guid> otherCached, SyncInfo response, out bool updatesAdded)
+        private void AddMissingNonLeafUpdatesToSyncUpdatesResponse(List<Guid> installedNonLeaf, List<Guid> otherCached, SyncInfo response, List<MicrosoftUpdatePackage> allApplicableUpdates, out bool updatesAdded)
         {
-            var missingNonLeafs = NonLeafUpdates
-                    .Except(installedNonLeaf)                   // Do not resend installed updates
-                    .Except(otherCached)                        // Do not resend other client known updates
-                    .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
-                    .Select(guid => IdToFullIdentityMap[guid])  // Map the GUID to a fully qualified identity
-                                                                // Non leaf updates can be either a category or regular update
-                    .Select(id => MetadataSource.GetPackage(id) as MicrosoftUpdatePackage)
-                    .Where(u => u.IsApplicable(installedNonLeaf))    // Eliminate not applicable updates
-                    .Take(MaxUpdatesInResponse + 1)             // Only take the maximum number of updates allowed + 1 (to see if we truncated)
-                    .ToList();
-
-            // Remove all software updates that have not been approved
-            if (!AreAllSoftwareUpdatesApproved)
-            {
-                missingNonLeafs.RemoveAll(u => u is SoftwareUpdate && !ApprovedSoftwareUpdates.Contains(u.Id));
-            }
+            var clientCachedUpdateGuids = new HashSet<Guid>(installedNonLeaf.Concat(otherCached));
+            var missingNonLeafs = allApplicableUpdates
+                .Where(u => NonLeafUpdates.Contains(u.Id.ID) && !clientCachedUpdateGuids.Contains(u.Id.ID))
+                .ToList();
 
             if (missingNonLeafs.Count > 0)
             {
-                response.NewUpdates = CreateUpdateInfoListFromNonLeafUpdates(missingNonLeafs).ToArray();
-                response.Truncated = true;
+                response.NewUpdates = CreateUpdateInfoListFromNonLeafUpdates(missingNonLeafs.Take(MaxUpdatesInResponse + 1)
+                .ToList())
+                .ToArray();
+                response.Truncated = missingNonLeafs.Count > MaxUpdatesInResponse;
                 updatesAdded = true;
             }
             else
@@ -146,29 +194,22 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
         /// <param name="otherCached">List of other updates known to the client</param>
         /// <param name="response">The response  to append new updates to</param>
+        /// <param name="allApplicableUpdates">A list of all applicable updates for the client.</param>
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
-        private void AddMissingBundleUpdatesToSyncUpdatesResponse(List<Guid> installedNonLeaf, List<Guid> otherCached, SyncInfo response, out bool updatesAdded)
+        private void AddMissingBundleUpdatesToSyncUpdatesResponse(List<Guid> installedNonLeaf, List<Guid> otherCached, SyncInfo response, List<MicrosoftUpdatePackage> allApplicableUpdates, out bool updatesAdded)
         {
-            var allMissingBundles = SoftwareLeafUpdateGuids
-                .Except(installedNonLeaf)                               // Do not resend installed updates
-                .Except(otherCached)                                    // Do not resend other client known updates
-                .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
-                .Select(guid => IdToFullIdentityMap[guid])              // Map the GUID to a fully qualified identity
-                .Select(id => MetadataSource.GetPackage(id) as SoftwareUpdate)          // Select the software update by identity
-                .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates != null && u.BundledWithUpdates.Count > 0))// Remove not applicable and not bundles
-                .Take(MaxUpdatesInResponse + 1)
+            var clientCachedUpdateGuids = new HashSet<Guid>(installedNonLeaf.Concat(otherCached));
+            var allMissingBundles = allApplicableUpdates
+                .OfType<SoftwareUpdate>()
+                .Where(u => (u.BundledWithUpdates?.Count ?? 0) > 0 && !clientCachedUpdateGuids.Contains(u.Id.ID)) // Remove not bundles
                 .ToList();
-
-            // Remove all software updates that have not been approved
-            if (!AreAllSoftwareUpdatesApproved)
-            {
-                allMissingBundles.RemoveAll(u => !ApprovedSoftwareUpdates.Contains(u.Id));
-            }
 
             if (allMissingBundles.Count > 0)
             {
-                response.NewUpdates = CreateUpdateInfoListFromSoftwareUpdate(allMissingBundles).ToArray();
-                response.Truncated = true;
+                response.NewUpdates = CreateUpdateInfoListFromSoftwareUpdate(allMissingBundles.Take(MaxUpdatesInResponse + 1)
+                .ToList())
+                .ToArray();
+                response.Truncated = allMissingBundles.Count > MaxUpdatesInResponse;
                 updatesAdded = true;
             }
             else
@@ -183,29 +224,23 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
         /// <param name="otherCached">List of other updates known to the client</param>
         /// <param name="response">The response  to append new updates to</param>
+        /// <param name="allApplicableUpdates">A list of all applicable updates for the client.</param>
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
-        private void AddMissingSoftwareUpdatesToSyncUpdatesResponse(List<Guid> installedNonLeaf, List<Guid> otherCached, SyncInfo response, out bool updatesAdded)
+        private void AddMissingSoftwareUpdatesToSyncUpdatesResponse(List<Guid> installedNonLeaf, List<Guid> otherCached, SyncInfo response, List<MicrosoftUpdatePackage> allApplicableUpdates, out bool updatesAdded)
         {
-            var allMissingApplicableUpdates = SoftwareLeafUpdateGuids
-                .Except(installedNonLeaf)                               // Do not resend installed updates
-                .Except(otherCached)                                    // Do not resend other client known updates
-                .Select(guid => IdToFullIdentityMap[guid])              // Map the GUID to a fully qualified identity
-                .Select(id => MetadataSource.GetPackage(id) as SoftwareUpdate)          // Select the software update by identity
-                .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates == null || u.BundledWithUpdates.Count == 0)) // Remove not applicable and bundles
-                .Take(MaxUpdatesInResponse + 1)
+            var clientCachedUpdateGuids = new HashSet<Guid>(installedNonLeaf.Concat(otherCached));
+            var allMissingApplicableUpdates = allApplicableUpdates
+                .OfType<SoftwareUpdate>()
+                .Where(u => (u.BundledWithUpdates?.Count ?? 0) > 0 && !clientCachedUpdateGuids.Contains(u.Id.ID))
                 .ToList();
-
-            // Remove all software updates that have not been approved
-            if (!AreAllSoftwareUpdatesApproved)
-            {
-                allMissingApplicableUpdates.RemoveAll(u => !ApprovedSoftwareUpdates.Contains(u.Id));
-            }
 
             response.Truncated = allMissingApplicableUpdates.Count > MaxUpdatesInResponse;
 
             if (allMissingApplicableUpdates.Count > 0)
             {
-                response.NewUpdates = CreateUpdateInfoListFromSoftwareUpdate(allMissingApplicableUpdates).ToArray();
+                response.NewUpdates = CreateUpdateInfoListFromSoftwareUpdate(allMissingApplicableUpdates.Take(MaxUpdatesInResponse)
+                .ToList())
+                .ToArray();
                 updatesAdded = true;
             }
             else
@@ -235,8 +270,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 var identity = softwareUpdates[i].Id;
                 var coreXml = GetCoreFragment(identity);
 
-                var isBundle = softwareUpdates[i].BundledUpdates != null && softwareUpdates[i].BundledUpdates.Count > 0;
-                var isBundled = softwareUpdates[i].BundledWithUpdates != null && softwareUpdates[i].BundledWithUpdates.Count > 0;
+                var isBundle = softwareUpdates[i].BundledUpdates is not null && softwareUpdates[i].BundledUpdates.Count > 0;
+                var isBundled = softwareUpdates[i].BundledWithUpdates is not null && softwareUpdates[i].BundledWithUpdates.Count > 0;
 
                 // Add the update information to the return array
                 returnList.Add(new UpdateInfo()

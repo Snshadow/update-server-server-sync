@@ -76,7 +76,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public bool ContainsMetadata(IPackageIdentity packageIdentity)
         {
-            if (InputFile != null)
+            if (InputFile is not null)
             {
                 var metadataPath = GetPackageMetadataPath(packageIdentity);
                 return ZipEntriesIndex.TryGetValue(metadataPath, out var _);
@@ -89,7 +89,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public Stream GetMetadata(IPackageIdentity packageIdentity)
         {
-            if (InputFile != null)
+            if (InputFile is not null)
             {
                 var metadataPath = GetPackageMetadataPath(packageIdentity);
                 return GetEntryStream(metadataPath);
@@ -116,13 +116,13 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             if (!IsDisposed)
             {
-                if (OutputFile != null)
+                if (OutputFile is not null)
                 {
                     OutputFile.Close();
                     OutputFile.Dispose();
                     OutputFile = null;
                 }
-                else if (InputFile == null)
+                else if (InputFile is null)
                 {
                     InputFile.Close();
                     InputFile = null;
@@ -134,7 +134,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void AddPackage(IPackage package)
         {
-            if (OutputFile == null)
+            if (OutputFile is null)
             {
                 throw new Exception("Write not supported");
             }
@@ -145,7 +145,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 if (PartitionRegistration.TryGetPartitionFromPackage(package, out var partitionDefinition) &&
                     partitionDefinition.HasExternalContentFileMetadata &&
-                    package.Files != null &&
+                    package.Files is not null &&
                     package.Files.Any())
                 {
                     WritePackageFiles(package);
@@ -178,7 +178,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
         {
-            if (InputFile == null)
+            if (InputFile is null)
             {
                 throw new Exception("Read not supported");
             }
@@ -209,7 +209,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void Flush()
         {
-            if (OutputFile != null)
+            if (OutputFile is not null)
             {
                 lock (WriteLock)
                 {
@@ -253,7 +253,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public IEnumerator<IPackage> GetEnumerator()
         {
-            if (InputFile == null)
+            if (InputFile is null)
             {
                 throw new Exception("Read not supported");
             }

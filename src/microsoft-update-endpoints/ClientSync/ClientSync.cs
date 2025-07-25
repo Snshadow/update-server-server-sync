@@ -52,6 +52,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
         private const int MaxUpdatesInResponse = 50;
 
+        private List<CategoryIdentifier> _categoryFilter;
+
         private string ContentRoot;
 
         DriverUpdateMatching DriverMatcher;
@@ -75,7 +77,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         }
 
         /// <summary>
-        /// Sets the service configuratoin
+        /// Sets the service configuration
         /// </summary>
         /// <param name="serviceConfiguration">Service configuration</param>
         public void SetServiceConfiguration(Config serviceConfiguration)
@@ -93,7 +95,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataSource = metadataSource;
 
-            if (MetadataSource != null)
+            if (MetadataSource is not null)
             {
                 PrerequisitesGraph prereqGraph = PrerequisitesGraph.FromIndexedPackageSource(MetadataSource);
 
@@ -109,7 +111,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 // Filter out leaf updates and only retain software ones that are not superseded
                 var leafSoftwareUpdates = MetadataSource.
                     OfType<SoftwareUpdate>()
-                    .Where(u => u.IsSupersededBy == null || u.IsSupersededBy.Count == 0)
+                    .Where(u => u.IsSupersededBy is null || u.IsSupersededBy.Count == 0)
                     .GroupBy(u => u.Id.ID)
                     .Select(k => k.Key)
                     .ToHashSet();
@@ -234,7 +236,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             MetadataSourceLock.EnterReadLock();
 
-            if (MetadataSource == null)
+            if (MetadataSource is null)
             {
                 throw new FaultException();
             }
@@ -281,7 +283,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 }
             }
 
-            var files = requestedUpdates.Where(u => u.Files != null && u.Files.Any()).SelectMany(u => u.Files.OfType<UpdateFile>()).Distinct().ToList();
+            var files = requestedUpdates.Where(u => u.Files is not null && u.Files.Any()).SelectMany(u => u.Files.OfType<UpdateFile>()).Distinct().ToList();
             var fileList = new List<FileLocation>();
             for (int i = 0; i < files.Count; i++)
             {
@@ -403,7 +405,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         private List<MicrosoftUpdatePackageIdentity> GetUpdateIdentitiesFromClientIndexes(int[] clientIndexes)
         {
             var updateIdentities = new List<MicrosoftUpdatePackageIdentity>();
-            if (clientIndexes != null)
+            if (clientIndexes is not null)
             {
                 foreach (var nonLeafRevision in clientIndexes)
                 {

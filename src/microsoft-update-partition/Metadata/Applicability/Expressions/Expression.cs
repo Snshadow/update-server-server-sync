@@ -66,7 +66,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
             while (attributesQueryResult.MoveNext())
             {
                 var matchingToken = tokens.FirstOrDefault(t => t.Key.Equals(attributesQueryResult.Current.Name));
-                if (matchingToken == null)
+                if (matchingToken is null)
                 {
                     throw new Exception("Unknown attribute found: " + attributesQueryResult.Current.Name);
                 }

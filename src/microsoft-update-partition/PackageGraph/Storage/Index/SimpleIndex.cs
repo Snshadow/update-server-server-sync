@@ -59,7 +59,7 @@ namespace Microsoft.PackageGraph.Storage.Index
 
         public void Save(Stream destination)
         {
-            if (_Container == null)
+            if (_Container is null)
             {
                 throw new Exception("The index was initialized with a non-streamable container");
             }
@@ -92,7 +92,7 @@ namespace Microsoft.PackageGraph.Storage.Index
         }
         protected void ReadIndex()
         {
-            if (_Container == null)
+            if (_Container is null)
             {
                 throw new Exception("The index was initialized with a non-streamable container");
             }
@@ -121,7 +121,7 @@ namespace Microsoft.PackageGraph.Storage.Index
                     }
                     catch (Exception) { }
 
-                    if (Index == null)
+                    if (Index is null)
                     {
                         Index = new Dictionary<I, T>();
                     }

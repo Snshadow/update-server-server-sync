@@ -157,7 +157,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         {
             return PartitionRegistration.TryGetPartitionFromPackage(package, out var partitionDefinition) &&
                 partitionDefinition.HasExternalContentFileMetadata &&
-                package.Files != null &&
+                package.Files is not null &&
                 package.Files.Any();
         }
 

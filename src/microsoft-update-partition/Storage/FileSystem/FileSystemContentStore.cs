@@ -149,7 +149,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <inheritdoc cref="IContentStore.GetUri(IContentFile)"/>
         public string GetUri(IContentFile updateFile)
         {
-            if (updateFile.Digest == null)
+            if (updateFile.Digest is null)
             {
                 throw new Exception("Cannot determine file path for update with no digest");
             }

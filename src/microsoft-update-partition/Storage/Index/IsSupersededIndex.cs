@@ -24,7 +24,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
         {
             if (package is SoftwareUpdate softwareUpdate)
             {
-                if(softwareUpdate.SupersededUpdates != null && softwareUpdate.SupersededUpdates.Count > 0)
+                if(softwareUpdate.SupersededUpdates is not null && softwareUpdate.SupersededUpdates.Count > 0)
                 {
                     foreach (var supersededUpdate in softwareUpdate.SupersededUpdates)
                     {

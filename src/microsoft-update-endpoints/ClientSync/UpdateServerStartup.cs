@@ -58,7 +58,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             if (!string.IsNullOrEmpty(contentPath))
             {
                 ContentSource = new FileSystemContentStore(contentPath);
-                if (ContentSource == null)
+                if (ContentSource is null)
                 {
                     throw new System.Exception($"Cannot open updates content source from path {contentPath}");
                 }
@@ -80,7 +80,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             // Enable the upstream WCF services
             var clientSyncService = new ClientSyncWebService();
-            clientSyncService.SetContentURLBase(ContentSource == null ? null : ContentRoot);
+            clientSyncService.SetContentURLBase(ContentSource is null ? null : ContentRoot);
             clientSyncService.SetServiceConfiguration(UpdateServiceConfiguration);
             clientSyncService.SetPackageStore(MetadataSource);
 
@@ -89,7 +89,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             services.TryAddSingleton<ReportingWebService>();
 
             // Enable the content controller if serving content
-            if (ContentSource != null)
+            if (ContentSource is not null)
             {
                 services.AddSingleton<IContentStore>(ContentSource);
                 // Add ContentController from this assembly
@@ -110,7 +110,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 app.UseDeveloperExceptionPage();
             }
 
-            if (ContentSource != null)
+            if (ContentSource is not null)
             {
                 app.UseRouting();
                 app.UseEndpoints(endpoints =>

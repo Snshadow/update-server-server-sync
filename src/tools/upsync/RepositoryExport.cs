@@ -18,13 +18,13 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void ExportUpdates(MetadataSourceExportOptions options)
         {
             var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
-            if (source == null)
+            if (source is null)
             {
                 return;
             }
 
             var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options as IMetadataFilterOptions);
-            if (filter == null)
+            if (filter is null)
             {
                 return;
             }

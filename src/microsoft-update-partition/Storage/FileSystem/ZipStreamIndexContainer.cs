@@ -47,7 +47,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         public static ZipStreamIndexContainer Open(Stream source)
         {
             var indexContainer = new ZipStreamIndexContainer();
-            if (source == null)
+            if (source is null)
             {
                 indexContainer.ResetIndex();
                 return indexContainer;
@@ -77,7 +77,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void ResetIndex()
         {
-            if (InputFile != null)
+            if (InputFile is not null)
             {
                 InputFile.Close();
                 InputFile = null;
@@ -100,7 +100,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void CloseInput()
         {
-            if (InputFile != null)
+            if (InputFile is not null)
             {
                 InputFile.Close();
                 InputFile = null;
@@ -206,7 +206,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public bool TryGetIndexReadStream(IndexDefinition index, out Stream indexStream)
         {
-            if (InputFile == null)
+            if (InputFile is null)
             {
                 indexStream = null;
                 return false;

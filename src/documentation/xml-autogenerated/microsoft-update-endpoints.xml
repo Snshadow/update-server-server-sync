@@ -34,7 +34,7 @@
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.SetServiceConfiguration(Microsoft.UpdateServices.WebServices.ClientSync.Config)">
             <summary>
-            Sets the service configuratoin
+            Sets the service configuration
             </summary>
             <param name="serviceConfiguration">Service configuration</param>
         </member>
@@ -266,40 +266,44 @@
             <param name="parameters">Sync parameters</param>
             <returns></returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddMissingRootUpdatesToSyncUpdatesResponse(System.Collections.Generic.List{System.Guid},System.Collections.Generic.List{System.Guid},Microsoft.UpdateServices.WebServices.ClientSync.SyncInfo,System.Boolean@)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddMissingRootUpdatesToSyncUpdatesResponse(System.Collections.Generic.List{System.Guid},System.Collections.Generic.List{System.Guid},Microsoft.UpdateServices.WebServices.ClientSync.SyncInfo,System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage},System.Boolean@)">
             <summary>
             For a client request, gathers applicable root updates (detectoids, categories, etc.) that the client does not have yet
             </summary>
             <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
             <param name="otherCached">List of other updates known to the client</param>
             <param name="response">The response  to append new updates to</param>
+            <param name="allApplicableUpdates">A list of all applicable updates for the client.</param>
             <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddMissingNonLeafUpdatesToSyncUpdatesResponse(System.Collections.Generic.List{System.Guid},System.Collections.Generic.List{System.Guid},Microsoft.UpdateServices.WebServices.ClientSync.SyncInfo,System.Boolean@)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddMissingNonLeafUpdatesToSyncUpdatesResponse(System.Collections.Generic.List{System.Guid},System.Collections.Generic.List{System.Guid},Microsoft.UpdateServices.WebServices.ClientSync.SyncInfo,System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage},System.Boolean@)">
             <summary>
             For a client request, gathers applicable software updates that are not leafs in the prerequisite tree; 
             </summary>
             <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
             <param name="otherCached">List of other updates known to the client</param>
             <param name="response">The response  to append new updates to</param>
+            <param name="allApplicableUpdates">A list of all applicable updates for the client.</param>
             <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddMissingBundleUpdatesToSyncUpdatesResponse(System.Collections.Generic.List{System.Guid},System.Collections.Generic.List{System.Guid},Microsoft.UpdateServices.WebServices.ClientSync.SyncInfo,System.Boolean@)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddMissingBundleUpdatesToSyncUpdatesResponse(System.Collections.Generic.List{System.Guid},System.Collections.Generic.List{System.Guid},Microsoft.UpdateServices.WebServices.ClientSync.SyncInfo,System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage},System.Boolean@)">
             <summary>
             For a client request, gathers applicable leaf bundle updates that the client does not have yet
             </summary>
             <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
             <param name="otherCached">List of other updates known to the client</param>
             <param name="response">The response  to append new updates to</param>
+            <param name="allApplicableUpdates">A list of all applicable updates for the client.</param>
             <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddMissingSoftwareUpdatesToSyncUpdatesResponse(System.Collections.Generic.List{System.Guid},System.Collections.Generic.List{System.Guid},Microsoft.UpdateServices.WebServices.ClientSync.SyncInfo,System.Boolean@)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddMissingSoftwareUpdatesToSyncUpdatesResponse(System.Collections.Generic.List{System.Guid},System.Collections.Generic.List{System.Guid},Microsoft.UpdateServices.WebServices.ClientSync.SyncInfo,System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage},System.Boolean@)">
             <summary>
             For a client sync request, gathers applicable software updates that the client does not have yet
             </summary>
             <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
             <param name="otherCached">List of other updates known to the client</param>
             <param name="response">The response  to append new updates to</param>
+            <param name="allApplicableUpdates">A list of all applicable updates for the client.</param>
             <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.CreateUpdateInfoListFromSoftwareUpdate(System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SoftwareUpdate})">
@@ -495,11 +499,11 @@
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.UpdateXmlTransformer.GetLocalizedPropertiesFromMetadataXml(System.String,System.String[])">
             <summary>
-            Gets localized properties fragment from full update metadata
+            Gets localized properties fragments from full update metadata
             </summary>
             <param name="metadataXml">Update metadata XML</param>
             <param name="languages">Languages to get the localized properties for</param>
-            <returns>Localized properties fragment</returns>
+            <returns>Localized properties fragments</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content.MicrosoftUpdateContentController">
             <summary>
