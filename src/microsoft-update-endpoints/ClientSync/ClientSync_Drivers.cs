@@ -30,12 +30,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             // Initialize the response
             var syncResult = new SyncInfo()
             {
-                NewCookie = new Cookie() { Expiration = DateTime.Now.AddDays(5), EncryptedData = new byte[12] },
+                NewCookie = new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = new byte[12] },
                 DriverSyncNotNeeded = "false",
                 Truncated = false
             };
 
-            List<Guid> computerHardwareIds = parameters.ComputerSpec.HardwareIDs is not null ? parameters.ComputerSpec.HardwareIDs.ToList() : new List<Guid>();
+            List<Guid> computerHardwareIds = parameters.ComputerSpec.HardwareIDs?.ToList() ?? new();
 
             List<UpdateInfo> driverUpdates = new();
 
@@ -142,7 +142,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                         var installedDriverFeatureScore = (byte)((installedDriver.DriverRank & 0x00FF0000) >> 24);
 
                         // If the match result does not have a feature score, consider the score to be 255
-                        var matchResultEffectiveFeatureScore = matchResult.MatchedFeatureScore is null ? byte.MaxValue : matchResult.MatchedFeatureScore.Score;
+                        var matchResultEffectiveFeatureScore = matchResult.MatchedFeatureScore?.Score ?? byte.MaxValue;
 
                         if (installedDriverFeatureScore != matchResultEffectiveFeatureScore)
                         {
@@ -172,7 +172,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 // Both our driver match and the installed driver matched the same HWID. Figure out the best one by comparing versions
                 if (matchResult.MatchedVersion.Date == installedDriver.DriverVerDate)
                 {
-                    return ((ulong)installedDriver.DriverVerVersion > matchResult.MatchedVersion.Version);
+                    return (ulong)installedDriver.DriverVerVersion > matchResult.MatchedVersion.Version;
                 }
                 else
                 {

@@ -9,8 +9,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
     public partial class ClientSyncWebService
     {
+        /// <summary>
+        /// Contains the set of software updates approved for installation
+        /// </summary>
         readonly private HashSet<MicrosoftUpdatePackageIdentity> ApprovedSoftwareUpdates;
         private bool AreAllSoftwareUpdatesApproved = true;
+
+        /// <summary>
+        /// Contains the set of driver updates approved for installation
+        /// </summary>
         readonly private HashSet<MicrosoftUpdatePackageIdentity> ApprovedDriverUpdates;
 
         /// <summary>

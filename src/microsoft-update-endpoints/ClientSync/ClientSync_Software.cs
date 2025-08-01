@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {
-
     public partial class ClientSyncWebService
     {
         /// <summary>
@@ -39,7 +38,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             // Initialize the response
             var response = new SyncInfo()
             {
-                NewCookie = new Cookie() { Expiration = DateTime.Now.AddDays(5), EncryptedData = new byte[12] },
+                NewCookie = new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = new byte[12] },
                 DriverSyncNotNeeded = "false"
             };
 

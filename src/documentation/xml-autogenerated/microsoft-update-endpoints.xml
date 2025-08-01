@@ -81,7 +81,7 @@
             <param name="callerAttributes">Caller attributes; optional</param>
             <returns>Extended update information response.</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.GetExtendedUpdateInfoAsync(Microsoft.UpdateServices.WebServices.ClientSync.Cookie,System.Int32[],Microsoft.UpdateServices.WebServices.ClientSync.XmlUpdateFragmentType[],System.String[],System.String)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.GetExtendedUpdateInfoAsync(Microsoft.UpdateServices.WebServices.ClientSync.Cookie,System.Int32[],Microsoft.UpdateServices.WebServices.ClientSync.XmlUpdateFragmentType[],System.String[],System.String,System.String)">
             <summary>
             Handle requests for extended update information. The extended information is extracted from update metadata.
             Extended information also includes file URLs
@@ -90,6 +90,7 @@
             <param name="revisionIDs">Revision Ids for which to get extended information</param>
             <param name="infoTypes">The type of extended information requested</param>
             <param name="locales">The language to use when getting language dependent extended information</param>
+            <param name="GeoId">The region for which to retrieve end user license agreement (EULA) XML fragments and digests</param>
             <param name="callerAttributes">Caller attributes; unused</param>
             <returns>Extended update information response.</returns>
         </member>
@@ -171,6 +172,16 @@
             </summary>
             <param name="parameters">Sync parameters</param>
             <returns>List of update GUIDs</returns>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.ApprovedSoftwareUpdates">
+            <summary>
+            Contains the set of software updates approved for installation
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.ApprovedDriverUpdates">
+            <summary>
+            Contains the set of driver updates approved for installation
+            </summary>
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.UnApprovedUpdatesRequestedDelegate">
             <summary>

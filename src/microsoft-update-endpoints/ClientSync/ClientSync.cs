@@ -181,7 +181,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>A new cookie</returns>
         public Task<Cookie> GetCookieAsync(AuthorizationCookie[] authCookies, Cookie oldCookie, DateTime lastChange, DateTime currentTime, string protocolVersion)
         {
-            return Task.FromResult(new Cookie() { Expiration = DateTime.Now.AddDays(5), EncryptedData = new byte[12] });
+            return Task.FromResult(new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = new byte[12] });
         }
 
         /// <summary>
@@ -228,9 +228,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="revisionIDs">Revision Ids for which to get extended information</param>
         /// <param name="infoTypes">The type of extended information requested</param>
         /// <param name="locales">The language to use when getting language dependent extended information</param>
+        /// <param name="GeoId">The region for which to retrieve end user license agreement (EULA) XML fragments and digests</param>
         /// <param name="callerAttributes">Caller attributes; unused</param>
         /// <returns>Extended update information response.</returns>
-        public Task<ExtendedUpdateInfo> GetExtendedUpdateInfoAsync(Cookie cookie, int[] revisionIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string callerAttributes)
+        public Task<ExtendedUpdateInfo> GetExtendedUpdateInfoAsync(Cookie cookie, int[] revisionIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string GeoId, string callerAttributes)
         {
             MetadataSourceLock.EnterReadLock();
 

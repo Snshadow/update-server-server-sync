@@ -72,7 +72,7 @@ namespace Microsoft.PackageGraph.ObjectModel
         /// <returns>Int hash code</returns>
         public override int GetHashCode()
         {
-            return ($"{Algorithm}:{DigestBase64}").GetHashCode();
+            return $"{Algorithm}:{DigestBase64}".GetHashCode();
         }
     }
 }
