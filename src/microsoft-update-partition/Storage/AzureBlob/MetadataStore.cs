@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Azure;
@@ -29,7 +29,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         private const string MetadataBlobName = "metadata";
 
-        private readonly object MetadataBlobLock = new();
+        private readonly Lock MetadataBlobLock = new();
 
         private const int UploadCacheSize = 32 * 1024 * 1024;
         private readonly MemoryStream UploadCache = new(UploadCacheSize);
@@ -157,8 +157,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         {
             return PartitionRegistration.TryGetPartitionFromPackage(package, out var partitionDefinition) &&
                 partitionDefinition.HasExternalContentFileMetadata &&
-                package.Files is not null &&
-                package.Files.Any();
+                (package.Files?.Any() ?? false);
         }
 
         public PackageStoreEntry AddPackage(IPackage package)

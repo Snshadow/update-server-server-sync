@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
@@ -268,7 +268,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <param name="updateIds">The ids to retrieve data for</param>
         internal List<MicrosoftUpdatePackage> GetUpdateDataForIds(List<MicrosoftUpdatePackageIdentity> updateIds)
         {
-            if (AccessToken is null || AccessToken.ExpiresIn(TimeSpan.FromMinutes(2)))
+            if (AccessToken?.ExpiresIn(TimeSpan.FromMinutes(2)) ?? false)
             {
                 RefreshAccessToken(null, null).GetAwaiter().GetResult();
             }
@@ -320,7 +320,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     retryCount++;
                 } while (updateDataReply is null && retryCount < 10);
 
-                if (updateDataReply is null || updateDataReply.GetUpdateDataResponse1 is null || updateDataReply.GetUpdateDataResponse1.GetUpdateDataResult is null)
+                if (updateDataReply?.GetUpdateDataResponse1?.GetUpdateDataResult is null)
                 {
                     throw new Exception("Failed to get update metadata");
                 }
@@ -387,7 +387,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     retryCount++;
                 } while (updateDataReply is null && retryCount < 10);
 
-                if (updateDataReply is null || updateDataReply.GetUpdateDataResponse1 is null || updateDataReply.GetUpdateDataResponse1.GetUpdateDataResult is null)
+                if (updateDataReply?.GetUpdateDataResponse1?.GetUpdateDataResult is null)
                 {
                     currentRevision--;
                 }

@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.UpdateServices.WebServices.ServerSync;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
+using Microsoft.UpdateServices.WebServices.ServerSync;
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -15,15 +16,15 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         /// Export filtered or all update metadata from a source
         /// </summary>
         /// <param name="options">Export options</param>
-        public static void ExportUpdates(MetadataSourceExportOptions options)
+        public static void ExportUpdates(ExportCommand.Settings options)
         {
-            var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
+            var source = MetadataStoreCreator.OpenFromOptions(options);
             if (source is null)
             {
                 return;
             }
 
-            var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options as IMetadataFilterOptions);
+            var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options);
             if (filter is null)
             {
                 return;

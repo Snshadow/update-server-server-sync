@@ -1,7 +1,5 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-
-using System;
 
 namespace Microsoft.PackageGraph.ObjectModel
 {
@@ -22,7 +20,7 @@ namespace Microsoft.PackageGraph.ObjectModel
         /// Ges the file size, in bytes.
         /// </summary>
         /// <value>File size</value>
-        UInt64 Size { get; }
+        ulong Size { get; }
 
         /// <summary>
         /// Gets the primary digest of a content file. 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.Storage;
@@ -31,20 +31,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
             var graph = new Dictionary<Guid, PrerequisiteGraphNode>();
 
             var allMicrosoftUpdatePackages = source.OfType<MicrosoftUpdatePackage>();
-            var updatesWithPrerequisites = allMicrosoftUpdatePackages.Where(update => update.Prerequisites is not null && update.Prerequisites.Count > 0);
+            var updatesWithPrerequisites = allMicrosoftUpdatePackages.Where(update => (update.Prerequisites?.Count ?? 0) > 0);
 
             foreach (var updateWithPrerequisites in updatesWithPrerequisites)
             {
                 var updateGuid = updateWithPrerequisites.Id.ID;
-                PrerequisiteGraphNode updateNode;
-                if (!graph.ContainsKey(updateGuid))
+                if (!graph.TryGetValue(updateGuid, out PrerequisiteGraphNode updateNode))
                 {
                     updateNode = new PrerequisiteGraphNode(updateGuid);
                     graph.Add(updateGuid, updateNode);
-                }
-                else
-                {
-                    updateNode = graph[updateGuid];
                 }
 
                 var prerequisites = updateWithPrerequisites.Prerequisites;
@@ -66,12 +61,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
 
                 foreach (var prerequisite in flatListPrerequisites)
                 {
-                    PrerequisiteGraphNode prerequisiteNode;
-                    if (graph.ContainsKey(prerequisite))
-                    {
-                        prerequisiteNode = graph[prerequisite];
-                    }
-                    else
+                    if (!graph.TryGetValue(prerequisite, out PrerequisiteGraphNode prerequisiteNode))
                     {
                         prerequisiteNode = new PrerequisiteGraphNode(prerequisite);
                         graph.Add(prerequisite, prerequisiteNode);

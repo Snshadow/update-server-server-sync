@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
@@ -24,8 +24,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
         {
             if (package is SoftwareUpdate softwareUpdate)
             {
-                var supersededUpdates = softwareUpdate.SupersededUpdates;
-                if (supersededUpdates is not null && supersededUpdates.Count > 0)
+                if (softwareUpdate.SupersededUpdates is { Count: > 0 })
                 {
                     base.Add(packageIndex, new List<Guid>(softwareUpdate.SupersededUpdates));
                 }

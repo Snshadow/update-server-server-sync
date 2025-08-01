@@ -21,6 +21,17 @@
             Update indexes are used when communicating with clients, as they are smaller that full Identities
             </summary>
         </member>
+        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.UnApprovedDriverUpdatesRequestedDelegate">
+            <summary>
+            Delegate for handling unapproved driver update requests
+            </summary>
+            <param name="unapprovedDrivers">List of unapproved driver updates that were requested</param>
+        </member>
+        <member name="E:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.OnUnApprovedDriverUpdatesRequested">
+            <summary>
+            Event raised when unapproved driver updates are requested by clients
+            </summary>
+        </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.#ctor">
             <summary>
             Default constructor
@@ -37,6 +48,12 @@
             Sets the service configuration
             </summary>
             <param name="serviceConfiguration">Service configuration</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.SetDeploymentAndSyncStore(Microsoft.PackageGraph.Storage.IDeploymentAndSync)">
+            <summary>
+            Sets the source of deployment and synchronization
+            </summary>
+            <param name="dataStore">The source for deployment and synchronization data</param>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.SetPackageStore(Microsoft.PackageGraph.Storage.IMetadataStore)">
             <summary>
@@ -81,7 +98,7 @@
             <param name="callerAttributes">Caller attributes; optional</param>
             <returns>Extended update information response.</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.GetExtendedUpdateInfoAsync(Microsoft.UpdateServices.WebServices.ClientSync.Cookie,System.Int32[],Microsoft.UpdateServices.WebServices.ClientSync.XmlUpdateFragmentType[],System.String[],System.String)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.GetExtendedUpdateInfoAsync(Microsoft.UpdateServices.WebServices.ClientSync.Cookie,System.Int32[],Microsoft.UpdateServices.WebServices.ClientSync.XmlUpdateFragmentType[],System.String[],System.String,System.String)">
             <summary>
             Handle requests for extended update information. The extended information is extracted from update metadata.
             Extended information also includes file URLs
@@ -90,6 +107,7 @@
             <param name="revisionIDs">Revision Ids for which to get extended information</param>
             <param name="infoTypes">The type of extended information requested</param>
             <param name="locales">The language to use when getting language dependent extended information</param>
+            <param name="GeoId">The region for which to retrieve end user license agreement (EULA) XML fragments and digests</param>
             <param name="callerAttributes">Caller attributes; unused</param>
             <returns>Extended update information response.</returns>
         </member>
@@ -172,80 +190,11 @@
             <param name="parameters">Sync parameters</param>
             <returns>List of update GUIDs</returns>
         </member>
-        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.UnApprovedUpdatesRequestedDelegate">
-            <summary>
-            Delegate method called to report updates applicable to a client but which are not approved and thus not offered
-            </summary>
-            <param name="requestedUnapprovedUpdates"></param>
-        </member>
-        <member name="E:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.OnUnApprovedSoftwareUpdatesRequested">
-            <summary>
-            Event raised when software updates are applicable to a client but are not approved for distribution
-            </summary>
-        </member>
-        <member name="E:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.OnUnApprovedDriverUpdatesRequested">
-            <summary>
-            Event raised when driver updates are applicable to a client but are not approved for distribution
-            </summary>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddApprovedSoftwareUpdate(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity)">
-            <summary>
-            Adds an update identity to the list of approved software updates.
-            Approved updates are made available to clients connecting to this service.
-            </summary>
-            <param name="approvedUpdate">Approved update</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddApprovedSoftwareUpdates(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity})">
-            <summary>
-            Adds a list of update identities to the list of approved software updates.
-            Approved updates are made available to clients connecting to this service.
-            </summary>
-            <param name="approvedUpdates">List of approved updates</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddApprovedDriverUpdate(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity)">
-            <summary>
-            Adds an update identities to the list of approved driver updates.
-            Approved updates are made available to clients connecting to this service.
-            </summary>
-            <param name="approvedUpdate">Approved driver update</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddApprovedDriverUpdates(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity})">
-            <summary>
-            Adds a list of update identities to the list of approved driver updates.
-            Approved updates are made available to clients connecting to this service.
-            </summary>
-            <param name="approvedUpdates"></param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.RemoveApprovedSoftwareUpdate(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity)">
-            <summary>
-            Removes an approved software update from the list of approved software updates.
-            The software update will not be given to connecting clients anymore.
-            </summary>
-            <param name="updateIdentity">Identity of update to un-approve</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.RemoveApprovedDriverUpdate(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity)">
-            <summary>
-            Removes an approved software update from the list of approved software updates.
-            The software update will not be given to connecting clients anymore.
-            </summary>
-            <param name="updateIdentity">Identity of update to un-approve</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.ClearApprovedDriverUpdates">
-            <summary>
-            Clears the list of approved driver updates.
-            Un-approved updates are not made available to connecting clients.
-            </summary>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.ClearApprovedSoftwareUpdates">
-            <summary>
-            Clears the list of approved software updates.
-            Un-approved updates are not made available to connecting clients.
-            </summary>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.DoDriversSync(Microsoft.UpdateServices.WebServices.ClientSync.SyncUpdateParameters)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.DoDriversSync(Microsoft.UpdateServices.WebServices.ClientSync.Cookie,Microsoft.UpdateServices.WebServices.ClientSync.SyncUpdateParameters)">
             <summary>
             Handle driver sync requests
             </summary>
+            <param name="cookie"></param>
             <param name="parameters"></param>
             <returns></returns>
         </member>
@@ -259,10 +208,11 @@
             <param name="computerHardwareIds">List of computer hardware ids</param>
             <returns>True if the installed driver is a better match, false otherwise</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.DoSoftwareUpdateSync(Microsoft.UpdateServices.WebServices.ClientSync.SyncUpdateParameters)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.DoSoftwareUpdateSync(Microsoft.UpdateServices.WebServices.ClientSync.Cookie,Microsoft.UpdateServices.WebServices.ClientSync.SyncUpdateParameters)">
             <summary>
             Handle software sync request from a client
             </summary>
+            <param name="cookie">Request cookie</param>
             <param name="parameters">Sync parameters</param>
             <returns></returns>
         </member>

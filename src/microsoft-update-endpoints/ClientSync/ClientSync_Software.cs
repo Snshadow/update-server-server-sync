@@ -1,25 +1,26 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.ServiceModel;
 using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {
-
     public partial class ClientSyncWebService
     {
         /// <summary>
         /// Handle software sync request from a client
         /// </summary>
+        /// <param name="cookie">Request cookie</param>
         /// <param name="parameters">Sync parameters</param>
         /// <returns></returns>
-        private Task<SyncInfo> DoSoftwareUpdateSync(SyncUpdateParameters parameters)
+        private Task<SyncInfo> DoSoftwareUpdateSync(Cookie cookie, SyncUpdateParameters parameters)
         {
             MetadataSourceLock.EnterReadLock();
 
@@ -39,7 +40,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             // Initialize the response
             var response = new SyncInfo()
             {
-                NewCookie = new Cookie() { Expiration = DateTime.Now.AddDays(5), EncryptedData = new byte[12] },
+                NewCookie = new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = cookie.EncryptedData },
                 DriverSyncNotNeeded = "false"
             };
 
@@ -61,7 +62,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 }
             }
 
+            var computerId = GetComputerIdFromCookie(cookie);
+            var computerSync = DeployAndSyncStore.GetComputerSync(computerId);
+            response.ChangedUpdates = GetChangedUpdates(
+                installedNonLeafUpdatesGuids.Union(otherCachedUpdatesGuids).ToList(),
+                computerSync?.LastSyncTime ?? DateTime.MinValue)
+                .ToArray();
+
+            // response.OutOfScopeRevisionIDs = [];
+            // response.DeployedOutOfScopeRevisionIds = [];
+
             MetadataSourceLock.ExitReadLock();
+
+            // Update last synchronization time for computer
+            DeployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
 
             return Task.FromResult(response);
         }
@@ -83,12 +97,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 .Select(id => MetadataSource.GetPackage(id) as MicrosoftUpdatePackage)       // Get the update by identity
                 .Take(MaxUpdatesInResponse + 1)                         // Only take the maximum number of updates allowed + 1 (to see if we truncated)
                 .ToList();
-
-            // Remove all software updates that have not been approved
-            if (!AreAllSoftwareUpdatesApproved)
-            {
-                missingRootUpdates.RemoveAll(u => u is SoftwareUpdate && !ApprovedSoftwareUpdates.Contains(u.Id));
-            }
 
             if (missingRootUpdates.Count > 0)
             {
@@ -122,11 +130,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                     .Take(MaxUpdatesInResponse + 1)             // Only take the maximum number of updates allowed + 1 (to see if we truncated)
                     .ToList();
 
-            // Remove all software updates that have not been approved
-            if (!AreAllSoftwareUpdatesApproved)
-            {
-                missingNonLeafs.RemoveAll(u => u is SoftwareUpdate && !ApprovedSoftwareUpdates.Contains(u.Id));
-            }
 
             if (missingNonLeafs.Count > 0)
             {
@@ -155,15 +158,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
                 .Select(guid => IdToFullIdentityMap[guid])              // Map the GUID to a fully qualified identity
                 .Select(id => MetadataSource.GetPackage(id) as SoftwareUpdate)          // Select the software update by identity
-                .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates?.Count ?? 0) > 0)// Remove not applicable and not bundles
+                .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates?.Count ?? 0) > 0) // Remove not applicable and not bundles
                 .Take(MaxUpdatesInResponse + 1)
                 .ToList();
 
-            // Remove all software updates that have not been approved
-            if (!AreAllSoftwareUpdatesApproved)
-            {
-                allMissingBundles.RemoveAll(u => !ApprovedSoftwareUpdates.Contains(u.Id));
-            }
 
             if (allMissingBundles.Count > 0)
             {
@@ -195,11 +193,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 .Take(MaxUpdatesInResponse + 1)
                 .ToList();
 
-            // Remove all software updates that have not been approved
-            if (!AreAllSoftwareUpdatesApproved)
-            {
-                allMissingApplicableUpdates.RemoveAll(u => !ApprovedSoftwareUpdates.Contains(u.Id));
-            }
+            // Remove all null updates that might have slipped past the initial queries
+            allMissingApplicableUpdates.RemoveAll(u => u is null);
 
             response.Truncated = allMissingApplicableUpdates.Count > MaxUpdatesInResponse;
 
@@ -235,23 +230,27 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 var identity = softwareUpdates[i].Id;
                 var coreXml = GetCoreFragment(identity);
 
-                var isBundle = softwareUpdates[i].BundledUpdates is not null && softwareUpdates[i].BundledUpdates.Count > 0;
-                var isBundled = softwareUpdates[i].BundledWithUpdates is not null && softwareUpdates[i].BundledWithUpdates.Count > 0;
+                var isBundle = softwareUpdates[i].BundledUpdates is { Count: > 0 };
+                var isBundled = softwareUpdates[i].BundledWithUpdates is { Count: > 0 };
+
+                var deploymentData = GetDeployment(revision);
 
                 // Add the update information to the return array
                 returnList.Add(new UpdateInfo()
                 {
                     Deployment = new Deployment()
                     {
-                        // Action is Install for bundles of updates that are not part of a bundle
+                        // Use the Action value if deployment was created for this update
+                        // Action is Evaluate for bundles of updates that are not part of a bundle
                         // Action is Bundle for updates that are part of a bundle
-                        Action = (isBundle || !isBundled) ? DeploymentAction.Install : DeploymentAction.Bundle,
+                        Action = deploymentData?.Action ?? ((isBundle || !isBundled) ? DeploymentAction.Evaluate : DeploymentAction.Bundle),
                         ID = isBundle ? 20000 : (isBundled ? 20001 : 20002),
                         AutoDownload = "0",
                         AutoSelect = "0",
                         SupersedenceBehavior = "0",
                         IsAssigned = true,
-                        LastChangeTime = "2019-08-06"
+                        LastChangeTime = deploymentData?.LastChangeTime.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo) ?? "2019-08-06",
+                        Deadline = deploymentData?.Deadline?.ToString("yyyy-MM-ddTHH:mm:ssK", DateTimeFormatInfo.InvariantInfo)
                     },
                     IsLeaf = true,
                     ID = revision,
@@ -279,7 +278,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             for (int i = 0; i < returnListLength; i++)
             {
                 var revision = IdToRevisionMap[nonLeafUpdates[i].Id.ID];
-
                 var identity = nonLeafUpdates[i].Id;
 
                 // Generate the core XML fragment
@@ -307,6 +305,54 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             }
 
             return returnList;
+        }
+
+        private List<UpdateInfo> GetChangedUpdates(List<Guid> cached, DateTime lastSyncTime)
+        {
+            var changedUpdates = new List<UpdateInfo>();
+            var cachedUpdates = cached
+                .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
+                .Select(guid => IdToFullIdentityMap[guid])
+                .Select(id => MetadataSource.GetPackage(id) as SoftwareUpdate);
+
+            foreach (var update in cachedUpdates)
+            {
+                if (update is null)
+                {
+                    continue;
+                }
+
+                var revision = IdToRevisionMap[update.Id.ID];
+                var deployment = GetDeployment(revision);
+
+                if (deployment is not null && deployment.LastChangeTime > lastSyncTime)
+                {
+                    var isBundle = update.BundledUpdates is { Count: > 0 };
+                    var isBundled = update.BundledWithUpdates is { Count: > 0 };
+
+                    changedUpdates.Add(new UpdateInfo()
+                    {
+                        Deployment = new Deployment()
+                        {
+                            Action = deployment.Action,
+                            ID = isBundle ? 20000 : (isBundled ? 20001 : 20002),
+                            AutoDownload = "0",
+                            AutoSelect = "0",
+                            SupersedenceBehavior = "0",
+                            IsAssigned = true,
+                            LastChangeTime = deployment.LastChangeTime.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo),
+                            Deadline = deployment.Deadline?.ToString("yyyy-MM-ddTHH:mm:ssK", DateTimeFormatInfo.InvariantInfo)
+                        },
+                        ID = revision,
+                        IsLeaf = true,
+                        IsShared = false,
+                        Verification = null,
+                        Xml = GetCoreFragment(update.Id)
+                    });
+                }
+            }
+
+            return changedUpdates;
         }
     }
 }

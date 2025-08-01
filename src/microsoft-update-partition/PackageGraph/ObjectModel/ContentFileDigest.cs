@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Newtonsoft.Json;
@@ -20,7 +20,7 @@ namespace Microsoft.PackageGraph.ObjectModel
         public string DigestBase64 { get; private set; }
 
         /// <inheritdoc cref="IContentFileDigest.HexString"/>
-        public string HexString => BitConverter.ToString(Convert.FromBase64String(DigestBase64)).Replace("-", "");
+        public string HexString => Convert.ToHexString(Convert.FromBase64String(DigestBase64));
 
         [JsonConstructor]
         private ContentFileDigest() { }
@@ -72,7 +72,7 @@ namespace Microsoft.PackageGraph.ObjectModel
         /// <returns>Int hash code</returns>
         public override int GetHashCode()
         {
-            return ($"{Algorithm}:{DigestBase64}").GetHashCode();
+            return $"{Algorithm}:{DigestBase64}".GetHashCode();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -50,7 +50,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
         private void RetrievePackageIdentities()
         {
-            lock(this)
+            lock (this)
             {
                 if (_Identities is null)
                 {
@@ -138,7 +138,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
             if (destination is IMetadataStore baseline)
             {
-                unavailableUpdates = new List<MicrosoftUpdatePackageIdentity>();
                 unavailableUpdates = _Identities.Where(id => !baseline.ContainsPackage(id)).ToList();
             }
             else
@@ -161,7 +160,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     var retrievedPackages = _Client.GetUpdateDataForIds(batch.ToList());
                     destination.AddPackages(retrievedPackages);
 
-                    lock(progressArgs)
+                    lock (progressArgs)
                     {
                         progressArgs.Current += retrievedPackages.Count;
                         MetadataCopyProgress?.Invoke(this, progressArgs);

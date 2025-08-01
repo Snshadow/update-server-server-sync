@@ -1759,12 +1759,13 @@
             <param name="keywords">List of keywords to match. All keywords must match</param>
             <returns>True if all keywords match, false otherwise.</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.FromMetadataXml(System.Byte[],System.Collections.Generic.Dictionary{System.String,Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content.UpdateFileUrl})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.FromMetadataXml(System.Byte[],System.Collections.Generic.Dictionary{System.String,Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content.UpdateFileUrl},System.String)">
             <summary>
             Creates a MicrosoftUpdatePackage from raw metadata and a list of content files associated with the package
             </summary>
             <param name="metadata">RAW metadata. Expected to be UTF8 encoded XML</param>
             <param name="filesCollection">List of URLs for content files</param>
+            <param name="locale">Locale of the metadata</param>
             <returns>Rehydrated MicrosoftUpdatePackage object</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.LoadNonIndexedMetadata(System.Xml.XPath.XPathNavigator,System.Xml.XmlNamespaceManager)">
@@ -1886,6 +1887,17 @@
             Registers Microsoft Update as a source for packages metadata.
             </summary>
         </member>
+        <member name="T:Microsoft.PackageGraph.ObjectModel.ComputerSync">
+            <summary>
+            An implementation for <see cref="T:Microsoft.PackageGraph.ObjectModel.IComputerSync"/> for a computer synchronization state.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.ComputerSync.ComputerId">
+            <inheritdoc cref="P:Microsoft.PackageGraph.ObjectModel.IComputerSync.ComputerId"/>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.ComputerSync.LastSyncTime">
+            <inheritdoc cref="P:Microsoft.PackageGraph.ObjectModel.IComputerSync.LastSyncTime"/>
+        </member>
         <member name="T:Microsoft.PackageGraph.ObjectModel.ContentFileDigest">
             <summary>
             An implementation for <see cref="T:Microsoft.PackageGraph.ObjectModel.IContentFileDigest"/> for an update content file.
@@ -1925,6 +1937,38 @@
             Override for getting the object's hash code
             </summary>
             <returns>Int hash code</returns>
+        </member>
+        <member name="T:Microsoft.PackageGraph.ObjectModel.DeploymentEntry">
+            <summary>
+            An implementation for <see cref="T:Microsoft.PackageGraph.ObjectModel.IDeployment"/> for a deployment for an update.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.DeploymentEntry.RevisionId">
+            <inheritdoc cref="P:Microsoft.PackageGraph.ObjectModel.IDeployment.RevisionId"/>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.DeploymentEntry.Action">
+            <inheritdoc cref="P:Microsoft.PackageGraph.ObjectModel.IDeployment.Action"/>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.DeploymentEntry.Deadline">
+            <inheritdoc cref="P:Microsoft.PackageGraph.ObjectModel.IDeployment.Deadline"/>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.DeploymentEntry.LastChangeTime">
+            <inheritdoc cref="P:Microsoft.PackageGraph.ObjectModel.IDeployment.LastChangeTime"/>
+        </member>
+        <member name="T:Microsoft.PackageGraph.ObjectModel.IComputerSync">
+            <summary>
+            Represents a computer synchronization state.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.IComputerSync.ComputerId">
+            <summary>
+            An id of a computer
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.IComputerSync.LastSyncTime">
+            <summary>
+            Last synchronized time
+            </summary>
         </member>
         <member name="T:Microsoft.PackageGraph.ObjectModel.IContentFile">
             <summary>
@@ -1977,6 +2021,35 @@
             <summary>
             Gets the HEX string representation of the digest 
             </summary>
+        </member>
+        <member name="T:Microsoft.PackageGraph.ObjectModel.IDeployment">
+            <summary>
+            Represents a deployment for an update.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.IDeployment.RevisionId">
+            <summary>
+            Gets a revision id of a deployment
+            </summary>
+            <value>Revision id value</value>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.IDeployment.Action">
+            <summary>
+            Gets a deployment action of a deployment
+            </summary>
+            <value>Deployment action value</value>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.IDeployment.Deadline">
+            <summary>
+            Gets a deadline of a deployment
+            </summary>
+            <value>The time by which the deployment should occur</value>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.IDeployment.LastChangeTime">
+            <summary>
+            Gets a last change time of a deployment
+            </summary>
+            <value>The time when the deployment was created</value>
         </member>
         <member name="T:Microsoft.PackageGraph.ObjectModel.IPackage">
             <summary>
@@ -2325,6 +2398,50 @@
             <summary>
             The count of content files left to be downloaded in the current download operation
             </summary>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.IDeploymentAndSync">
+            <summary>
+            Defines an interface for storing and retrieving deployment and sync information
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.SaveDeployment(Microsoft.PackageGraph.ObjectModel.IDeployment)">
+            <summary>
+            Persists a deployment entry to the underlying storage
+            </summary>
+            <param name="deployment">The deployment to save</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.DeleteDeployment(System.Int32)">
+            <summary>
+            Deletes a deployment entry from the underlying storage
+            </summary>
+            <param name="revisionId">The revision ID of the deployment to delete</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.GetDeployment(System.Int32)">
+            <summary>
+            Retrieves a deployment entry from the underlying storage
+            </summary>
+            <param name="revisionId">The revision ID of the deployment to retrieve</param>
+            <returns>The requested deployment</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.UpdateComputerSync(System.String,System.DateTime)">
+            <summary>
+            Updates the last sync time for a given computer
+            </summary>
+            <param name="computerId">The ID of the computer that synced</param>
+            <param name="syncTime">The time that the computer synced</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.DeleteComputer(System.String)">
+            <summary>
+            Deletes the computer from an underlying storage
+            </summary>
+            <param name="computerId">The ID of the computer to be deleted</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.GetComputerSync(System.String)">
+            <summary>
+            Retrieves a computer synchronization info for a given id.
+            </summary>
+            <param name="computerId"></param>
+            <returns></returns>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataFilter">
             <summary>
@@ -2724,6 +2841,94 @@
             <summary>
             Hashes file contents and checks hashes with value expected from update file metadata
             </summary>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext">
+            <summary>
+            Represents the database context for deployments and synchronization, managing the connection and table creation.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext"/> class.
+            </summary>
+            <param name="databasePath">The path to the SQLite database file.</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.InitializeDatabase">
+            <summary>
+            Initializes the database by creating the necessary tables if they don't exist.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.GetConnection">
+            <summary>
+            Gets the active database connection.
+            </summary>
+            <returns>The SQLite connection.</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.Dispose">
+            <summary>
+            Releases the resources used by the database connection.
+            </summary>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.DeploymentStore">
+            <summary>
+            Manages the storage of deployment data.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.#ctor(Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.PackageGraph.Storage.Local.DeploymentStore"/> class.
+            </summary>
+            <param name="context">The deployment database context.</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.SaveDeployment(Microsoft.PackageGraph.ObjectModel.IDeployment)">
+            <summary>
+            Saves a deployment to the database
+            </summary>
+            <param name="deployment">The deployment to save</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.DeleteDeployment(System.Int32)">
+            <summary>
+            Deletes a deployment from the database
+            </summary>
+            <param name="revisionId">The revision id of a deployment to delete</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.GetDeployment(System.Int32)">
+            <summary>
+            Retrieves a deployment from the database by its revision ID
+            </summary>
+            <param name="revisionId">The revision ID of the deployment to retrieve</param>
+            <returns>The deployment, or null if not found</returns>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore">
+            <summary>
+            Manages the storage of computer synchronization status
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore.#ctor(Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore"/> class
+            </summary>
+            <param name="context">The deployment database context</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore.UpdateComputerSync(System.String,System.DateTime)">
+            <summary>
+            Updates the synchronization status for a specific computer
+            </summary>
+            <param name="computerId">The ID of the computer</param>
+            <param name="syncTime">The time of the synchronization</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore.DeleteComputer(System.String)">
+            <summary>
+            Deletes the synchronization status for a computer
+            </summary>
+            <param name="computerId">The ID of a computer</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore.GetComputerSync(System.String)">
+            <summary>
+            Retrieves a synchronization information from by its computer ID
+            </summary>
+            <param name="computerId"></param>
+            <returns>A synchronization information of a computer</returns>
         </member>
         <member name="P:Microsoft.PackageGraph.Storage.Local.DirectoryPackageStore.IsReindexingRequired">
             <inheritdoc cref="P:Microsoft.PackageGraph.Storage.IMetadataStore.IsReindexingRequired"/>

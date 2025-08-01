@@ -1,10 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
+using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
@@ -50,6 +51,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         private Dictionary<Guid, int> IdToRevisionMap;
         private Dictionary<Guid, MicrosoftUpdatePackageIdentity> IdToFullIdentityMap;
 
+        private IDeploymentAndSync DeployAndSyncStore;
+
         private const int MaxUpdatesInResponse = 50;
 
         private string ContentRoot;
@@ -57,12 +60,21 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         DriverUpdateMatching DriverMatcher;
 
         /// <summary>
+        /// Delegate for handling unapproved driver update requests
+        /// </summary>
+        /// <param name="unapprovedDrivers">List of unapproved driver updates that were requested</param>
+        public delegate void UnApprovedDriverUpdatesRequestedDelegate(List<DriverUpdate> unapprovedDrivers);
+
+        /// <summary>
+        /// Event raised when unapproved driver updates are requested by clients
+        /// </summary>
+        public event UnApprovedDriverUpdatesRequestedDelegate OnUnApprovedDriverUpdatesRequested;
+
+        /// <summary>
         /// Default constructor
         /// </summary>
         public ClientSyncWebService()
         {
-            ApprovedSoftwareUpdates = new HashSet<MicrosoftUpdatePackageIdentity>();
-            ApprovedDriverUpdates = new HashSet<MicrosoftUpdatePackageIdentity>();
         }
 
         /// <summary>
@@ -84,6 +96,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         }
 
         /// <summary>
+        /// Sets the source of deployment and synchronization
+        /// </summary>
+        /// <param name="dataStore">The source for deployment and synchronization data</param>
+        public void SetDeploymentAndSyncStore(IDeploymentAndSync dataStore)
+        {
+            DeployAndSyncStore = dataStore;
+        }
+
+        /// <summary>
         /// Sets the source of update metadata
         /// </summary>
         /// <param name="metadataSource">The source for updates metadata</param>
@@ -100,7 +121,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 // Get leaf updates - updates that have prerequisites and no dependents
                 LeafUpdatesGuids = prereqGraph.GetLeafUpdates();
 
-                // Get non leaft updates: updates that have prerequisites and dependents
+                // Get non leaf updates: updates that have prerequisites and dependents
                 NonLeafUpdates = prereqGraph.GetNonLeafUpdates();
 
                 // Get root updates: updates that have no prerequisites
@@ -109,7 +130,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 // Filter out leaf updates and only retain software ones that are not superseded
                 var leafSoftwareUpdates = MetadataSource.
                     OfType<SoftwareUpdate>()
-                    .Where(u => (u.IsSupersededBy?.Count ?? 0) == 0)
                     .GroupBy(u => u.Id.ID)
                     .Select(k => k.Key)
                     .ToHashSet();
@@ -144,6 +164,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 MetadataSourceIndex = null;
                 IdToRevisionMap = null;
                 IdToFullIdentityMap = null;
+                DeployAndSyncStore = null;
                 DriverMatcher = null;
             }
 
@@ -181,7 +202,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>A new cookie</returns>
         public Task<Cookie> GetCookieAsync(AuthorizationCookie[] authCookies, Cookie oldCookie, DateTime lastChange, DateTime currentTime, string protocolVersion)
         {
-            return Task.FromResult(new Cookie() { Expiration = DateTime.Now.AddDays(5), EncryptedData = new byte[12] });
+            // TODO: implement time based EncryptedData to check the requester
+            return Task.FromResult(new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = authCookies?[0].CookieData ?? new byte[12] });
         }
 
         /// <summary>
@@ -228,9 +250,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="revisionIDs">Revision Ids for which to get extended information</param>
         /// <param name="infoTypes">The type of extended information requested</param>
         /// <param name="locales">The language to use when getting language dependent extended information</param>
+        /// <param name="GeoId">The region for which to retrieve end user license agreement (EULA) XML fragments and digests</param>
         /// <param name="callerAttributes">Caller attributes; unused</param>
         /// <returns>Extended update information response.</returns>
-        public Task<ExtendedUpdateInfo> GetExtendedUpdateInfoAsync(Cookie cookie, int[] revisionIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string callerAttributes)
+        public Task<ExtendedUpdateInfo> GetExtendedUpdateInfoAsync(Cookie cookie, int[] revisionIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string GeoId, string callerAttributes)
         {
             MetadataSourceLock.EnterReadLock();
 
@@ -387,12 +410,23 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             if (parameters.SkipSoftwareSync)
             {
-                return DoDriversSync(parameters);
+                return DoDriversSync(cookie, parameters);
             }
             else
             {
-                return DoSoftwareUpdateSync(parameters);
+                return DoSoftwareUpdateSync(cookie, parameters);
             }
+        }
+
+        static private string GetComputerIdFromCookie(Cookie cookie)
+        {
+            // Remove null character at the end of cookie.EncryptedData
+            return Encoding.UTF8.GetString(cookie.EncryptedData).Trim('\0');
+        }
+
+        private IDeployment GetDeployment(int revisionId)
+        {
+            return DeployAndSyncStore.GetDeployment(revisionId);
         }
 
         /// <summary>

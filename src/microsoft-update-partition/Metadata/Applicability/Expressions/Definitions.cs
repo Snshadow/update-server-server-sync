@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -1095,6 +1095,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
             { "bar:SensorById", ExpressionType.SensorById },
             { "bar:NFC", ExpressionType.NFC },
             { "bar:Camera", ExpressionType.Camera },
+            { "DeviceAttribute", ExpressionType.DeviceAttribute },
             { "upd:ProductReleaseInstalled", ExpressionType.ProductReleaseInstalled },
             { "upd:ProductReleaseVersion", ExpressionType.ProductReleaseVersion },
             { "drv:WindowsDriverInstalled", ExpressionType.WindowsDriverInstalled },
@@ -1109,7 +1110,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
             { "drv:InstalledVersionRange", ExpressionType.InstalledVersionRange },
             { "bar:ClusteredOS", ExpressionType.ClusteredOS },
             { "bar:ClusterResourceOwner", ExpressionType.ClusterResourceOwner },
-            { "DeviceAttribute", ExpressionType.DeviceAttribute },
         };
     }
 }

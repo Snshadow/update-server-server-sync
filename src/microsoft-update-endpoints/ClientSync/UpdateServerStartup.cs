@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.AspNetCore.Builder;
@@ -84,14 +84,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             clientSyncService.SetServiceConfiguration(UpdateServiceConfiguration);
             clientSyncService.SetPackageStore(MetadataSource);
 
-            services.TryAddSingleton<ClientSyncWebService>(clientSyncService);
+            if (MetadataSource is IDeploymentAndSync dataStore)
+            {
+                clientSyncService.SetDeploymentAndSyncStore(dataStore);
+            }
+
+            services.TryAddSingleton(clientSyncService);
             services.TryAddSingleton<SimpleAuthenticationWebService>();
             services.TryAddSingleton<ReportingWebService>();
 
             // Enable the content controller if serving content
             if (ContentSource is not null)
             {
-                services.AddSingleton<IContentStore>(ContentSource);
+                services.AddSingleton(ContentSource);
                 // Add ContentController from this assembly
                 services.AddMvc().AddApplicationPart(Assembly.GetExecutingAssembly()).AddControllersAsServices();
             }

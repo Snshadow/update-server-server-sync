@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.AspNetCore.Builder;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync;
+using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using System.Collections.Generic;
 using System.IO;
 
@@ -17,7 +18,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
     /// </summary>
     class UpdateServer
     {
-        public static void Run(RunUpdateServerOptions options)
+        public static void Run(RunUpdateServerCommand.Settings options)
         {
             // Load the default configuration for the MUv6 server
             var serviceConfigurationJson = File.ReadAllText("./update-server-config.json");

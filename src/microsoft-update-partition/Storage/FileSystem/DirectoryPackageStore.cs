@@ -1,8 +1,6 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.PackageGraph.MicrosoftUpdate;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Microsoft.PackageGraph.Storage.Index;
@@ -10,14 +8,13 @@ using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel.Design.Serialization;
 using System.IO;
 using System.Linq;
 using System.Threading;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
-    class DirectoryPackageStore : IMetadataSink, IMetadataStore, IMetadataLookup
+    class DirectoryPackageStore : IMetadataSink, IMetadataStore, IMetadataLookup, IDeploymentAndSync
     {
         readonly string TargetPath;
 
@@ -35,8 +32,11 @@ namespace Microsoft.PackageGraph.Storage.Local
         List<CompressedMetadataStore> DeltaMetadataStores;
 
         TableOfContent TOC;
+        private readonly Lock WriteLock = new();
 
-        private readonly object WriteLock = new();
+        private readonly DeploySyncDbContext DbContext;
+        private readonly DeploymentStore Deployments;
+        private readonly ComputerSyncStore ComputerSync;
 
         private bool IsDirty = false;
         private bool IsIndexDirty = false;
@@ -76,6 +76,10 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 ReadToc();
                 ReadIdentities();
+
+                DbContext = new DeploySyncDbContext(Path.Combine(path, "deploySync.db"));
+                Deployments = new DeploymentStore(DbContext);
+                ComputerSync = new ComputerSyncStore(DbContext);
 
                 var indexContainerPath = Path.Combine(path, IndexesContainerFileName);
                 if (File.Exists(indexContainerPath))
@@ -245,6 +249,36 @@ namespace Microsoft.PackageGraph.Storage.Local
             destination.AddPackages(packagesToAdd);
         }
 
+        public void SaveDeployment(IDeployment deployment)
+        {
+            Deployments.SaveDeployment(deployment);
+        }
+
+        public void DeleteDeployment(int revisionId)
+        {
+            Deployments.DeleteDeployment(revisionId);
+        }
+
+        public IDeployment GetDeployment(int revisionId)
+        {
+            return Deployments.GetDeployment(revisionId);
+        }
+
+        public void UpdateComputerSync(string computerId, DateTime syncTime)
+        {
+            ComputerSync.UpdateComputerSync(computerId, syncTime);
+        }
+
+        public void DeleteComputer(string computerId)
+        {
+            ComputerSync.DeleteComputer(computerId);
+        }
+
+        public IComputerSync GetComputerSync(string computerId)
+        {
+            return ComputerSync.GetComputerSync(computerId);
+        }
+
         public void Dispose()
         {
             lock (WriteLock)
@@ -254,6 +288,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     Flush();
                 }
 
+                DbContext.Dispose();
                 DeltaMetadataStores.ForEach(s => s.Dispose());
                 DeltaMetadataStores.Clear();
                 _IndexToIdentityMap.Clear();
@@ -366,12 +401,9 @@ namespace Microsoft.PackageGraph.Storage.Local
                     DeltaMetadataStores.Add(CompressedMetadataStore.CreateNew(Path.Combine(TargetPath, $"{TOC.DeltaSectionCount}.zip")));
                     TOC.DeltaSectionCount++;
 
-                    if (TOC.DeltaSectionPackageCount is null)
-                    {
-                        TOC.DeltaSectionPackageCount = new List<long>();
-                    }
+                    TOC.DeltaSectionPackageCount ??= new List<long>();
 
-                    if (TOC.DeltaSectionPackageCount.Any())
+                    if (TOC.DeltaSectionPackageCount.Count != 0)
                     {
                         TOC.DeltaSectionPackageCount.Add(TOC.DeltaSectionPackageCount.Last());
                     }

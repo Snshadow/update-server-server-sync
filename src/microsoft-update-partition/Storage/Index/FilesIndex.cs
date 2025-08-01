@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
@@ -24,8 +24,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
         public override void IndexPackage(IPackage package, int packageIndex)
         {
             if (package is MicrosoftUpdatePackage microsoftUpdatePackage &&
-                microsoftUpdatePackage.Files is not null &&
-                microsoftUpdatePackage.Files.Any())
+                (microsoftUpdatePackage.Files?.Any() ?? false))
             {
                 base.Add(packageIndex, microsoftUpdatePackage.Files.OfType<UpdateFile>().ToList());
             }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Index;
@@ -18,14 +18,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         private List<DriverMetadata> _Metadata;
         private bool _DriverMetadataLoaded = false;
 
-        internal DriverUpdate(MicrosoftUpdatePackageIdentity id, XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager) : base(id, metadataNavigator, namespaceManager)
+        internal DriverUpdate(
+            MicrosoftUpdatePackageIdentity id,
+            XPathNavigator metadataNavigator,
+            XmlNamespaceManager namespaceManager,
+            string locale) : base(id, metadataNavigator, namespaceManager, locale)
         {
             LoadNonIndexedMetadata(metadataNavigator, namespaceManager);
         }
 
-        internal DriverUpdate(MicrosoftUpdatePackageIdentity id, IMetadataLookup metadataLookup, IMetadataSource metadataSource) : base(id, metadataLookup, metadataSource)
+        internal DriverUpdate(MicrosoftUpdatePackageIdentity id,
+        IMetadataLookup metadataLookup,
+        IMetadataSource metadataSource,
+        string locale) : base(id, metadataLookup, metadataSource, locale)
         {
-
         }
 
         /// <summary>
@@ -39,7 +45,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 return _Metadata;
             }
 
-            if(_FastLookupSource is not null)
+            if (_FastLookupSource is not null)
             {
                 _FastLookupSource.TryListKeyLookup<DriverMetadata>(this.Id, AvailableIndexes.DriverMetadataIndexName, out _Metadata);
                 _DriverMetadataLoaded = true;

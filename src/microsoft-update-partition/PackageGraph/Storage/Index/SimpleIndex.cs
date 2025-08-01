@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.ObjectModel;
@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Microsoft.PackageGraph.Storage.Index
 {
-    abstract class SimpleIndex<I,T> : IIndex
+    abstract class SimpleIndex<I, T> : IIndex
     {
         protected Dictionary<I, T> Index;
 
@@ -121,10 +121,7 @@ namespace Microsoft.PackageGraph.Storage.Index
                     }
                     catch (Exception) { }
 
-                    if (Index is null)
-                    {
-                        Index = new Dictionary<I, T>();
-                    }
+                    Index ??= new Dictionary<I, T>();
                 }
 
                 IsIndexLoaded = true;
@@ -137,7 +134,7 @@ namespace Microsoft.PackageGraph.Storage.Index
             {
                 ReadIndex();
             }
-            if (Index.TryGetValue((I)key, out data))
+            if (Index.TryGetValue(key, out data))
             {
                 return true;
             }

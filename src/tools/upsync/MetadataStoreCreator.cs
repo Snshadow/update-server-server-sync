@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Azure.Storage.Blobs;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
+using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -12,33 +13,46 @@ using System.Linq;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
-    public class MetadataStoreOptions : IMetadataStoreOptions
+    public interface IMetadataStoreOptions
     {
-        public string Alias { get; set; }
-        public string Path { get; set; }
+        string Alias { get; }
+        string Path { get; }
+        string Type { get; }
+        string StoreConnectionString { get; }
+    }
 
-        public string Type { get; set; }
+    public interface IMetadataFilterOptions
+    {
+        IEnumerable<string> ProductsFilter { get; }
 
-        public string StoreConnectionString { get; set; }
+        IEnumerable<string> ClassificationsFilter { get; }
+
+        IEnumerable<string> IdFilter { get; }
+
+        string HardwareIdFilter { get; }
+
+        string ComputerHardwareIdFilter { get; set; }
+
+        string TitleFilter { get; }
+
+        bool SkipSuperseded { get; }
+
+        IEnumerable<string> KbArticleFilter { get; }
+
+        int FirstX { get; }
     }
 
     class MetadataStoreCreator
     {
         private const string StoreAliasesConfigFile = "store-aliases.json";
 
-        public static void CreateAlias(StoreAliasCreateOptions storeOptions)
+        public static void CreateAlias(StoreAliasCreateCommand.Settings storeOptions)
         {
-            List<StoreAliasCreateOptions> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
+            List<StoreAliasCreateCommand.Settings> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
 
             storeAliases.RemoveAll(alias => alias.Alias == storeOptions.Alias);
 
-            var store = CreateFromOptions(
-                new MetadataStoreOptions()
-                {
-                    Path = storeOptions.Path,
-                    StoreConnectionString = storeOptions.StoreConnectionString,
-                    Type = storeOptions.Type
-                });
+            var store = CreateFromOptions(storeOptions);
             if (store is not null)
             {
                 storeAliases.Add(storeOptions);
@@ -46,9 +60,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        public static void DeleteAlias(StoreAliasDeleteOptions options)
+        public static void DeleteAlias(StoreAliasDeleteCommand.Settings options)
         {
-            List<StoreAliasCreateOptions> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
+            List<StoreAliasCreateCommand.Settings> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
             if (options.All)
             {
                 File.Delete(StoreAliasesConfigFile);
@@ -68,9 +82,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        public static void ListAliases(StoreAliasListOptions options)
+        public static void ListAliases(StoreAliasListCommand.Settings options)
         {
-            List<StoreAliasCreateOptions> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
+            List<StoreAliasCreateCommand.Settings> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
             var aliasesToList =
                 string.IsNullOrEmpty(options.Alias) ?
                 storeAliases :
@@ -93,28 +107,28 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        private static List<StoreAliasCreateOptions> LoadStoreAliases(string path)
+        private static List<StoreAliasCreateCommand.Settings> LoadStoreAliases(string path)
         {
             if (File.Exists(path))
             {
                 try
                 {
-                    return JsonConvert.DeserializeObject<List<StoreAliasCreateOptions>>(File.ReadAllText(path));
+                    return JsonConvert.DeserializeObject<List<StoreAliasCreateCommand.Settings>>(File.ReadAllText(path));
                 }
                 catch (Exception) { }
             }
 
-            return new List<StoreAliasCreateOptions>();
+            return new();
         }
 
         public static IMetadataStore OpenFromOptions(IMetadataStoreOptions sourceOptions)
         {
             if (!string.IsNullOrEmpty(sourceOptions.Alias))
             {
-                List<StoreAliasCreateOptions> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
+                List<StoreAliasCreateCommand.Settings> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
                 var alias = sourceOptions.Alias;
-                sourceOptions = storeAliases.FirstOrDefault(alias => alias.Alias == sourceOptions.Alias);
-                if (sourceOptions is null)
+                var foundAlias = storeAliases.FirstOrDefault(alias => alias.Alias == sourceOptions.Alias);
+                if (foundAlias is null)
                 {
                     Console.WriteLine($"Alias {alias} not found");
                     return null;
@@ -148,17 +162,17 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     ConsoleOutput.WriteRed($"Cannot open the package store: {ex.Message}");
                 }
             }
-            else if (sourceOptions.Type == "azure-blob")
+            else if (sourceOptions.Type == "azure")
             {
                 if (string.IsNullOrEmpty(sourceOptions.StoreConnectionString))
                 {
                     var azureContainer = new BlobContainerClient(new Uri(sourceOptions.Path));
-                    return Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(azureContainer);
+                    return Storage.Azure.PackageStore.Open(azureContainer);
                 }
                 else
                 {
                     var blobClient = new BlobServiceClient(sourceOptions.StoreConnectionString);
-                    return Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(blobClient, sourceOptions.Path);
+                    return Storage.Azure.PackageStore.Open(blobClient, sourceOptions.Path);
                 }
             }
             else
@@ -173,10 +187,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         {
             if (!string.IsNullOrEmpty(sourceOptions.Alias))
             {
-                List<StoreAliasCreateOptions> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
+                List<StoreAliasCreateCommand.Settings> storeAliases = LoadStoreAliases(StoreAliasesConfigFile);
                 var alias = sourceOptions.Alias;
-                sourceOptions = storeAliases.FirstOrDefault(alias => alias.Alias == sourceOptions.Alias);
-                if (sourceOptions is null)
+                var foundAlias = storeAliases.FirstOrDefault(alias => alias.Alias == sourceOptions.Alias);
+                if (foundAlias is null)
                 {
                     Console.WriteLine($"Alias {alias} not found");
                     return null;
@@ -204,7 +218,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     ConsoleOutput.WriteRed($"Cannot open the package store: {ex.Message}");
                 }
             }
-            else if (sourceOptions.Type == "azure-blob")
+            else if (sourceOptions.Type == "azure")
             {
                 if (string.IsNullOrEmpty(sourceOptions.StoreConnectionString))
                 {
@@ -222,7 +236,5 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             return source;
         }
-
-
     }
 }

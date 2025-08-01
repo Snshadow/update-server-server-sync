@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
@@ -16,7 +16,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         internal static List<Guid> StringGuidsToGuids(IEnumerable<string> stringGuids)
         {
             var returnList = new List<Guid>();
-            foreach (var guidString in stringGuids)
+            foreach (var guidString in stringGuids ?? [])
             {
                 if (!Guid.TryParse(guidString, out Guid guid))
                 {
@@ -35,7 +35,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 TitleFilter = filterOptions.TitleFilter,
                 HardwareIdFilter = filterOptions.HardwareIdFilter,
-                KbArticleFilter = filterOptions.KbArticleFilter.ToList()
+                KbArticleFilter = filterOptions.KbArticleFilter?.ToList()
             };
 
             if (!string.IsNullOrEmpty(filterOptions.ComputerHardwareIdFilter))

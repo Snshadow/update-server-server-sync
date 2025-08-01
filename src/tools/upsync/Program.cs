@@ -1,52 +1,45 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using CommandLine;
 using Microsoft.PackageGraph.Storage;
+using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
+using Spectre.Console.Cli;
+using System;
+using System.Threading;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
     class Program
     {
-        private static readonly object ProgressLock = new();
-        static void Main(string[] args)
+        private static readonly Lock ProgressLock = new();
+        static int Main(string[] args)
         {
-            CommandLine.Parser.Default.ParseArguments<
-                MetadataSourceStatusOptions,
-                FetchPackagesOptions,
-                QueryMetadataOptions,
-                MetadataSourceExportOptions,
-                ContentSyncOptions,
-                RunUpstreamServerOptions,
-                RunUpdateServerOptions,
-                FetchCategoriesOptions,
-                FetchConfigurationOptions,
-                ReindexStoreOptions,
-                MatchDriverOptions,
-                MetadataCopyOptions,
-                StoreAliasListOptions,
-                StoreAliasDeleteOptions,
-                StoreAliasCreateOptions>(args)
-                .WithParsed<FetchPackagesOptions>(opts => MetadataSync.FetchPackagesUpdates(opts))
-                .WithParsed<FetchConfigurationOptions>(opts => MetadataSync.FetchConfiguration(opts))
-                .WithParsed<FetchCategoriesOptions>(opts => MetadataSync.FetchCategories(opts))
-                .WithParsed<ReindexStoreOptions>(opts => MetadataSync.ReIndex(opts))
-                .WithParsed<QueryMetadataOptions>(opts => MetadataQuery.Query(opts))
-                .WithParsed<MatchDriverOptions>(opts => MetadataQuery.MatchDrivers(opts))
-                .WithParsed<MetadataSourceExportOptions>(opts => UpdateMetadataExport.ExportUpdates(opts))
-                .WithParsed<ContentSyncOptions>(opts => ContentSync.SyncContent(opts))
-                .WithParsed<MetadataSourceStatusOptions>(opts => MetadataQuery.Status(opts))
-                .WithParsed<RunUpstreamServerOptions>(opts => UpstreamServer.Run(opts))
-                .WithParsed<RunUpdateServerOptions>(opts => UpdateServer.Run(opts))
-                .WithParsed<MetadataCopyOptions>(opts => MetadataCopy.Run(opts))
-                .WithParsed<StoreAliasListOptions>(opts => MetadataStoreCreator.ListAliases(opts))
-                .WithParsed<StoreAliasDeleteOptions>(opts => MetadataStoreCreator.DeleteAlias(opts))
-                .WithParsed<StoreAliasCreateOptions>(opts => MetadataStoreCreator.CreateAlias(opts))
-                .WithNotParsed(failed => Console.WriteLine("Error"));
+            var app = new CommandApp();
+            app.Configure(config =>
+            {
+                config.AddCommand<FetchConfigurationCommand>("fetch-config");
+                config.AddCommand<FetchCommand>("fetch");
+                config.AddCommand<QueryCommand>("query");
+                config.AddCommand<StatusCommand>("status");
+                config.AddCommand<ExportCommand>("export");
+                config.AddCommand<ContentSyncCommand>("fetch-content");
+                config.AddCommand<RunUpstreamServerCommand>("run-upstream-server");
+                config.AddCommand<RunUpdateServerCommand>("run-update-server");
+                config.AddCommand<FetchCategoriesCommand>("pre-fetch");
+                config.AddCommand<ReindexCommand>("index");
+                config.AddCommand<ApproveUpdateCommand>("approve-update");
+                config.AddCommand<UnapproveUpdateCommand>("unapprove-update");
+                config.AddCommand<MatchDriverCommand>("match-driver");
+                config.AddCommand<MetadataCopyCommand>("copy-metadata");
+                config.AddCommand<StoreAliasListCommand>("list-store-aliases");
+                config.AddCommand<StoreAliasDeleteCommand>("delete-store-alias");
+                config.AddCommand<StoreAliasCreateCommand>("create-store-alias");
+            });
+
+            return app.Run(args);
         }
 
-        private static readonly object ConsoleWriteLock = new();
+        private static readonly Lock ConsoleWriteLock = new();
 
         private static void UpdateConsoleForMessageRefresh()
         {

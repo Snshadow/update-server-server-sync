@@ -1,4 +1,4 @@
-﻿﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.UpdateServices.WebServices.ServerSync;
@@ -49,7 +49,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         public bool ExpiresIn(TimeSpan timeSpan)
         {
             // A token is considered expired if it is null or if the expiration time is within the specified timespan.
-            return AccessCookie is null || AccessCookie.Expiration <= DateTime.Now.Add(timeSpan);
+            return AccessCookie is null || AccessCookie.Expiration <= DateTime.UtcNow.Add(timeSpan);
         }
 
         /// <summary>

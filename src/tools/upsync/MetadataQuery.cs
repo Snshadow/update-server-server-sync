@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Source;
+using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using System;
@@ -18,15 +19,15 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
     class MetadataQuery
     {
         private readonly IMetadataStore MetadataStore;
-        private readonly QueryMetadataOptions Options;
+        private readonly QueryCommand.Settings Options;
 
         /// <summary>
         ///  Runs a query command against a metadata source
         /// </summary>
         /// <param name="options">Query options (filters)</param>
-        public static void Query(QueryMetadataOptions options)
+        public static void Query(QueryCommand.Settings options)
         {
-            var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
+            var source = MetadataStoreCreator.OpenFromOptions(options);
             if (source is null)
             {
                 return;
@@ -36,9 +37,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             repoQuery.Query();
         }
 
-        public static void MatchDrivers(MatchDriverOptions options)
+        public static void MatchDrivers(MatchDriverCommand.Settings options)
         {
-            var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
+            var source = MetadataStoreCreator.OpenFromOptions(options);
             if (source is null)
             {
                 return;
@@ -46,14 +47,14 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             using (source)
             {
-                List<Guid> computerHardwareIds = FilterBuilder.StringGuidsToGuids(options.ComputerHardwareIds);
+                List<Guid> computerHardwareIds = FilterBuilder.StringGuidsToGuids(options.ComputerHardwareIds?.Split('+'));
                 if (computerHardwareIds is null)
                 {
                     ConsoleOutput.WriteRed($"The computer hardware ID must be a GUID");
                     return;
                 }
 
-                var prerequisites = FilterBuilder.StringGuidsToGuids(options.InstalledPrerequisites);
+                var prerequisites = FilterBuilder.StringGuidsToGuids(options.InstalledPrerequisites?.Split('+'));
                 if (prerequisites is null)
                 {
                     ConsoleOutput.WriteRed($"Prerequisites must be a list of GUIDs separated by '+'");
@@ -62,7 +63,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
                 DriverUpdateMatching driverMatching = DriverUpdateMatching.FromPackageSource(source);
 
-                var driverMatch = driverMatching.MatchDriver(options.HardwareIds, computerHardwareIds, prerequisites);
+                var driverMatch = driverMatching.MatchDriver(options.HardwareIds?.Split('+'), computerHardwareIds, prerequisites);
 
                 if (driverMatch is not null)
                 {
@@ -89,9 +90,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        public static void Status(MetadataSourceStatusOptions options)
+        public static void Status(StatusCommand.Settings options)
         {
-            var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
+            var source = MetadataStoreCreator.OpenFromOptions(options);
             if (source is null)
             {
                 return;
@@ -109,7 +110,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void PrintFilter(UpstreamSourceFilter filter, IMetadataStore metadataSource)
         {
             Console.WriteLine("Filter:");
-            
+
             var allClassifications = metadataSource.OfType<ClassificationCategory>();
             var allProducts = metadataSource.OfType<ProductCategory>();
 
@@ -170,10 +171,20 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        private MetadataQuery(IMetadataStore metadataSource, QueryMetadataOptions options)
+        private MetadataQuery(IMetadataStore metadataSource, QueryCommand.Settings options)
         {
             MetadataStore = metadataSource;
             Options = options;
+        }
+
+        private enum PackageType
+        {
+            MicrosoftUpdateClassification,
+            MicrosoftUpdateProduct,
+            MicrosoftUpdateDetectoid,
+            MicrosoftUpdateUpdate,
+            MicrosoftUpdateDriver,
+            AnyPackage
         }
 
         private static readonly Dictionary<string, PackageType> SupportedPackages = new()
@@ -187,9 +198,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         private void Query()
         {
-            if (SupportedPackages.ContainsKey(Options.PackageType))
+            if (SupportedPackages.TryGetValue(Options.PackageType, out PackageType packageType))
             {
-                var packageType = SupportedPackages[Options.PackageType];
                 switch (packageType)
                 {
                     case PackageType.MicrosoftUpdateClassification:
@@ -197,7 +207,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     case PackageType.MicrosoftUpdateUpdate:
                     case PackageType.MicrosoftUpdateDriver:
                     case PackageType.MicrosoftUpdateDetectoid:
-                        MicrosoftUpdateMetadata.PrintMicrosoftUpdatePackages(Options, MetadataStore, packageType);
+                        MicrosoftUpdateMetadata.PrintMicrosoftUpdatePackages(Options, MetadataStore, packageType.ToString());
                         break;
 
                     default:

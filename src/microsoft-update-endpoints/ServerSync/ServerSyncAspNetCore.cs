@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
@@ -81,12 +81,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                 Categories.AddRange(packageSource.OfType<DetectoidCategory>());
                 foreach (var softwarePackage in packageSource.OfType<SoftwareUpdate>())
                 {
-                    Updates.Add(softwarePackage.Id as MicrosoftUpdatePackageIdentity, softwarePackage);
+                    Updates.Add(softwarePackage.Id, softwarePackage);
                 }
 
                 foreach (var driverUpdate in packageSource.OfType<DriverUpdate>())
                 {
-                    Updates.Add(driverUpdate.Id as MicrosoftUpdatePackageIdentity, driverUpdate);
+                    Updates.Add(driverUpdate.Id, driverUpdate);
                 }
 
                 foreach (var classification in Categories.OfType<ClassificationCategory>())
@@ -145,7 +145,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             // Build the standard response
             var result = new ServerAuthConfig()
             {
-                LastChange = DateTime.Now,
+                LastChange = DateTime.UtcNow,
                 AuthInfo = new AuthPlugInInfo[]
                 {
                     new AuthPlugInInfo() { PlugInID = "DssTargeting", ServiceUrl = "DssAuthWebService/DssAuthWebService.asmx" }
@@ -182,7 +182,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
         /// <returns>A cookie that expires in 5 days.</returns>
         public Task<Cookie> GetCookieAsync(GetCookieRequest request)
         {
-            return Task.FromResult(new Cookie() { Expiration = DateTime.Now.AddDays(5), EncryptedData = new byte[12] });
+            return Task.FromResult(new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = new byte[12] });
         }
 
         /// <summary>
@@ -194,40 +194,37 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
         {
             var response = new RevisionIdList
             {
-                Anchor = DateTime.Now.ToString()
+                Anchor = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", System.Globalization.CultureInfo.InvariantCulture)
             };
 
             PackageStoreLock.AcquireReaderLock(-1);
 
             try
             {
-                if (request.GetRevisionIdList.filter.GetConfig == true)
+                if (request.GetRevisionIdList.filter.GetConfig)
                 {
                     response.NewRevisions = Categories.Select(u => new UpdateIdentity() { UpdateID = u.Id.ID, RevisionNumber = u.Id.Revision }).ToArray();
                 }
                 else
                 {
-                    var productsFilter = request.GetRevisionIdList.filter.Categories;
-                    var classificationsFilter = request.GetRevisionIdList.filter.Classifications;
-
-                    var effectiveProductsFilter = productsFilter is null ? ProductsIndex.Keys : productsFilter.Select(p => p.Id);
-                    var effectiveClassificationsFilter = classificationsFilter is null ? ClassificationsIndex.Keys : classificationsFilter.Select(c => c.Id);
+                    var effectiveProductsFilter = request.GetRevisionIdList.filter.Categories?.Select(p => p.Id) ?? ProductsIndex.Keys;
+                    var effectiveClassificationsFilter = request.GetRevisionIdList.filter.Classifications?.Select(c => c.Id) ?? ClassificationsIndex.Keys;
 
                     var filteredByProduct = new List<MicrosoftUpdatePackageIdentity>();
                     foreach (var product in effectiveProductsFilter)
                     {
-                        if (ProductsIndex.ContainsKey(product))
+                        if (ProductsIndex.TryGetValue(product, out List<MicrosoftUpdatePackage> value))
                         {
-                            filteredByProduct.AddRange(ProductsIndex[product].Select(u => u.Id));
+                            filteredByProduct.AddRange(value.Select(u => u.Id));
                         }
                     }
 
                     var filteredByClassification = new List<MicrosoftUpdatePackageIdentity>();
                     foreach (var classification in effectiveClassificationsFilter)
                     {
-                        if (ClassificationsIndex.ContainsKey(classification))
+                        if (ClassificationsIndex.TryGetValue(classification, out List<MicrosoftUpdatePackage> value))
                         {
-                            filteredByClassification.AddRange(ClassificationsIndex[classification].Select(u => u.Id));
+                            filteredByClassification.AddRange(value.Select(u => u.Id));
                         }
                     }
 
@@ -274,12 +271,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             serviceConfiguration = ServiceConfiguration;
             ServiceConfigurationLock.ReleaseReaderLock();
 
-            if (serviceConfiguration is null)
-            {
-                return Task.FromResult(response);
-            }
-
-            if (PackageStore is null)
+            if (serviceConfiguration is null || PackageStore is null)
             {
                 return Task.FromResult(response);
             }

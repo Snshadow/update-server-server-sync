@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using ICSharpCode.SharpZipLib.Zip;
@@ -77,11 +77,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void ResetIndex()
         {
-            if (InputFile is not null)
-            {
-                InputFile.Close();
-                InputFile = null;
-            }
+            InputFile?.Close();
+            InputFile = null;
 
             CreateTableOfContents();
             CreateAllKnownIndexes();
@@ -100,11 +97,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void CloseInput()
         {
-            if (InputFile is not null)
-            {
-                InputFile.Close();
-                InputFile = null;
-            }
+            InputFile?.Close();
+            InputFile = null;
         }
 
         private static string GetIndexPathFromDefinition(IndexDefinition definition)

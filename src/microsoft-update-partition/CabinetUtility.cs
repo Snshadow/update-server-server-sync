@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -58,9 +58,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
                 var expandProcess = Process.Start(startInfo);
                 expandProcess.WaitForExit();
 
-                using var decompresedFile = File.OpenRead(xmlTempFile);
+                using var decompressedFile = File.OpenRead(xmlTempFile);
                 using var recompressor = new GZipStream(inMemoryStream, CompressionLevel.Fastest, true);
-                decompresedFile.CopyTo(recompressor);
+                decompressedFile.CopyTo(recompressor);
             }
             catch (Exception)
             {
@@ -187,7 +187,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
         /// <returns></returns>
         private static string CreateMakeCabDirective(List<string> files, string outFile)
         {
-            var textWriter = new System.IO.StringWriter();
+            var textWriter = new StringWriter();
             textWriter.WriteLine(".OPTION EXPLICIT");
             textWriter.WriteLine(".Set DiskDirectoryTemplate=");
 

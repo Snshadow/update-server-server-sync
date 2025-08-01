@@ -1,14 +1,13 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Source;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
-using Newtonsoft.Json;
+using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using System.Threading;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
@@ -18,28 +17,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
     /// </summary>
     class MetadataSync
     {
-        public static void FetchConfiguration(FetchConfigurationOptions options)
+        public static void ReIndex(ReindexCommand.Settings options)
         {
-            MicrosoftUpdate.Source.Endpoint upstreamEndpoint;
-            if (!string.IsNullOrEmpty(options.UpstreamEndpoint))
-            {
-                upstreamEndpoint = new MicrosoftUpdate.Source.Endpoint(options.UpstreamEndpoint);
-            }
-            else
-            {
-                upstreamEndpoint = MicrosoftUpdate.Source.Endpoint.Default;
-            }
-
-            var server = new UpstreamServerClient(upstreamEndpoint);
-            server.MetadataQueryProgress += Server_MetadataQueryProgress;
-            var configData = server.GetServerConfigData().GetAwaiter().GetResult();
-
-            File.WriteAllText(options.OutFile, JsonConvert.SerializeObject(configData));
-        }
-
-        public static void ReIndex(ReindexStoreOptions options)
-        {
-            var sourceToUpdate = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
+            var sourceToUpdate = MetadataStoreCreator.OpenFromOptions(options);
             if (sourceToUpdate is null)
             {
                 return;
@@ -68,16 +48,16 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        public static void FetchCategories(FetchCategoriesOptions options)
+        public static void FetchCategories(FetchCategoriesCommand.Settings options)
         {
-            MicrosoftUpdate.Source.Endpoint upstreamEndpoint;
+            Endpoint upstreamEndpoint;
             if (!string.IsNullOrEmpty(options.UpstreamEndpoint))
             {
-                upstreamEndpoint = new MicrosoftUpdate.Source.Endpoint(options.UpstreamEndpoint);
+                upstreamEndpoint = new Endpoint(options.UpstreamEndpoint);
             }
             else
             {
-                upstreamEndpoint = MicrosoftUpdate.Source.Endpoint.Default;
+                upstreamEndpoint = Endpoint.Default;
             }
 
             if (!string.IsNullOrEmpty(options.AccountName) &&
@@ -86,7 +66,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 throw new NotImplementedException();
             }
 
-            var destinationStore = MetadataStoreCreator.CreateFromOptions(options as IMetadataStoreOptions);
+            var destinationStore = MetadataStoreCreator.CreateFromOptions(options);
             if (destinationStore is null)
             {
                 return;
@@ -105,9 +85,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             ConsoleOutput.WriteGreen("Done!");
         }
 
-        public static void FetchPackagesUpdates(FetchPackagesOptions options)
+        public static void FetchPackagesUpdates(FetchCommand.Settings options)
         {
-            var store = MetadataStoreCreator.CreateFromOptions(options as IMetadataStoreOptions);
+            var store = MetadataStoreCreator.CreateFromOptions(options);
             if (store is null)
             {
                 return;
@@ -115,7 +95,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             switch (options.EndpointType)
             {
-                case FetchPackagesOptions.MicrosoftUpdateEndpoint:
+                case "microsoft-update":
                     FetchMicrosoftUpdatePackages(options, store);
                     break;
 
@@ -124,9 +104,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        private static void FetchMicrosoftUpdatePackages(FetchPackagesOptions options, IMetadataStore store)
+        private static void FetchMicrosoftUpdatePackages(FetchCommand.Settings options, IMetadataStore store)
         {
-            var upstreamEndpoint = string.IsNullOrEmpty(options.UpstreamEndpoint) ? MicrosoftUpdate.Source.Endpoint.Default : new MicrosoftUpdate.Source.Endpoint(options.UpstreamEndpoint);
+            var upstreamEndpoint = string.IsNullOrEmpty(options.UpstreamEndpoint) ? Endpoint.Default : new Endpoint(options.UpstreamEndpoint);
 
             if (!string.IsNullOrEmpty(options.AccountName) &&
                 !string.IsNullOrEmpty(options.AccountGuid))
@@ -143,11 +123,11 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 microsoftUpdateCategoriesSource.MetadataCopyProgress += Program.OnPackageCopyProgress;
                 microsoftUpdateCategoriesSource.CopyTo(store, CancellationToken.None);
 
-                if (options.Ids.Any())
+                if (!string.IsNullOrEmpty(options.Ids))
                 {
                     var server = new UpstreamServerClient(upstreamEndpoint);
 
-                    foreach (var updateId in options.Ids)
+                    foreach (var updateId in options.Ids.Split('+'))
                     {
                         if (Guid.TryParse(updateId, out var updateIdGuid))
                         {
@@ -178,7 +158,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     UpstreamSourceFilter sourceFilter;
                     try
                     {
-                        sourceFilter = MetadataSync.CreateValidFilterFromOptions(options, store);
+                        sourceFilter = CreateValidFilterFromOptions(options, store);
                     }
                     catch (Exception ex)
                     {
@@ -285,14 +265,14 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             return filterList;
         }
 
-        private static UpstreamSourceFilter CreateValidFilterFromOptions(FetchPackagesOptions options, IMetadataStore metadataSource)
+        private static UpstreamSourceFilter CreateValidFilterFromOptions(FetchCommand.Settings options, IMetadataStore metadataSource)
         {
             List<Guid> productFilter = CreateFilterListForCategory<ProductCategory>(
-                options.ProductsFilter,
+                options.ProductsFilter?.Split('+') ?? Enumerable.Empty<string>(),
                 metadataSource);
 
             List<Guid> classificationFilter = CreateFilterListForCategory<ClassificationCategory>(
-                options.ClassificationsFilter,
+                options.ClassificationsFilter?.Split('+') ?? Enumerable.Empty<string>(),
                 metadataSource);
 
             return new UpstreamSourceFilter(productFilter, classificationFilter);

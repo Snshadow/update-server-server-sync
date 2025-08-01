@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.ObjectModel;
@@ -32,28 +32,26 @@ namespace Microsoft.PackageGraph.Storage.Local
             Stream destination,
             CancellationToken cancellationToken)
         {
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
+            using var updateRequest = new HttpRequestMessage { RequestUri = new Uri(source), Method = HttpMethod.Get };
+            // Stream the file
+            using HttpResponseMessage response = client
+                .SendAsync(updateRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                .GetAwaiter()
+                .GetResult();
+            if (response.IsSuccessStatusCode)
             {
-                using var updateRequest = new HttpRequestMessage { RequestUri = new Uri(source), Method = HttpMethod.Get };
-                // Stream the file
-                using HttpResponseMessage response = client
-                    .SendAsync(updateRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                    .GetAwaiter()
-                    .GetResult();
-                if (response.IsSuccessStatusCode)
+                using Stream streamToReadFrom = response.Content.ReadAsStreamAsync(cancellationToken).GetAwaiter().GetResult();
+                // Read in chunks while not at the end and cancellation was not requested
+                byte[] readBuffer = new byte[2097152 * 5];
+                var readBytesCount = streamToReadFrom.Read(readBuffer, 0, readBuffer.Length);
+                while (!cancellationToken.IsCancellationRequested && readBytesCount > 0)
                 {
-                    using Stream streamToReadFrom = response.Content.ReadAsStreamAsync(cancellationToken).GetAwaiter().GetResult();
-                    // Read in chunks while not at the end and cancellation was not requested
-                    byte[] readBuffer = new byte[2097152 * 5];
-                    var readBytesCount = streamToReadFrom.Read(readBuffer, 0, readBuffer.Length);
-                    while (!cancellationToken.IsCancellationRequested && readBytesCount > 0)
-                    {
-                        destination.Write(readBuffer, 0, readBytesCount);
-                        readBytesCount = streamToReadFrom.Read(readBuffer, 0, readBuffer.Length);
-                    }
-
-                    return readBytesCount == 0;
+                    destination.Write(readBuffer, 0, readBytesCount);
+                    readBytesCount = streamToReadFrom.Read(readBuffer, 0, readBuffer.Length);
                 }
+
+                return readBytesCount == 0;
             }
 
             return false;

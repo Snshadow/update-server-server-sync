@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -28,7 +28,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
 
         internal AtLeastOne(IEnumerable<Guid> ids)
         {
-            Simple = new List<Simple>(ids.Select(id => new Prerequisites.Simple(id)));
+            Simple = new List<Simple>(ids.Select(id => new Simple(id)));
             IsCategory = ids.Last().Equals(Guid.Empty);
 
             if (IsCategory)
@@ -39,7 +39,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
 
         internal AtLeastOne(IEnumerable<Guid> ids, bool isCategory)
         {
-            Simple = new List<Simple>(ids.Select(id => new Prerequisites.Simple(id)));
+            Simple = new List<Simple>(ids.Select(id => new Simple(id)));
             IsCategory = isCategory;
         }
     }

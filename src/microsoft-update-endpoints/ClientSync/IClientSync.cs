@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.UpdateServices.WebServices.ClientSync;
@@ -54,12 +54,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         [System.ServiceModel.OperationContractAttribute(Action = "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtended" +
             "UpdateInfo", ReplyAction = "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtended" +
             "UpdateInfoResponse")]
-        System.Threading.Tasks.Task<ExtendedUpdateInfo> GetExtendedUpdateInfoAsync(Cookie cookie, int[] revisionIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string deviceAttributes);
+        System.Threading.Tasks.Task<ExtendedUpdateInfo> GetExtendedUpdateInfoAsync(Cookie cookie, int[] revisionIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string GeoId, string callerAttributes);
 
         [System.ServiceModel.OperationContractAttribute(Action = "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtended" +
             "UpdateInfo2", ReplyAction = "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtended" +
             "UpdateInfo2Response")]
-        System.Threading.Tasks.Task<ExtendedUpdateInfo2> GetExtendedUpdateInfo2Async(Cookie cookie, UpdateIdentity[] updateIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string deviceAttributes);
+        System.Threading.Tasks.Task<ExtendedUpdateInfo2> GetExtendedUpdateInfo2Async(Cookie cookie, UpdateIdentity[] updateIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string callerAttributes);
 
         [System.ServiceModel.OperationContractAttribute(Action = "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetFileLoca" +
             "tions", ReplyAction = "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetFileLoca" +

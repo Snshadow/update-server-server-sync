@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -9,37 +9,42 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
 {
     abstract class UpdateParser
     {
-        public static string GetDescription(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager)
+        private static string GetLocalizedProperty(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager, string property, string locale)
         {
-            XPathExpression descriptionQuery = metadataNavigator.Compile("upd:Update/upd:LocalizedPropertiesCollection/upd:LocalizedProperties[upd:Language='en']/upd:Description");
-            descriptionQuery.SetContext(namespaceManager);
+            var propertyQuery = metadataNavigator.Compile($"upd:Update/upd:LocalizedPropertiesCollection/upd:LocalizedProperties[upd:Language='{locale}']/{property}");
+            propertyQuery.SetContext(namespaceManager);
 
-            var result = metadataNavigator.Evaluate(descriptionQuery) as XPathNodeIterator;
+            var result = metadataNavigator.Evaluate(propertyQuery) as XPathNodeIterator;
             if (result.Count > 0)
             {
                 result.MoveNext();
                 return result.Current.Value;
             }
-            else
+            else if (locale != "en")
             {
-                return null;
+                // Fallback to 'en'
+                propertyQuery = metadataNavigator.Compile($"upd:Update/upd:LocalizedPropertiesCollection/upd:LocalizedProperties[upd:Language='en']/{property}");
+                propertyQuery.SetContext(namespaceManager);
+                result = metadataNavigator.Evaluate(propertyQuery) as XPathNodeIterator;
+                if (result.Count > 0)
+                {
+                    result.MoveNext();
+                    return result.Current.Value;
+                }
             }
+
+            return null;
         }
 
-        public static string GetTitle(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager)
+        public static string GetDescription(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager, string locale)
         {
-            XPathExpression titleQuery = metadataNavigator.Compile("upd:Update/upd:LocalizedPropertiesCollection/upd:LocalizedProperties[upd:Language='en']/upd:Title");
-            titleQuery.SetContext(namespaceManager);
+            return GetLocalizedProperty(metadataNavigator, namespaceManager, "upd:Description", locale);
+        }
 
-            var result = metadataNavigator.Evaluate(titleQuery) as XPathNodeIterator;
-
-            if (result.Count == 0)
-            {
-                throw new Exception("Invalid XML");
-            }
-
-            result.MoveNext();
-            return result.Current.Value;
+        public static string GetTitle(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager, string locale)
+        {
+            var title = GetLocalizedProperty(metadataNavigator, namespaceManager, "upd:Title", locale) ?? throw new Exception("Invalid XML");
+            return title;
         }
 
         public static string GetUpdateType(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager)
