@@ -100,7 +100,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 // Get leaf updates - updates that have prerequisites and no dependents
                 LeafUpdatesGuids = prereqGraph.GetLeafUpdates();
 
-                // Get non leaft updates: updates that have prerequisites and dependents
+                // Get non leaf updates: updates that have prerequisites and dependents
                 NonLeafUpdates = prereqGraph.GetNonLeafUpdates();
 
                 // Get root updates: updates that have no prerequisites

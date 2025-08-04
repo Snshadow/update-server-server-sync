@@ -129,7 +129,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                 }
                 else
                 {
-                    throw ex;
+                    throw;
                 }
             }
 

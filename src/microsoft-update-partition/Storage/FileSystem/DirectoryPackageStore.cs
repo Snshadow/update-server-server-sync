@@ -35,7 +35,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         TableOfContent TOC;
 
-        private readonly object WriteLock = new();
+        private readonly Lock WriteLock = new();
 
         private bool IsDirty = false;
         private bool IsIndexDirty = false;

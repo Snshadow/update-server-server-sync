@@ -29,7 +29,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         private const string MetadataBlobName = "metadata";
 
-        private readonly object MetadataBlobLock = new();
+        private readonly Lock MetadataBlobLock = new();
 
         private const int UploadCacheSize = 32 * 1024 * 1024;
         private readonly MemoryStream UploadCache = new(UploadCacheSize);

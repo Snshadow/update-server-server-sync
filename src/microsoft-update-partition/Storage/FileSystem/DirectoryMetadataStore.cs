@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Threading;
 
 namespace Microsoft.PackageGraph.Storage.Local
@@ -19,7 +18,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private bool IsDisposed = false;
 
-        readonly object WriteLock = new();
+        readonly Lock WriteLock = new();
 
         public event EventHandler<PackageStoreEventArgs> MetadataCopyProgress;
 

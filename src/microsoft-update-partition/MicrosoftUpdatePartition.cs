@@ -39,7 +39,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate
 
         public IPackage FromStream(Stream metadataStream, IMetadataSource backingMetadataStore)
         {
-            var rehydratedUpdate = MicrosoftUpdatePackage.FromStoredMetadataXml(metadataStream, backingMetadataStore) as MicrosoftUpdatePackage;
+            var rehydratedUpdate = MicrosoftUpdatePackage.FromStoredMetadataXml(metadataStream, backingMetadataStore);
 
             return rehydratedUpdate;
         }

@@ -50,7 +50,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
         private void RetrievePackageIdentities()
         {
-            lock(this)
+            lock (this)
             {
                 if (_Identities is null)
                 {
@@ -161,7 +161,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     var retrievedPackages = _Client.GetUpdateDataForIds(batch.ToList());
                     destination.AddPackages(retrievedPackages);
 
-                    lock(progressArgs)
+                    lock (progressArgs)
                     {
                         progressArgs.Current += retrievedPackages.Count;
                         MetadataCopyProgress?.Invoke(this, progressArgs);

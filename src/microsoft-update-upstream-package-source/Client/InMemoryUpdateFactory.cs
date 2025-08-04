@@ -31,9 +31,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                 metadata = compressedStream.ToArray();
             }
             else
-            { 
+            {
                 // If the plain text blob is not available, use the compressed XML blob
-                if (serverSyncData.XmlUpdateBlobCompressed is null || serverSyncData.XmlUpdateBlobCompressed.Length == 0)
+                if ((serverSyncData.XmlUpdateBlobCompressed?.Length ?? 0) == 0)
                 {
                     throw new Exception("Missing XmlUpdateBlobCompressed");
                 }

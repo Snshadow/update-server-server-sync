@@ -20,14 +20,14 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
     {
         public static void FetchConfiguration(FetchConfigurationOptions options)
         {
-            MicrosoftUpdate.Source.Endpoint upstreamEndpoint;
+            Endpoint upstreamEndpoint;
             if (!string.IsNullOrEmpty(options.UpstreamEndpoint))
             {
-                upstreamEndpoint = new MicrosoftUpdate.Source.Endpoint(options.UpstreamEndpoint);
+                upstreamEndpoint = new Endpoint(options.UpstreamEndpoint);
             }
             else
             {
-                upstreamEndpoint = MicrosoftUpdate.Source.Endpoint.Default;
+                upstreamEndpoint = Endpoint.Default;
             }
 
             var server = new UpstreamServerClient(upstreamEndpoint);
@@ -70,14 +70,14 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         public static void FetchCategories(FetchCategoriesOptions options)
         {
-            MicrosoftUpdate.Source.Endpoint upstreamEndpoint;
+            Endpoint upstreamEndpoint;
             if (!string.IsNullOrEmpty(options.UpstreamEndpoint))
             {
-                upstreamEndpoint = new MicrosoftUpdate.Source.Endpoint(options.UpstreamEndpoint);
+                upstreamEndpoint = new Endpoint(options.UpstreamEndpoint);
             }
             else
             {
-                upstreamEndpoint = MicrosoftUpdate.Source.Endpoint.Default;
+                upstreamEndpoint = Endpoint.Default;
             }
 
             if (!string.IsNullOrEmpty(options.AccountName) &&
@@ -126,7 +126,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         private static void FetchMicrosoftUpdatePackages(FetchPackagesOptions options, IMetadataStore store)
         {
-            var upstreamEndpoint = string.IsNullOrEmpty(options.UpstreamEndpoint) ? MicrosoftUpdate.Source.Endpoint.Default : new MicrosoftUpdate.Source.Endpoint(options.UpstreamEndpoint);
+            var upstreamEndpoint = string.IsNullOrEmpty(options.UpstreamEndpoint) ? Endpoint.Default : new Endpoint(options.UpstreamEndpoint);
 
             if (!string.IsNullOrEmpty(options.AccountName) &&
                 !string.IsNullOrEmpty(options.AccountGuid))
@@ -178,7 +178,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     UpstreamSourceFilter sourceFilter;
                     try
                     {
-                        sourceFilter = MetadataSync.CreateValidFilterFromOptions(options, store);
+                        sourceFilter = CreateValidFilterFromOptions(options, store);
                     }
                     catch (Exception ex)
                     {

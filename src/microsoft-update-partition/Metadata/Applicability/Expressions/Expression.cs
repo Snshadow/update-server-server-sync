@@ -54,7 +54,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability
                 throw new Exception("Unknown expression type: " + expressionNavigator.Name);
             }
 
-            this.ExpressionType = KnownExpressionDefinitions.NameToTypeMap[expressionNavigator.Name];
+            ExpressionType = KnownExpressionDefinitions.NameToTypeMap[expressionNavigator.Name];
 
             Attributes = new List<ExpressionToken>();
 

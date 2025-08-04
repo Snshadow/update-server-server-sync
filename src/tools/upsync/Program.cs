@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Threading;
 using CommandLine;
 using Microsoft.PackageGraph.Storage;
 
@@ -9,7 +10,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
     class Program
     {
-        private static readonly object ProgressLock = new();
+        private static readonly Lock ProgressLock = new();
         static void Main(string[] args)
         {
             CommandLine.Parser.Default.ParseArguments<
@@ -46,7 +47,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 .WithNotParsed(failed => Console.WriteLine("Error"));
         }
 
-        private static readonly object ConsoleWriteLock = new();
+        private static readonly Lock ConsoleWriteLock = new();
 
         private static void UpdateConsoleForMessageRefresh()
         {

@@ -23,7 +23,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private bool IsDisposed = false;
 
-        readonly object WriteLock = new();
+        readonly Lock WriteLock = new();
 
         public event EventHandler<PackageStoreEventArgs> MetadataCopyProgress;
 

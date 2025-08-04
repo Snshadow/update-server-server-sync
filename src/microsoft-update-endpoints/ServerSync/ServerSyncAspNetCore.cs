@@ -81,12 +81,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                 Categories.AddRange(packageSource.OfType<DetectoidCategory>());
                 foreach (var softwarePackage in packageSource.OfType<SoftwareUpdate>())
                 {
-                    Updates.Add(softwarePackage.Id as MicrosoftUpdatePackageIdentity, softwarePackage);
+                    Updates.Add(softwarePackage.Id, softwarePackage);
                 }
 
                 foreach (var driverUpdate in packageSource.OfType<DriverUpdate>())
                 {
-                    Updates.Add(driverUpdate.Id as MicrosoftUpdatePackageIdentity, driverUpdate);
+                    Updates.Add(driverUpdate.Id, driverUpdate);
                 }
 
                 foreach (var classification in Categories.OfType<ClassificationCategory>())
