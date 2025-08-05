@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.Storage;
@@ -14,9 +14,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
     public class ProductCategory : MicrosoftUpdatePackage
     {
         internal ProductCategory(
-            MicrosoftUpdatePackageIdentity id, 
-            XPathNavigator metadataNavigator, 
-            XmlNamespaceManager namespaceManager) : base(id, metadataNavigator, namespaceManager)
+            MicrosoftUpdatePackageIdentity id,
+            XPathNavigator metadataNavigator,
+            XmlNamespaceManager namespaceManager,
+            string locale) : base(id, metadataNavigator, namespaceManager, locale)
         {
         }
 

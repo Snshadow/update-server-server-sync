@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
@@ -172,7 +172,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             {
                 filteredUpdates = filteredUpdates
                     .Where(u => u is not SoftwareUpdate ||
-                    (u is SoftwareUpdate softwareUpdate && (softwareUpdate.IsSupersededBy is null || softwareUpdate.IsSupersededBy.Count == 0)));
+                    (u is SoftwareUpdate softwareUpdate && ((softwareUpdate.IsSupersededBy?.Count ?? 0) == 0)));
             }
 
             // Return first X matches, if requested

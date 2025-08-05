@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Index;
@@ -18,7 +18,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         private List<DriverMetadata> _Metadata;
         private bool _DriverMetadataLoaded = false;
 
-        internal DriverUpdate(MicrosoftUpdatePackageIdentity id, XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager) : base(id, metadataNavigator, namespaceManager)
+        internal DriverUpdate(MicrosoftUpdatePackageIdentity id, XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager, string locale) : base(id, metadataNavigator, namespaceManager, locale)
         {
             LoadNonIndexedMetadata(metadataNavigator, namespaceManager);
         }

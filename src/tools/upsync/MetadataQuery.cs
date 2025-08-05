@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
@@ -109,7 +109,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void PrintFilter(UpstreamSourceFilter filter, IMetadataStore metadataSource)
         {
             Console.WriteLine("Filter:");
-            
+
             var allClassifications = metadataSource.OfType<ClassificationCategory>();
             var allProducts = metadataSource.OfType<ProductCategory>();
 
@@ -187,9 +187,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         private void Query()
         {
-            if (SupportedPackages.ContainsKey(Options.PackageType))
+            if (SupportedPackages.TryGetValue(Options.PackageType, out PackageType packageType))
             {
-                var packageType = SupportedPackages[Options.PackageType];
                 switch (packageType)
                 {
                     case PackageType.MicrosoftUpdateClassification:

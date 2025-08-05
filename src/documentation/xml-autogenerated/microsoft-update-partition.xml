@@ -1759,12 +1759,13 @@
             <param name="keywords">List of keywords to match. All keywords must match</param>
             <returns>True if all keywords match, false otherwise.</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.FromMetadataXml(System.Byte[],System.Collections.Generic.Dictionary{System.String,Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content.UpdateFileUrl})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.FromMetadataXml(System.Byte[],System.Collections.Generic.Dictionary{System.String,Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content.UpdateFileUrl},System.String)">
             <summary>
             Creates a MicrosoftUpdatePackage from raw metadata and a list of content files associated with the package
             </summary>
             <param name="metadata">RAW metadata. Expected to be UTF8 encoded XML</param>
             <param name="filesCollection">List of URLs for content files</param>
+            <param name="locale">Locale of the metadata</param>
             <returns>Rehydrated MicrosoftUpdatePackage object</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.LoadNonIndexedMetadata(System.Xml.XPath.XPathNavigator,System.Xml.XmlNamespaceManager)">
