@@ -12,7 +12,7 @@ namespace Microsoft.PackageGraph.Storage.Index
             {
                 Name = AvailableIndexes.TitlesIndexName,
                 PartitionName = null,
-                Version = TitlesIndex.CurrentVersion,
+                Version = CurrentVersion,
                 Factory = new InternalIndexFactory(),
                 Tag = "stream"
             };

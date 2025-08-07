@@ -21,7 +21,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         {
         }
 
-        internal ProductCategory(MicrosoftUpdatePackageIdentity id, IMetadataLookup metadataLookup, IMetadataSource metadataSource) : base(id, metadataLookup, metadataSource)
+        internal ProductCategory(
+            MicrosoftUpdatePackageIdentity id,
+            IMetadataLookup metadataLookup,
+            IMetadataSource metadataSource,
+            string locale) : base(id, metadataLookup, metadataSource, locale)
         {
         }
 

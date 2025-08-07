@@ -313,7 +313,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <param name="filesCollection">List of URLs for content files</param>
         /// <param name="locale">Locale of the metadata</param>
         /// <returns>Rehydrated MicrosoftUpdatePackage object</returns>
-        public static MicrosoftUpdatePackage FromMetadataXml(byte[] metadata, Dictionary<string, UpdateFileUrl> filesCollection, string locale = "en")
+        public static MicrosoftUpdatePackage FromMetadataXml(byte[] metadata, Dictionary<string, UpdateFileUrl> filesCollection, string locale = null)
         {
             var metadataStream = new GZipStream(new MemoryStream(metadata, false), CompressionMode.Decompress);
             var createdUpdate = FromMetadataXml(metadataStream, filesCollection, locale);
@@ -322,7 +322,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             return createdUpdate;
         }
 
-        internal static MicrosoftUpdatePackage FromStoredMetadataXml(Stream metadataStream, IMetadataSource metadataStore, string locale = "en")
+        internal static MicrosoftUpdatePackage FromStoredMetadataXml(Stream metadataStream, IMetadataSource metadataStore, string locale = null)
         {
             XPathDocument document = new(metadataStream);
             XPathNavigator navigator = document.CreateNavigator();
@@ -447,27 +447,28 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             return createdUpdate;
         }
 
-        internal static MicrosoftUpdatePackage FromTypeAndStore(StoredPackageType updateType, MicrosoftUpdatePackageIdentity id, IMetadataLookup metadataLookup, IMetadataSource metadataSource)
+        internal static MicrosoftUpdatePackage FromTypeAndStore(StoredPackageType updateType, MicrosoftUpdatePackageIdentity id, IMetadataLookup metadataLookup, IMetadataSource metadataSource, string locale = null)
         {
             return updateType switch
             {
-                StoredPackageType.MicrosoftUpdateDetectoid => new DetectoidCategory(id, metadataLookup, metadataSource),
-                StoredPackageType.MicrosoftUpdateProduct => new ProductCategory(id, metadataLookup, metadataSource),
-                StoredPackageType.MicrosoftUpdateClassification => new ClassificationCategory(id, metadataLookup, metadataSource),
-                StoredPackageType.MicrosoftUpdateDriver => new DriverUpdate(id, metadataLookup, metadataSource),
-                StoredPackageType.MicrosoftUpdateSoftware => new SoftwareUpdate(id, metadataLookup, metadataSource),
+                StoredPackageType.MicrosoftUpdateDetectoid => new DetectoidCategory(id, metadataLookup, metadataSource, locale),
+                StoredPackageType.MicrosoftUpdateProduct => new ProductCategory(id, metadataLookup, metadataSource, locale),
+                StoredPackageType.MicrosoftUpdateClassification => new ClassificationCategory(id, metadataLookup, metadataSource, locale),
+                StoredPackageType.MicrosoftUpdateDriver => new DriverUpdate(id, metadataLookup, metadataSource, locale),
+                StoredPackageType.MicrosoftUpdateSoftware => new SoftwareUpdate(id, metadataLookup, metadataSource, locale),
                 _ => throw new Exception($"Unexpected update type: {updateType}"),
             };
         }
 
         internal MicrosoftUpdatePackage(MicrosoftUpdatePackageIdentity id, XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager, string locale)
         {
+            _locale = locale ?? System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
             _Id = id;
-            _locale = locale;
-            _Title = UpdateParser.GetTitle(metadataNavigator, namespaceManager, locale);
+            _Title = UpdateParser.GetTitle(metadataNavigator, namespaceManager, _locale);
             _TitleLoaded = true;
 
-            _Description = UpdateParser.GetDescription(metadataNavigator, namespaceManager, locale);
+            _Description = UpdateParser.GetDescription(metadataNavigator, namespaceManager, _locale);
             _MetadataLoaded = true;
 
             _Prerequisites = PrerequisiteParser.FromXml(metadataNavigator, namespaceManager);
@@ -482,8 +483,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             _CategoriesLoaded = true;
         }
 
-        internal MicrosoftUpdatePackage(MicrosoftUpdatePackageIdentity id, IMetadataLookup metadataLookup, IMetadataSource metadataSource)
+        internal MicrosoftUpdatePackage(MicrosoftUpdatePackageIdentity id, IMetadataLookup metadataLookup, IMetadataSource metadataSource, string locale)
         {
+            _locale = locale ?? System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
             _Id = id;
             _FastLookupSource = metadataLookup;
             _MetadataSource = metadataSource;
