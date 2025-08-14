@@ -20,7 +20,6 @@ namespace Microsoft.PackageGraph.Partitions
         /// <summary>
         /// Partition factory for creating packages from raw metadata and other sources
         /// </summary>
-
         public IPackageFactory Factory;
 
         /// <summary>
