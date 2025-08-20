@@ -20,7 +20,7 @@ namespace Microsoft.PackageGraph.ObjectModel
         public string DigestBase64 { get; private set; }
 
         /// <inheritdoc cref="IContentFileDigest.HexString"/>
-        public string HexString => BitConverter.ToString(Convert.FromBase64String(DigestBase64)).Replace("-", "");
+        public string HexString => Convert.ToHexString(Convert.FromBase64String(DigestBase64));
 
         [JsonConstructor]
         private ContentFileDigest() { }

@@ -84,6 +84,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             clientSyncService.SetServiceConfiguration(UpdateServiceConfiguration);
             clientSyncService.SetPackageStore(MetadataSource);
 
+            if (MetadataSource is IDeploymentAndSync dataStore)
+            {
+                clientSyncService.SetDeploymentAndSyncStore(dataStore);
+            }
+
             services.TryAddSingleton<ClientSyncWebService>(clientSyncService);
             services.TryAddSingleton<SimpleAuthenticationWebService>();
             services.TryAddSingleton<ReportingWebService>();

@@ -363,12 +363,9 @@ namespace Microsoft.PackageGraph.Storage.Local
                     DeltaMetadataStores.Add(CompressedMetadataStore.CreateNew(Path.Combine(TargetPath, $"{TOC.DeltaSectionCount}.zip")));
                     TOC.DeltaSectionCount++;
 
-                    if (TOC.DeltaSectionPackageCount is null)
-                    {
-                        TOC.DeltaSectionPackageCount = new List<long>();
-                    }
+                    TOC.DeltaSectionPackageCount ??= new List<long>();
 
-                    if (TOC.DeltaSectionPackageCount.Any())
+                    if (TOC.DeltaSectionPackageCount.Count != 0)
                     {
                         TOC.DeltaSectionPackageCount.Add(TOC.DeltaSectionPackageCount.Last());
                     }

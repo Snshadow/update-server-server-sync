@@ -138,7 +138,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
             if (destination is IMetadataStore baseline)
             {
-                unavailableUpdates = new List<MicrosoftUpdatePackageIdentity>();
                 unavailableUpdates = _Identities.Where(id => !baseline.ContainsPackage(id)).ToList();
             }
             else

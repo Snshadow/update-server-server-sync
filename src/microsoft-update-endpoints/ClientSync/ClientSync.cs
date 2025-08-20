@@ -5,6 +5,7 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
+using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
@@ -50,6 +51,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         private Dictionary<Guid, int> IdToRevisionMap;
         private Dictionary<Guid, MicrosoftUpdatePackageIdentity> IdToFullIdentityMap;
 
+        private IDeploymentAndSync _dataStore;
+
         private const int MaxUpdatesInResponse = 50;
 
         private string ContentRoot;
@@ -57,12 +60,21 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         DriverUpdateMatching DriverMatcher;
 
         /// <summary>
+        /// Delegate for handling unapproved driver update requests
+        /// </summary>
+        /// <param name="unapprovedDrivers">List of unapproved driver updates that were requested</param>
+        public delegate void UnApprovedDriverUpdatesRequestedDelegate(List<DriverUpdate> unapprovedDrivers);
+
+        /// <summary>
+        /// Event raised when unapproved driver updates are requested by clients
+        /// </summary>
+        public event UnApprovedDriverUpdatesRequestedDelegate OnUnApprovedDriverUpdatesRequested;
+
+        /// <summary>
         /// Default constructor
         /// </summary>
         public ClientSyncWebService()
         {
-            ApprovedSoftwareUpdates = new HashSet<MicrosoftUpdatePackageIdentity>();
-            ApprovedDriverUpdates = new HashSet<MicrosoftUpdatePackageIdentity>();
         }
 
         /// <summary>
@@ -81,6 +93,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         public void SetServiceConfiguration(Config serviceConfiguration)
         {
             ServiceConfiguration = serviceConfiguration;
+        }
+
+        /// <summary>
+        /// Sets the source of deployment and synchronization
+        /// </summary>
+        /// <param name="dataStore">The source for deployment and synchronization data</param>
+        public void SetDeploymentAndSyncStore(IDeploymentAndSync dataStore)
+        {
+            _dataStore = dataStore;
         }
 
         /// <summary>
@@ -181,7 +202,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>A new cookie</returns>
         public Task<Cookie> GetCookieAsync(AuthorizationCookie[] authCookies, Cookie oldCookie, DateTime lastChange, DateTime currentTime, string protocolVersion)
         {
-            return Task.FromResult(new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = new byte[12] });
+            // TODO: implement time based EncryptedData to check the requester
+            return Task.FromResult(new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = authCookies?[0].CookieData ?? new byte[12] });
         }
 
         /// <summary>
@@ -386,14 +408,26 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>SyncInfo containing updates applicable to the caller.</returns>
         public Task<SyncInfo> SyncUpdatesAsync(Cookie cookie, SyncUpdateParameters parameters)
         {
+            _dataStore.UpdateComputerSync(GetComputerIdFromCookie(cookie), DateTime.UtcNow);
+
             if (parameters.SkipSoftwareSync)
             {
-                return DoDriversSync(parameters);
+                return DoDriversSync(cookie, parameters);
             }
             else
             {
-                return DoSoftwareUpdateSync(parameters);
+                return DoSoftwareUpdateSync(cookie, parameters);
             }
+        }
+
+        static private string GetComputerIdFromCookie(Cookie cookie)
+        {
+            return Encoding.UTF8.GetString(Convert.FromBase64String(Encoding.UTF8.GetString(cookie.EncryptedData)));
+        }
+
+        private IDeployment GetDeployment(int revisionId)
+        {
+            return _dataStore.GetDeployment(revisionId);
         }
 
         /// <summary>

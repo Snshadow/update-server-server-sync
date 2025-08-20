@@ -6,6 +6,7 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,10 +18,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <summary>
         /// Handle driver sync requests
         /// </summary>
+        /// <param name="cookie"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        private Task<SyncInfo> DoDriversSync(SyncUpdateParameters parameters)
+        private Task<SyncInfo> DoDriversSync(Cookie cookie, SyncUpdateParameters parameters)
         {
+            MetadataSourceLock.EnterReadLock();
+
+            if (MetadataSource is null)
+            {
+                throw new System.ServiceModel.FaultException();
+            }
+
             // Get list of driver updates known to the client
             var cachedDrivers = GetUpdateIdentitiesFromClientIndexes(parameters.CachedDriverIDs);
 
@@ -30,7 +39,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             // Initialize the response
             var syncResult = new SyncInfo()
             {
-                NewCookie = new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = new byte[12] },
+                NewCookie = new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = cookie.EncryptedData },
                 DriverSyncNotNeeded = "false",
                 Truncated = false
             };
@@ -60,24 +69,31 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                     !cachedDrivers.Contains(driverMatchResult.Driver.Id) &&
                     !IsInstalledDriverBetterMatch(device.installedDriver, driverMatchResult, hardwareIdsToMatch, computerHardwareIds))
                 {
-                    if (ApprovedDriverUpdates.Contains(driverMatchResult.Driver.Id))
+                    if (GetDeployment(IdToRevisionMap[driverMatchResult.Driver.Id.ID]) is not null)
                     {
+                        var identity = driverMatchResult.Driver.Id;
+                        var revision = IdToRevisionMap[driverMatchResult.Driver.Id.ID];
+
                         // Get core XML fragment for driver update
-                        var coreXml = GetCoreFragment(driverMatchResult.Driver.Id);
+                        var coreXml = GetCoreFragment(identity);
+
+                        // Get deployment entry for driver update
+                        var deploymentData = GetDeployment(revision);
 
                         driverUpdates.Add(new UpdateInfo()
                         {
                             Deployment = new Deployment()
                             {
-                                Action = DeploymentAction.Install,
+                                Action = deploymentData?.Action ?? DeploymentAction.Evaluate,
                                 ID = 25000,
                                 AutoDownload = "0",
                                 AutoSelect = "0",
                                 SupersedenceBehavior = "0",
                                 IsAssigned = true,
-                                LastChangeTime = "2019-08-06"
+                                LastChangeTime = deploymentData?.LastChangeTime.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo) ?? "2019-08-06",
+                                Deadline = deploymentData?.Deadline?.ToString("yyyy-MM-ddTHH:mm:ssK", DateTimeFormatInfo.InvariantInfo)
                             },
-                            ID = IdToRevisionMap[driverMatchResult.Driver.Id.ID],
+                            ID = revision,
                             IsLeaf = true,
                             Xml = coreXml,
                             IsShared = false,
@@ -105,6 +121,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             syncResult.NewUpdates = driverUpdates.ToArray();
 
+            MetadataSourceLock.ExitReadLock();
+
             return Task.FromResult(syncResult);
         }
 
@@ -123,7 +141,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 if (!matchResult.MatchedComputerHardwareId.HasValue)
                 {
                     // The installed driver matched a computer HW ID while the match result did not; the installed driver is better
-                    return false;
+                    return true;
                 }
                 else
                 {
