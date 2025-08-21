@@ -24,6 +24,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 FetchCategoriesOptions,
                 FetchConfigurationOptions,
                 ReindexStoreOptions,
+                ApproveUpdateOptions,
+                UnApproveUpdateOptions,
                 MatchDriverOptions,
                 MetadataCopyOptions,
                 StoreAliasListOptions,
@@ -34,6 +36,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 .WithParsed<FetchCategoriesOptions>(opts => MetadataSync.FetchCategories(opts))
                 .WithParsed<ReindexStoreOptions>(opts => MetadataSync.ReIndex(opts))
                 .WithParsed<QueryMetadataOptions>(opts => MetadataQuery.Query(opts))
+                .WithParsed<ApproveUpdateOptions>(opts => ManageDeploy.ApproveUpdates(opts))
+                .WithParsed<UnApproveUpdateOptions>(opts => ManageDeploy.UnapproveUpdates(opts))
                 .WithParsed<MatchDriverOptions>(opts => MetadataQuery.MatchDrivers(opts))
                 .WithParsed<MetadataSourceExportOptions>(opts => UpdateMetadataExport.ExportUpdates(opts))
                 .WithParsed<ContentSyncOptions>(opts => ContentSync.SyncContent(opts))

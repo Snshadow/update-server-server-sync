@@ -153,12 +153,12 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 if (string.IsNullOrEmpty(sourceOptions.StoreConnectionString))
                 {
                     var azureContainer = new BlobContainerClient(new Uri(sourceOptions.Path));
-                    return Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(azureContainer);
+                    return Storage.Azure.PackageStore.Open(azureContainer);
                 }
                 else
                 {
                     var blobClient = new BlobServiceClient(sourceOptions.StoreConnectionString);
-                    return Microsoft.PackageGraph.Storage.Azure.PackageStore.Open(blobClient, sourceOptions.Path);
+                    return Storage.Azure.PackageStore.Open(blobClient, sourceOptions.Path);
                 }
             }
             else

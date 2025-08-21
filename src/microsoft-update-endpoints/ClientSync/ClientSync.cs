@@ -51,7 +51,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         private Dictionary<Guid, int> IdToRevisionMap;
         private Dictionary<Guid, MicrosoftUpdatePackageIdentity> IdToFullIdentityMap;
 
-        private IDeploymentAndSync _dataStore;
+        private IDeploymentAndSync DeployAndSyncStore;
 
         private const int MaxUpdatesInResponse = 50;
 
@@ -101,7 +101,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="dataStore">The source for deployment and synchronization data</param>
         public void SetDeploymentAndSyncStore(IDeploymentAndSync dataStore)
         {
-            _dataStore = dataStore;
+            DeployAndSyncStore = dataStore;
         }
 
         /// <summary>
@@ -165,6 +165,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 MetadataSourceIndex = null;
                 IdToRevisionMap = null;
                 IdToFullIdentityMap = null;
+                DeployAndSyncStore = null;
                 DriverMatcher = null;
             }
 
@@ -408,8 +409,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>SyncInfo containing updates applicable to the caller.</returns>
         public Task<SyncInfo> SyncUpdatesAsync(Cookie cookie, SyncUpdateParameters parameters)
         {
-            _dataStore.UpdateComputerSync(GetComputerIdFromCookie(cookie), DateTime.UtcNow);
-
             if (parameters.SkipSoftwareSync)
             {
                 return DoDriversSync(cookie, parameters);
@@ -427,7 +426,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
         private IDeployment GetDeployment(int revisionId)
         {
-            return _dataStore.GetDeployment(revisionId);
+            return DeployAndSyncStore.GetDeployment(revisionId);
         }
 
         /// <summary>

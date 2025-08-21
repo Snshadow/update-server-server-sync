@@ -22,7 +22,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         /// <param name="options">Print options, including filters</param>
         public static void PrintMicrosoftUpdatePackages(QueryMetadataOptions options, IMetadataStore metadataStore, PackageType packageType)
         {
-            var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options as IMetadataFilterOptions);
+            var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options);
             if (filter is null)
             {
                 return;

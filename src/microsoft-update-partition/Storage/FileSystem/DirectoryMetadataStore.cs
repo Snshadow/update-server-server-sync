@@ -12,17 +12,13 @@ using System.Threading;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
-    class DirectoryMetadataStore : IMetadataSink, IMetadataSource, IDeploymentAndSync
+    class DirectoryMetadataStore : IMetadataSink, IMetadataSource
     {
         readonly string TargetPath;
 
         private bool IsDisposed = false;
 
         readonly Lock WriteLock = new();
-
-        private readonly DeploymentStore Deployments;
-        private readonly DeploySyncDbContext DbContext;
-        private readonly ComputerSyncStore ComputerSync;
 
         public event EventHandler<PackageStoreEventArgs> MetadataCopyProgress;
 
@@ -38,40 +34,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 Directory.CreateDirectory(path);
             }
-
-            DbContext = new DeploySyncDbContext(Path.Combine(path, "deploySync.db"));
-            Deployments = new DeploymentStore(DbContext);
-            ComputerSync = new ComputerSyncStore(DbContext);
-        }
-
-        public void SaveDeployment(IDeployment deployment)
-        {
-            Deployments.SaveDeployment(deployment);
-        }
-
-        public void DeleteDeployment(int revisionId)
-        {
-            Deployments.DeleteDeployment(revisionId);
-        }
-
-        public IDeployment GetDeployment(int revisionId)
-        {
-            return Deployments.GetDeployment(revisionId);
-        }
-
-        public void UpdateComputerSync(string computerId, DateTime syncTime)
-        {
-            ComputerSync.UpdateSyncStatus(computerId, syncTime);
-        }
-
-        public void DeleteComputer(string computerId)
-        {
-            ComputerSync.DeleteComputer(computerId);
-        }
-
-        public IComputerSync GetComputerSync(string computerId)
-        {
-            return ComputerSync.GetComputerSync(computerId);
         }
 
         private string GetPackageMetadataPath(IPackageIdentity identity)
@@ -118,7 +80,6 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             if (!IsDisposed)
             {
-                DbContext.Dispose();
                 IsDisposed = true;
             }
         }

@@ -2910,7 +2910,7 @@
             </summary>
             <param name="context">The deployment database context</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore.UpdateSyncStatus(System.String,System.DateTime)">
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore.UpdateComputerSync(System.String,System.DateTime)">
             <summary>
             Updates the synchronization status for a specific computer
             </summary>

@@ -62,12 +62,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 }
             }
 
-            response.ChangedUpdates = GetChangedUpdates(otherCachedUpdatesGuids).ToArray();
+            var computerId = GetComputerIdFromCookie(cookie);
+            var computerSync = DeployAndSyncStore.GetComputerSync(computerId);
+            response.ChangedUpdates = GetChangedUpdates(
+                installedNonLeafUpdatesGuids.Union(otherCachedUpdatesGuids).ToList(),
+                computerSync?.LastSyncTime ?? DateTime.MinValue)
+                .ToArray();
 
             // response.OutOfScopeRevisionIDs = [];
             // response.DeployedOutOfScopeRevisionIds = [];
 
             MetadataSourceLock.ExitReadLock();
+
+            // Update last synchronization time for computer
+            DeployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
 
             return Task.FromResult(response);
         }
@@ -300,10 +308,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             return returnList;
         }
 
-        private List<UpdateInfo> GetChangedUpdates(List<Guid> otherCached)
+        private List<UpdateInfo> GetChangedUpdates(List<Guid> cached, DateTime lastSyncTime)
         {
             var changedUpdates = new List<UpdateInfo>();
-            var cachedUpdates = otherCached
+            var cachedUpdates = cached
                 .Where(guid => IdToFullIdentityMap.ContainsKey(guid))
                 .Select(guid => IdToFullIdentityMap[guid])
                 .Select(id => MetadataSource.GetPackage(id) as SoftwareUpdate);
@@ -318,7 +326,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 var revision = IdToRevisionMap[update.Id.ID];
                 var deployment = GetDeployment(revision);
 
-                if (deployment is not null)
+                if (deployment is not null && deployment.LastChangeTime > lastSyncTime)
                 {
                     var isBundle = update.BundledUpdates is { Count: > 0 };
                     var isBundled = update.BundledWithUpdates is { Count: > 0 };

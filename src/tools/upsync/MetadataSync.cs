@@ -39,7 +39,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         public static void ReIndex(ReindexStoreOptions options)
         {
-            var sourceToUpdate = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
+            var sourceToUpdate = MetadataStoreCreator.OpenFromOptions(options);
             if (sourceToUpdate is null)
             {
                 return;
@@ -86,7 +86,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 throw new NotImplementedException();
             }
 
-            var destinationStore = MetadataStoreCreator.CreateFromOptions(options as IMetadataStoreOptions);
+            var destinationStore = MetadataStoreCreator.CreateFromOptions(options);
             if (destinationStore is null)
             {
                 return;
@@ -107,7 +107,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         public static void FetchPackagesUpdates(FetchPackagesOptions options)
         {
-            var store = MetadataStoreCreator.CreateFromOptions(options as IMetadataStoreOptions);
+            var store = MetadataStoreCreator.CreateFromOptions(options);
             if (store is null)
             {
                 return;

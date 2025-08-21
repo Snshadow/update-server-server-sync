@@ -43,7 +43,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 return;
             }
 
-            var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options as IMetadataFilterOptions);
+            var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options);
             if (filter is null)
             {
                 return;

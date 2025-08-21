@@ -163,7 +163,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// </summary>
         /// <param name="computerId">The ID of the computer</param>
         /// <param name="syncTime">The time of the synchronization</param>
-        public void UpdateSyncStatus(string computerId, DateTime syncTime)
+        public void UpdateComputerSync(string computerId, DateTime syncTime)
         {
             var connection = _context.GetConnection();
             using var command = connection.CreateCommand();

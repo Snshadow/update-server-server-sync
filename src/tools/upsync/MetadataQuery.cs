@@ -26,7 +26,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         /// <param name="options">Query options (filters)</param>
         public static void Query(QueryMetadataOptions options)
         {
-            var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
+            var source = MetadataStoreCreator.OpenFromOptions(options);
             if (source is null)
             {
                 return;
@@ -38,7 +38,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         public static void MatchDrivers(MatchDriverOptions options)
         {
-            var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
+            var source = MetadataStoreCreator.OpenFromOptions(options);
             if (source is null)
             {
                 return;
@@ -91,7 +91,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         public static void Status(MetadataSourceStatusOptions options)
         {
-            var source = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
+            var source = MetadataStoreCreator.OpenFromOptions(options);
             if (source is null)
             {
                 return;

@@ -15,6 +15,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         MicrosoftUpdateDriver,
         AnyPackage
     }
+
     public interface IMetadataSourceOptions
     {
         string UpstreamEndpoint { get; }
@@ -288,6 +289,98 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public bool IncludeExtendedMetadata { get; set; }
     }
 
+    [Verb("approve-update", HelpText = "Approve updates for install")]
+    public class ApproveUpdateOptions : IMetadataStoreOptions, IMetadataFilterOptions
+    {
+        [Option("store-alias", Required = false, HelpText = "Destination store alias")]
+        public string Alias { get; set; }
+
+        [Option("store-path", Required = false, HelpText = "Store to query")]
+        public string Path { get; set; }
+
+        [Option("store-type", Required = false, Default = "local", HelpText = "Store type; local (default) or azure")]
+        public string Type { get; set; }
+
+        [Option("connection-string", Required = false, HelpText = "Azure connection string; required when the store type is azure")]
+        public string StoreConnectionString { get; set; }
+
+        [Option("id-filter", Required = false, Separator = '+', HelpText = "ID filter")]
+        public IEnumerable<string> IdFilter { get; set; }
+
+        [Option("file-hash", Required = false, HelpText = "File hash", SetName = "files")]
+        public string FileHash { get; set; }
+
+        [Option("title-filter", Required = false, HelpText = "Title filter")]
+        public string TitleFilter { get; set; }
+
+        [Option("hwid-filter", Required = false, HelpText = "Hardware ID filter")]
+        public string HardwareIdFilter { get; set; }
+
+        [Option("computer-hwid-filter", Required = false, HelpText = "Computer hardware ID filter")]
+        public string ComputerHardwareIdFilter { get; set; }
+
+        [Option("product-filter", Required = false, Separator = '+', HelpText = "Product filter")]
+        public IEnumerable<string> ProductsFilter { get; set; }
+
+        [Option("classification-filter", Required = false, Separator = '+', HelpText = "Classification filter")]
+        public IEnumerable<string> ClassificationsFilter { get; set; }
+
+        [Option("kbarticle-filter", Required = false, Separator = '+', HelpText = "KB article filter (numbers only)")]
+        public IEnumerable<string> KbArticleFilter { get; set; }
+
+        [Option("skip-superseded", Required = false, Default = false, HelpText = "Ignore superseded updates")]
+        public bool SkipSuperseded { get; set; }
+
+        [Option("first", Required = false, Default = 0, HelpText = "Handle first x updates only")]
+        public int FirstX { get; set; }
+    }
+
+    [Verb("unapprove-update", HelpText = "Unapprove updates from being installed")]
+    public class UnApproveUpdateOptions : IMetadataStoreOptions, IMetadataFilterOptions
+    {
+        [Option("store-alias", Required = false, HelpText = "Destination store alias")]
+        public string Alias { get; set; }
+
+        [Option("store-path", Required = false, HelpText = "Store to query")]
+        public string Path { get; set; }
+
+        [Option("store-type", Required = false, Default = "local", HelpText = "Store type; local (default) or azure")]
+        public string Type { get; set; }
+
+        [Option("connection-string", Required = false, HelpText = "Azure connection string; required when the store type is azure")]
+        public string StoreConnectionString { get; set; }
+
+        [Option("id-filter", Required = false, Separator = '+', HelpText = "ID filter")]
+        public IEnumerable<string> IdFilter { get; set; }
+
+        [Option("file-hash", Required = false, HelpText = "File hash", SetName = "files")]
+        public string FileHash { get; set; }
+
+        [Option("title-filter", Required = false, HelpText = "Title filter")]
+        public string TitleFilter { get; set; }
+
+        [Option("hwid-filter", Required = false, HelpText = "Hardware ID filter")]
+        public string HardwareIdFilter { get; set; }
+
+        [Option("computer-hwid-filter", Required = false, HelpText = "Computer hardware ID filter")]
+        public string ComputerHardwareIdFilter { get; set; }
+
+        [Option("product-filter", Required = false, Separator = '+', HelpText = "Product filter")]
+        public IEnumerable<string> ProductsFilter { get; set; }
+
+        [Option("classification-filter", Required = false, Separator = '+', HelpText = "Classification filter")]
+        public IEnumerable<string> ClassificationsFilter { get; set; }
+
+        [Option("kbarticle-filter", Required = false, Separator = '+', HelpText = "KB article filter (numbers only)")]
+        public IEnumerable<string> KbArticleFilter { get; set; }
+
+        [Option("skip-superseded", Required = false, Default = false, HelpText = "Ignore superseded updates")]
+        public bool SkipSuperseded { get; set; }
+
+        [Option("first", Required = false, Default = 0, HelpText = "Handle first x updates only")]
+        public int FirstX { get; set; }
+    }
+
     [Verb("match-driver", HelpText = "Find drivers")]
     public class MatchDriverOptions : IMetadataStoreOptions
     {
@@ -492,11 +585,11 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
     [Verb("delete-store-alias", HelpText = "Deletes a store configuration by alias")]
     public class StoreAliasDeleteOptions
     {
-        [Option("alias", Required = true, HelpText = "Delete only the specified alias", SetName ="specific")]
+        [Option("alias", Required = true, HelpText = "Delete only the specified alias", SetName = "specific")]
         public string Alias { get; set; }
 
         [Option("all", Required = true, HelpText = "Delete all aliases", SetName = "all")]
-        public bool All{ get; set; }
+        public bool All { get; set; }
     }
 
     [Verb("list-store-aliases", HelpText = "Lists stored store aliases")]

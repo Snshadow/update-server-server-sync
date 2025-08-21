@@ -123,6 +123,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataSourceLock.ExitReadLock();
 
+            var computerId = GetComputerIdFromCookie(cookie);
+
+            // Update last synchronization time for computer
+            DeployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
+
             return Task.FromResult(syncResult);
         }
 
