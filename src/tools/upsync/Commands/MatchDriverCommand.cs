@@ -32,15 +32,15 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("--hwid", true)]
             [Description("Match drivers for this list of hardware ids; Add HwIds from specific to generic")]
-            public IEnumerable<string> HardwareIds { get; set; }
+            public string HardwareIds { get; set; }
 
             [CommandOption("--computer-hwid")]
             [Description("Match drivers that target these computer hardware ids.")]
-            public IEnumerable<string> ComputerHardwareIds { get; set; }
+            public string ComputerHardwareIds { get; set; }
 
             [CommandOption("--installed-prerequisites", true)]
             [Description("Prerequisites installed on the target computer. Used for driver applicability checks")]
-            public IEnumerable<string> InstalledPrerequisites { get; set; }
+            public string InstalledPrerequisites { get; set; }
 
             public override ValidationResult Validate()
             {

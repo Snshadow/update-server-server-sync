@@ -47,14 +47,14 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             using (source)
             {
-                List<Guid> computerHardwareIds = FilterBuilder.StringGuidsToGuids(options.ComputerHardwareIds);
+                List<Guid> computerHardwareIds = FilterBuilder.StringGuidsToGuids(options.ComputerHardwareIds?.Split('+'));
                 if (computerHardwareIds is null)
                 {
                     ConsoleOutput.WriteRed($"The computer hardware ID must be a GUID");
                     return;
                 }
 
-                var prerequisites = FilterBuilder.StringGuidsToGuids(options.InstalledPrerequisites);
+                var prerequisites = FilterBuilder.StringGuidsToGuids(options.InstalledPrerequisites?.Split('+'));
                 if (prerequisites is null)
                 {
                     ConsoleOutput.WriteRed($"Prerequisites must be a list of GUIDs separated by '+'");
@@ -63,7 +63,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
                 DriverUpdateMatching driverMatching = DriverUpdateMatching.FromPackageSource(source);
 
-                var driverMatch = driverMatching.MatchDriver(options.HardwareIds, computerHardwareIds, prerequisites);
+                var driverMatch = driverMatching.MatchDriver(options.HardwareIds?.Split('+'), computerHardwareIds, prerequisites);
 
                 if (driverMatch is not null)
                 {

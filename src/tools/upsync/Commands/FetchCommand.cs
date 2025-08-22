@@ -41,11 +41,11 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("-p|--product-filter")]
             [Description("Product filter for sync'ing updates")]
-            public IEnumerable<string> ProductsFilter { get; set; }
+            public string ProductsFilter { get; set; }
 
             [CommandOption("-c|--classification-filter")]
             [Description("Classification filter for sync'ing updates")]
-            public IEnumerable<string> ClassificationsFilter { get; set; }
+            public string ClassificationsFilter { get; set; }
 
             [CommandOption("--account-name")]
             [Description("Account name; if not set, a random GUID is used.")]
@@ -57,7 +57,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("--ids")]
             [Description("Try fetch metadata for this list of ids (GUIDs)")]
-            public IEnumerable<string> Ids { get; set; }
+            public string Ids { get; set; }
 
             public override ValidationResult Validate()
             {

@@ -49,7 +49,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("--id-filter")]
             [Description("ID filter")]
-            public IEnumerable<string> IdFilter { get; set; }
+            public string IdFilter { get; set; }
+            IEnumerable<string> IMetadataFilterOptions.IdFilter => IdFilter?.Split('+');
 
             [CommandOption("--title-filter")]
             [Description("Title filter")]
@@ -65,15 +66,18 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("--product-filter")]
             [Description("Product filter")]
-            public IEnumerable<string> ProductsFilter { get; set; }
+            public string ProductsFilter { get; set; }
+            IEnumerable<string> IMetadataFilterOptions.ProductsFilter => ProductsFilter?.Split('+');
 
             [CommandOption("--kbarticle-filter")]
             [Description("KB article filter (numbers only)")]
-            public IEnumerable<string> KbArticleFilter { get; set; }
+            public string KbArticleFilter { get; set; }
+            IEnumerable<string> IMetadataFilterOptions.KbArticleFilter => KbArticleFilter?.Split('+');
 
             [CommandOption("--classification-filter")]
             [Description("Classification filter")]
-            public IEnumerable<string> ClassificationsFilter { get; set; }
+            public string ClassificationsFilter { get; set; }
+            IEnumerable<string> IMetadataFilterOptions.ClassificationsFilter => ClassificationsFilter?.Split('+');
 
             [CommandOption("--skip-superseded")]
             [Description("Do not serve superseded updates")]

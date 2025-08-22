@@ -123,11 +123,11 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 microsoftUpdateCategoriesSource.MetadataCopyProgress += Program.OnPackageCopyProgress;
                 microsoftUpdateCategoriesSource.CopyTo(store, CancellationToken.None);
 
-                if (options.Ids.Any())
+                if (!string.IsNullOrEmpty(options.Ids))
                 {
                     var server = new UpstreamServerClient(upstreamEndpoint);
 
-                    foreach (var updateId in options.Ids)
+                    foreach (var updateId in options.Ids.Split('+'))
                     {
                         if (Guid.TryParse(updateId, out var updateIdGuid))
                         {
@@ -268,11 +268,11 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         private static UpstreamSourceFilter CreateValidFilterFromOptions(FetchCommand.Settings options, IMetadataStore metadataSource)
         {
             List<Guid> productFilter = CreateFilterListForCategory<ProductCategory>(
-                options.ProductsFilter,
+                options.ProductsFilter?.Split('+') ?? Enumerable.Empty<string>(),
                 metadataSource);
 
             List<Guid> classificationFilter = CreateFilterListForCategory<ClassificationCategory>(
-                options.ClassificationsFilter,
+                options.ClassificationsFilter?.Split('+') ?? Enumerable.Empty<string>(),
                 metadataSource);
 
             return new UpstreamSourceFilter(productFilter, classificationFilter);
