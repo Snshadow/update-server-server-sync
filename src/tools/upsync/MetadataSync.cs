@@ -4,11 +4,10 @@
 using Microsoft.PackageGraph.MicrosoftUpdate.Source;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
-using Newtonsoft.Json;
+using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using System.Threading;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
@@ -18,26 +17,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
     /// </summary>
     class MetadataSync
     {
-        public static void FetchConfiguration(FetchConfigurationOptions options)
-        {
-            Endpoint upstreamEndpoint;
-            if (!string.IsNullOrEmpty(options.UpstreamEndpoint))
-            {
-                upstreamEndpoint = new Endpoint(options.UpstreamEndpoint);
-            }
-            else
-            {
-                upstreamEndpoint = Endpoint.Default;
-            }
-
-            var server = new UpstreamServerClient(upstreamEndpoint);
-            server.MetadataQueryProgress += Server_MetadataQueryProgress;
-            var configData = server.GetServerConfigData().GetAwaiter().GetResult();
-
-            File.WriteAllText(options.OutFile, JsonConvert.SerializeObject(configData));
-        }
-
-        public static void ReIndex(ReindexStoreOptions options)
+        public static void ReIndex(ReindexCommand.Settings options)
         {
             var sourceToUpdate = MetadataStoreCreator.OpenFromOptions(options);
             if (sourceToUpdate is null)
@@ -68,7 +48,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        public static void FetchCategories(FetchCategoriesOptions options)
+        public static void FetchCategories(FetchCategoriesCommand.Settings options)
         {
             Endpoint upstreamEndpoint;
             if (!string.IsNullOrEmpty(options.UpstreamEndpoint))
@@ -105,7 +85,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             ConsoleOutput.WriteGreen("Done!");
         }
 
-        public static void FetchPackagesUpdates(FetchPackagesOptions options)
+        public static void FetchPackagesUpdates(FetchCommand.Settings options)
         {
             var store = MetadataStoreCreator.CreateFromOptions(options);
             if (store is null)
@@ -115,7 +95,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             switch (options.EndpointType)
             {
-                case FetchPackagesOptions.MicrosoftUpdateEndpoint:
+                case "microsoft-update":
                     FetchMicrosoftUpdatePackages(options, store);
                     break;
 
@@ -124,7 +104,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        private static void FetchMicrosoftUpdatePackages(FetchPackagesOptions options, IMetadataStore store)
+        private static void FetchMicrosoftUpdatePackages(FetchCommand.Settings options, IMetadataStore store)
         {
             var upstreamEndpoint = string.IsNullOrEmpty(options.UpstreamEndpoint) ? Endpoint.Default : new Endpoint(options.UpstreamEndpoint);
 
@@ -285,7 +265,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             return filterList;
         }
 
-        private static UpstreamSourceFilter CreateValidFilterFromOptions(FetchPackagesOptions options, IMetadataStore metadataSource)
+        private static UpstreamSourceFilter CreateValidFilterFromOptions(FetchCommand.Settings options, IMetadataStore metadataSource)
         {
             List<Guid> productFilter = CreateFilterListForCategory<ProductCategory>(
                 options.ProductsFilter,

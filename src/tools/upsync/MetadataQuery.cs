@@ -4,6 +4,7 @@
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Source;
+using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using System;
@@ -18,13 +19,13 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
     class MetadataQuery
     {
         private readonly IMetadataStore MetadataStore;
-        private readonly QueryMetadataOptions Options;
+        private readonly QueryCommand.Settings Options;
 
         /// <summary>
         ///  Runs a query command against a metadata source
         /// </summary>
         /// <param name="options">Query options (filters)</param>
-        public static void Query(QueryMetadataOptions options)
+        public static void Query(QueryCommand.Settings options)
         {
             var source = MetadataStoreCreator.OpenFromOptions(options);
             if (source is null)
@@ -36,7 +37,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             repoQuery.Query();
         }
 
-        public static void MatchDrivers(MatchDriverOptions options)
+        public static void MatchDrivers(MatchDriverCommand.Settings options)
         {
             var source = MetadataStoreCreator.OpenFromOptions(options);
             if (source is null)
@@ -89,7 +90,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        public static void Status(MetadataSourceStatusOptions options)
+        public static void Status(StatusCommand.Settings options)
         {
             var source = MetadataStoreCreator.OpenFromOptions(options);
             if (source is null)
@@ -170,10 +171,20 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        private MetadataQuery(IMetadataStore metadataSource, QueryMetadataOptions options)
+        private MetadataQuery(IMetadataStore metadataSource, QueryCommand.Settings options)
         {
             MetadataStore = metadataSource;
             Options = options;
+        }
+
+        private enum PackageType
+        {
+            MicrosoftUpdateClassification,
+            MicrosoftUpdateProduct,
+            MicrosoftUpdateDetectoid,
+            MicrosoftUpdateUpdate,
+            MicrosoftUpdateDriver,
+            AnyPackage
         }
 
         private static readonly Dictionary<string, PackageType> SupportedPackages = new()
@@ -196,7 +207,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     case PackageType.MicrosoftUpdateUpdate:
                     case PackageType.MicrosoftUpdateDriver:
                     case PackageType.MicrosoftUpdateDetectoid:
-                        MicrosoftUpdateMetadata.PrintMicrosoftUpdatePackages(Options, MetadataStore, packageType);
+                        MicrosoftUpdateMetadata.PrintMicrosoftUpdatePackages(Options, MetadataStore, packageType.ToString());
                         break;
 
                     default:

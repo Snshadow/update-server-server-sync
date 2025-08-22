@@ -3,6 +3,7 @@
 
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
+using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
     // TODO implement update approve and unapprove with update filter using from the option.
     class ManageDeploy
     {
-        public static void ApproveUpdates(ApproveUpdateOptions options)
+        public static void ApproveUpdates(ApproveUpdateCommand.Settings options)
         {
             var store = MetadataStoreCreator.OpenFromOptions(options);
             if (store is not (IDeploymentAndSync deploymentStore and IMetadataStore metadataStore))
@@ -51,7 +52,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        public static void UnapproveUpdates(UnApproveUpdateOptions options)
+        public static void UnapproveUpdates(UnapproveUpdateCommand.Settings options)
         {
             var store = MetadataStoreCreator.OpenFromOptions(options);
             if (store is not (IDeploymentAndSync deploymentStore and IMetadataStore metadataStore))
