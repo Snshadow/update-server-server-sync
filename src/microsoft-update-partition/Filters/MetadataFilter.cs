@@ -165,7 +165,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             if (IdFilter?.Count > 0)
             {
                 // Remove all updates that don't match the ID filter
-                filteredUpdates = filteredUpdates.Where(u => IdFilter.Contains((u.Id as MicrosoftUpdatePackageIdentity).ID));
+                filteredUpdates = filteredUpdates.Where(u => IdFilter.Contains(u.Id.ID));
             }
 
             if (SkipSuperseded)

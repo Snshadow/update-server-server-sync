@@ -49,7 +49,7 @@
             </summary>
             <param name="serviceConfiguration">Service configuration</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.SetDeploymentAndSyncStore(Microsoft.PackageGraph.Storage.IDeploymentAndSync)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.SetDeploymentAndSyncStore(Microsoft.PackageGraph.Storage.IDeploySyncStore)">
             <summary>
             Sets the source of deployment and synchronization
             </summary>

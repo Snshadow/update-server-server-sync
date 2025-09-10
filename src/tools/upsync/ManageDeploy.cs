@@ -10,13 +10,12 @@ using System.Linq;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
-    // TODO implement update approve and unapprove with update filter using from the option.
     class ManageDeploy
     {
         public static void ApproveUpdates(ApproveUpdateCommand.Settings options)
         {
             var store = MetadataStoreCreator.OpenFromOptions(options);
-            if (store is not (IDeploymentAndSync deploymentStore and IMetadataStore metadataStore))
+            if (store is not (IDeploySyncStore deploymentStore and IMetadataStore metadataStore))
             {
                 return;
             }
@@ -55,7 +54,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         public static void UnapproveUpdates(UnapproveUpdateCommand.Settings options)
         {
             var store = MetadataStoreCreator.OpenFromOptions(options);
-            if (store is not (IDeploymentAndSync deploymentStore and IMetadataStore metadataStore))
+            if (store is not (IDeploySyncStore deploymentStore and IMetadataStore metadataStore))
             {
                 return;
             }

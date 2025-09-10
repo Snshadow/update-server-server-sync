@@ -51,7 +51,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         private Dictionary<Guid, int> IdToRevisionMap;
         private Dictionary<Guid, MicrosoftUpdatePackageIdentity> IdToFullIdentityMap;
 
-        private IDeploymentAndSync DeployAndSyncStore;
+        private IDeploySyncStore DeployAndSyncStore;
 
         private const int MaxUpdatesInResponse = 50;
 
@@ -99,7 +99,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// Sets the source of deployment and synchronization
         /// </summary>
         /// <param name="dataStore">The source for deployment and synchronization data</param>
-        public void SetDeploymentAndSyncStore(IDeploymentAndSync dataStore)
+        public void SetDeploymentAndSyncStore(IDeploySyncStore dataStore)
         {
             DeployAndSyncStore = dataStore;
         }

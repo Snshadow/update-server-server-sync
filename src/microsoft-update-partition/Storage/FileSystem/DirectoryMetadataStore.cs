@@ -7,29 +7,15 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
+using System.Linq;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
-    class DirectoryMetadataStore : IMetadataSink, IMetadataSource
+    class DirectoryMetadataStore : FileBasedBackingStoreBase, IMetadataSource
     {
-        readonly string TargetPath;
-
-        private bool IsDisposed = false;
-
-        readonly Lock WriteLock = new();
-
-        public event EventHandler<PackageStoreEventArgs> MetadataCopyProgress;
-
-#pragma warning disable 0067
-        public event EventHandler<PackageStoreEventArgs> OpenProgress;
-        public event EventHandler<PackageStoreEventArgs> PackagesAddProgress;
-#pragma warning restore 0067
-
-        public DirectoryMetadataStore(string path)
+        public DirectoryMetadataStore(string path) : base(path)
         {
-            TargetPath = path;
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
@@ -38,155 +24,39 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private string GetPackageMetadataPath(IPackageIdentity identity)
         {
-            return Path.Combine(TargetPath, "metadata", "partitions", identity.Partition, GetPackageIndex(identity), $"{identity.OpenIdHex}.xml");
+            return Path.Combine(RootPath, "metadata", "partitions", identity.Partition, GetPackagePathIndex(identity), $"{identity.OpenIdHex}.xml");
         }
 
-        private static string GetPackageFilesPath(IPackageIdentity identity)
+        private string GetPackageFilesPath(IPackageIdentity identity)
         {
-            return Path.Combine("filemetadata", "partitions", identity.Partition, GetPackageIndex(identity), $"{identity.OpenIdHex}.files.json");
+            return Path.Combine(RootPath, "filemetadata", "partitions", identity.Partition, GetPackagePathIndex(identity), $"{identity.OpenIdHex}.files.json");
         }
 
-        private static string GetPackageIndex(IPackageIdentity identity)
+        private static string GetPackagePathIndex(IPackageIdentity identity)
         {
             // The index is the last 8 bits of the update ID.
             return identity.OpenId.Last().ToString();
         }
 
-        public bool ContainsMetadata(IPackageIdentity packageIdentity)
+        bool IMetadataSource.ContainsMetadata(IPackageIdentity packageIdentity)
         {
-            var metadataPath = GetPackageMetadataPath(packageIdentity);
-            return File.Exists(metadataPath);
+            return ContainsPackage(packageIdentity);
         }
 
-        public Stream GetMetadata(IPackageIdentity packageIdentity)
+        Stream IMetadataSource.GetMetadata(IPackageIdentity packageIdentity)
         {
-            var metadataPath = GetPackageMetadataPath(packageIdentity);
-            return GetEntryStream(metadataPath);
+            return GetMetadata(packageIdentity);
         }
 
-        private static Stream GetEntryStream(string path)
+        List<T> IMetadataSource.GetFiles<T>(IPackageIdentity packageIdentity, IFileFactory<T> factory)
         {
-            if (File.Exists(path))
-            {
-                return File.OpenRead(path);
-            }
-            else
-            {
-                throw new KeyNotFoundException();
-            }
+            return GetFiles(packageIdentity, factory);
         }
 
-        public void Dispose()
-        {
-            if (!IsDisposed)
-            {
-                IsDisposed = true;
-            }
-        }
-
-        public void AddPackage(IPackage package)
-        {
-            lock (WriteLock)
-            {
-                WritePackageMetadata(package);
-
-                if (PartitionRegistration.TryGetPartitionFromPackage(package, out var partitionDefinition) &&
-                    partitionDefinition.HasExternalContentFileMetadata &&
-                    package.Files.Any())
-                {
-                    WritePackageFiles(package);
-                }
-            }
-        }
-
-        private void WritePackageMetadata(IPackage package)
-        {
-            var metadataPath = GetPackageMetadataPath(package.Id);
-            if (!Directory.Exists(Path.GetDirectoryName(metadataPath)))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(metadataPath));
-            }
-
-            using var packageMetadata = File.Create(metadataPath);
-            package.GetMetadataStream().CopyTo(packageMetadata);
-        }
-
-        private static void WritePackageFiles(IPackage package)
-        {
-            var filesFilePath = GetPackageFilesPath(package.Id);
-            if (!Directory.Exists(Path.GetDirectoryName(filesFilePath)))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(filesFilePath));
-            }
-
-            using var filesFile = File.CreateText(filesFilePath);
-            var serializer = new JsonSerializer();
-            serializer.Serialize(filesFile, package.Files);
-        }
-
-        public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
-        {
-            if (PartitionRegistration.TryGetPartitionFromPackageId(packageIdentity, out var partitionDefinition) &&
-                partitionDefinition.HasExternalContentFileMetadata)
-            {
-                var filesPath = GetPackageFilesPath(packageIdentity);
-
-                if (File.Exists(filesPath))
-                {
-                    using var filesStream = File.OpenText(filesPath);
-                    var serializer = new JsonSerializer();
-                    return serializer.Deserialize(filesStream, typeof(List<T>)) as List<T>;
-                }
-            }
-
-            return new List<T>();
-        }
-
-        public void AddPackages(IEnumerable<IPackage> packages)
-        {
-            foreach (var package in packages)
-            {
-                AddPackage(package);
-            }
-        }
-
-        private List<KeyValuePair<string, PartitionDefinition>> GetPackagesList()
-        {
-            List<KeyValuePair<string, PartitionDefinition>> packagePaths = new();
-
-            var partitions = Directory.GetDirectories(Path.Combine(TargetPath, "metadata", "partitions"));
-            foreach (var partition in partitions)
-            {
-                var partitionName = Path.GetFileName(partition);
-
-                if (PartitionRegistration.TryGetPartition(partitionName, out var partitionDefinition))
-                {
-                    var packagesInPartition = Directory.GetFiles(partition);
-                    foreach (var package in packagesInPartition)
-                    {
-                        packagePaths.Add(new KeyValuePair<string, PartitionDefinition>(package, partitionDefinition));
-                    }
-                }
-            }
-
-            return packagePaths;
-        }
-
-        private IPackage GetPackage(string path, string partitionName)
-        {
-            var packageStream = GetEntryStream(path);
-            if (PartitionRegistration.TryGetPartition(partitionName, out var partitionDefinition))
-            {
-                return partitionDefinition.Factory.FromStream(packageStream, this);
-            }
-
-            throw new NotImplementedException();
-        }
-
-        public IEnumerator<IPackage> GetEnumerator()
-        {
-            return new MetadataEnumerator(GetPackagesList(), this);
-        }
+#pragma warning disable 0067
+        public event EventHandler<PackageStoreEventArgs> MetadataCopyProgress;
+        public event EventHandler<PackageStoreEventArgs> OpenProgress;
+#pragma warning restore 0067
 
         public void CopyTo(IMetadataSink destination, CancellationToken cancelToken)
         {
@@ -218,6 +88,129 @@ namespace Microsoft.PackageGraph.Storage.Local
         public void CopyTo(IMetadataSink destination, IMetadataFilter filter, CancellationToken cancelToken)
         {
             throw new NotImplementedException();
+        }
+
+        public override void AddPackage(IPackage package)
+        {
+            var metadataPath = GetPackageMetadataPath(package.Id);
+            if (!Directory.Exists(Path.GetDirectoryName(metadataPath)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(metadataPath));
+            }
+
+            using (var packageMetadata = File.Create(metadataPath))
+            {
+                package.GetMetadataStream().CopyTo(packageMetadata);
+            }
+
+            var filesPath = GetPackageFilesPath(package.Id);
+            if (!Directory.Exists(Path.GetDirectoryName(filesPath)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(filesPath));
+            }
+
+            using (var filesFile = File.CreateText(filesPath))
+            {
+                var serializer = new JsonSerializer();
+                serializer.Serialize(filesFile, package.Files);
+            }
+        }
+
+        public override Stream GetMetadata(IPackageIdentity packageIdentity)
+        {
+            var metadataPath = GetPackageMetadataPath(packageIdentity);
+            if (File.Exists(metadataPath))
+            {
+                return File.OpenRead(metadataPath);
+            }
+            else
+            {
+                throw new KeyNotFoundException();
+            }
+        }
+
+        public override List<T> GetFiles<T>(IPackageIdentity packageIdentity, IFileFactory<T> factory)
+        {
+            var filesPath = GetPackageFilesPath(packageIdentity);
+            if (File.Exists(filesPath))
+            {
+                using (var filesStream = File.OpenText(filesPath))
+                {
+                    var serializer = new JsonSerializer();
+                    return serializer.Deserialize(filesStream, typeof(List<T>)) as List<T>;
+                }
+            }
+
+            return new List<T>();
+        }
+
+        public override void AddPackages(IEnumerable<IPackage> packages)
+        {
+            foreach (var package in packages)
+            {
+                AddPackage(package);
+            }
+        }
+
+        public override IPackage GetPackage(IPackageIdentity packageIdentity)
+        {
+            if (PartitionRegistration.TryGetPartitionFromPackageId(packageIdentity, out var partitionDefinition))
+            {
+                using (var metadataStream = GetMetadata(packageIdentity))
+                {
+                    return partitionDefinition.Factory.FromStream(metadataStream, this);
+                }
+            }
+
+            throw new KeyNotFoundException();
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override void Dispose()
+        {
+        }
+
+        public override IEnumerator<IPackage> GetEnumerator()
+        {
+            return new MetadataEnumerator(GetPackagesList(), this);
+        }
+
+        private List<KeyValuePair<string, PartitionDefinition>> GetPackagesList()
+        {
+            List<KeyValuePair<string, PartitionDefinition>> packagePaths = new();
+
+            var partitions = Directory.GetDirectories(Path.Combine(RootPath, "metadata", "partitions"));
+            foreach (var partition in partitions)
+            {
+                var partitionName = Path.GetFileName(partition);
+
+                if (PartitionRegistration.TryGetPartition(partitionName, out var partitionDefinition))
+                {
+                    var packagesInPartition = Directory.GetFiles(partition);
+                    foreach (var package in packagesInPartition)
+                    {
+                        packagePaths.Add(new KeyValuePair<string, PartitionDefinition>(package, partitionDefinition));
+                    }
+                }
+            }
+
+            return packagePaths;
+        }
+
+        private IPackage GetPackage(string path, string partitionName)
+        {
+            if (PartitionRegistration.TryGetPartition(partitionName, out var partitionDefinition))
+            {
+                using (var metadataStream = File.OpenRead(path))
+                {
+                    return partitionDefinition.Factory.FromStream(metadataStream, this);
+                }
+            }
+
+            throw new KeyNotFoundException();
         }
 
         class MetadataEnumerator : IEnumerator<IPackage>
@@ -255,6 +248,5 @@ namespace Microsoft.PackageGraph.Storage.Local
                 PathsEnumerator.Reset();
             }
         }
-
     }
 }

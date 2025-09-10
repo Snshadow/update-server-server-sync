@@ -167,9 +167,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// </summary>
         /// <typeparam name="T">Type of file to retrieve.</typeparam>
         /// <param name="packageIdentity">Identity of the package to retrieve files for.</param>
+        /// <param name="factory">File factory for retrieved files.</param>
         /// <returns>List of files in the package</returns>
         /// <exception cref="NotImplementedException"></exception>
-        public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
+        public List<T> GetFiles<T>(IPackageIdentity packageIdentity, IFileFactory<T> factory)
         {
             throw new NotImplementedException();
         }

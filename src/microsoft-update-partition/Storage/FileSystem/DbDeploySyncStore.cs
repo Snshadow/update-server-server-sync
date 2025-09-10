@@ -5,13 +5,14 @@ using Microsoft.Data.Sqlite;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
+using System.Globalization;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
     /// <summary>
-    /// Represents the database context for deployments and synchronization, managing the connection and table creation.
+    /// Represents the <see cref="DbContext"/> for deployments and synchronization.
     /// </summary>
-    public class DeploySyncDbContext : IDisposable
+    public class DeploySyncDbContext : DbContext
     {
         private readonly SqliteConnection _connection;
         private bool _isDisposed;
@@ -27,10 +28,8 @@ namespace Microsoft.PackageGraph.Storage.Local
             InitializeDatabase();
         }
 
-        /// <summary>
-        /// Initializes the database by creating the necessary tables if they don't exist.
-        /// </summary>
-        private void InitializeDatabase()
+        /// <inheritdoc cref="DbContext.InitializeDatabase"/>
+        protected override void InitializeDatabase()
         {
             var command = _connection.CreateCommand();
             command.CommandText = @"
@@ -48,16 +47,11 @@ namespace Microsoft.PackageGraph.Storage.Local
             command.ExecuteNonQuery();
         }
 
-        /// <summary>
-        /// Gets the active database connection.
-        /// </summary>
-        /// <returns>The SQLite connection.</returns>
-        public SqliteConnection GetConnection() => _connection;
+        /// <inheritdoc cref="DbContext.GetConnection"/>
+        public override SqliteConnection GetConnection() => _connection;
 
-        /// <summary>
-        /// Releases the resources used by the database connection.
-        /// </summary>
-        public void Dispose()
+        /// <inheritdoc cref="DbContext.Dispose"/>
+        public override void Dispose()
         {
             if (!_isDisposed)
             {
@@ -93,7 +87,9 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "INSERT OR REPLACE INTO Deployments (RevisionId, Action, Deadline, LastChangeTime) VALUES (@RevisionId, @Action, @Deadline, @LastChangeTime)";
+            command.CommandText = @"INSERT OR REPLACE INTO Deployments (RevisionId, Action, Deadline, LastChangeTime)
+                VALUES (@RevisionId, @Action, @Deadline, @LastChangeTime)
+            ";
             command.Parameters.AddWithValue("@RevisionId", deployment.RevisionId);
             command.Parameters.AddWithValue("@Action", (int)deployment.Action);
             command.Parameters.AddWithValue("@Deadline", (object)deployment.Deadline?.ToString("o") ?? DBNull.Value);
@@ -133,7 +129,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 {
                     RevisionId = revisionId,
                     Action = (DeploymentAction)reader.GetInt32(0),
-                    Deadline = !reader.IsDBNull(1) ? reader.GetDateTime(1) : null,
+                    Deadline = reader.IsDBNull(1) ? null : reader.GetDateTime(1),
                     LastChangeTime = reader.GetDateTime(2)
                 };
             }
@@ -198,13 +194,13 @@ namespace Microsoft.PackageGraph.Storage.Local
             command.CommandText = "SELECT LastSyncTime FROM ComputerSyncStatus WHERE ComputerId = @ComputerId";
             command.Parameters.AddWithValue("@ComputerId", computerId);
 
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
+            var result = command.ExecuteScalar() as string;
+            if (result is not null)
             {
-                return new ComputerSync
+                return new ComputerSync()
                 {
                     ComputerId = computerId,
-                    LastSyncTime = reader.GetDateTime(0)
+                    LastSyncTime = DateTime.Parse(result, DateTimeFormatInfo.InvariantInfo)
                 };
             }
 

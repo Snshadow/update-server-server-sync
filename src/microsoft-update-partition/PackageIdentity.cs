@@ -46,17 +46,17 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Last 64 bits of the ID guid
         /// </summary>
-        private UInt64 Key1;
+        private ulong Key1;
 
         /// <summary>
         /// First 64 bits of the ID guid
         /// </summary>
-        private UInt64 Key2;
+        private ulong Key2;
 
         /// <summary>
         /// Revision number
         /// </summary>
-        private Int32 Key3;
+        private int Key3;
 
         /// <summary>
         /// Create an update identity from GUID and revision
@@ -74,7 +74,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
         private void GenerateOpenId()
         {
-            OpenId = SHA512.HashData(Encoding.UTF8.GetBytes($"{Partition}-{ID}-{Revision}"));
+            OpenId = SHA256.HashData(Encoding.UTF8.GetBytes($"{Partition}-{ID}-{Revision}"));
         }
 
         /// <summary>

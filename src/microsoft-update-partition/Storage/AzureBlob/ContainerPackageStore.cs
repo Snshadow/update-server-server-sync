@@ -194,14 +194,14 @@ namespace Microsoft.PackageGraph.Storage.Azure
             }
         }
 
-        public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
+        public List<T> GetFiles<T>(IPackageIdentity packageIdentity, IFileFactory<T> factory)
         {
             ObjectDisposedException.ThrowIf(IsDisposed, this);
 
             if (Identities.TryGetPackageIndex(packageIdentity, out var packageIndex) &&
                 Identities.TryGetStoreEntry(packageIndex, out var storeEntry))
             {
-                return Metadata.GetFiles<T>(storeEntry);
+                return Metadata.GetFiles(storeEntry, factory);
             }
             else
             {

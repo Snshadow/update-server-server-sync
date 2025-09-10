@@ -29,7 +29,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content
         /// </summary>
         /// <value>File size</value>
         [JsonProperty]
-        public UInt64 Size { get; set; }
+        public ulong Size { get; set; }
 
         /// <summary>
         /// Gets the last modified timestamp for the file

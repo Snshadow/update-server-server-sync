@@ -12,7 +12,7 @@ using System;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
 {
-    class PrerequisitesIndex : SimpleIndex<int, List<List<Guid>>>, ISimpleMetadataIndex<int , List<IPrerequisite>>
+    class PrerequisitesIndex : SimpleIndex<int, List<List<Guid>>>, ISimpleMetadataIndex<int, List<IPrerequisite>>
     {
         public const string Name = AvailableIndexes.PrerequisitesIndexName;
 
@@ -24,9 +24,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
 
         public override void IndexPackage(IPackage package, int packageIndex)
         {
-            if (package is MicrosoftUpdatePackage microsoftUpdate && 
-                microsoftUpdate.Prerequisites is not null && 
-                microsoftUpdate.Prerequisites.Count > 0)
+            if (package is MicrosoftUpdatePackage microsoftUpdate &&
+                (microsoftUpdate.Prerequisites?.Count ?? 0) > 0)
             {
                 var prerequisiteGuids = new List<List<Guid>>();
                 foreach (var prereq in microsoftUpdate.Prerequisites)

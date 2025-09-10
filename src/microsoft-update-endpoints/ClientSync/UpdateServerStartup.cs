@@ -84,7 +84,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             clientSyncService.SetServiceConfiguration(UpdateServiceConfiguration);
             clientSyncService.SetPackageStore(MetadataSource);
 
-            if (MetadataSource is IDeploymentAndSync dataStore)
+            if (MetadataSource is IDeploySyncStore dataStore)
             {
                 clientSyncService.SetDeploymentAndSyncStore(dataStore);
             }

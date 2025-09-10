@@ -90,7 +90,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         {
             lock (DownloadCache)
             {
-                var minBufferRequired = (packageEntry.FileListOffset - packageEntry.MetadataOffset) + packageEntry.FileListLength;
+                var minBufferRequired = packageEntry.FileListOffset - packageEntry.MetadataOffset + packageEntry.FileListLength;
 
                 if (packageEntry.MetadataOffset < DownloadCacheOffset ||
                     packageEntry.MetadataOffset + minBufferRequired >= DownloadCacheOffset + DownloadCache.Length)
@@ -136,6 +136,30 @@ namespace Microsoft.PackageGraph.Storage.Azure
             var filesList = serializer.Deserialize(filesReader, typeof(List<T>)) as List<T>;
 
             return filesList;
+        }
+
+        public List<T> GetFiles<T>(PackageStoreEntry packageEntry, IFileFactory<T> factory)
+        {
+            if (packageEntry.FileListLength == 0)
+            {
+                return new List<T>();
+            }
+
+            Stream inMemoryFilesList;
+            lock (DownloadCache)
+            {
+                FillBufferForPackage(packageEntry);
+
+                var cachedFileListBuffer = new byte[packageEntry.FileListLength];
+                DownloadCache.Seek(packageEntry.FileListOffset - DownloadCacheOffset, SeekOrigin.Begin);
+                DownloadCache.Read(cachedFileListBuffer);
+                inMemoryFilesList = new GZipStream(new MemoryStream(cachedFileListBuffer), CompressionMode.Decompress);
+            }
+
+            using var filesReader = new StreamReader(inMemoryFilesList);
+            var serializer = new JsonSerializer();
+            var fileNames = serializer.Deserialize(filesReader, typeof(List<string>)) as List<string>;
+            return fileNames.Select(factory.Create).ToList();
         }
 
         private static long RoundToPageSize(long value) => value % MetadataPageSize == 0 ? value : MetadataPageSize * (value / MetadataPageSize) + MetadataPageSize;
