@@ -209,11 +209,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         }
 
         /// <summary>
-        /// Not implemented for an upstream update source. Also, do not contain files.
+        /// Not implemented for an upstream update source
         /// </summary>
         /// <typeparam name="T">Type of file to retrieve.</typeparam>
-        /// <param name="packageIdentity">Identity of the category to retrieve files for.</param>
-        /// <returns>List of files in the category</returns>
+        /// <param name="packageIdentity">Identity of the package to retrieve files for.</param>
+        /// <returns>List of files in the package</returns>
         /// <exception cref="NotImplementedException"></exception>
         public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
         {

@@ -90,7 +90,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
         {
             lock (DownloadCache)
             {
-                var minBufferRequired = (packageEntry.FileListOffset - packageEntry.MetadataOffset) + packageEntry.FileListLength;
+                var minBufferRequired = packageEntry.FileListOffset - packageEntry.MetadataOffset + packageEntry.FileListLength;
 
                 if (packageEntry.MetadataOffset < DownloadCacheOffset ||
                     packageEntry.MetadataOffset + minBufferRequired >= DownloadCacheOffset + DownloadCache.Length)

@@ -7,9 +7,9 @@ using System;
 namespace Microsoft.PackageGraph.Storage
 {
     /// <summary>
-    /// Defines an interface for storing and retrieving deployment and sync information
+    /// Defines an interface for storing and retrieving deployment and synchronization information
     /// </summary>
-    public interface IDeploymentAndSync
+    public interface IDeploySyncStore
     {
         /// <summary>
         /// Persists a deployment entry to the underlying storage

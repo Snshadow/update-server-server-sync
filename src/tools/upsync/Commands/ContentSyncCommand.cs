@@ -23,7 +23,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("--metadata-store-type")]
             [DefaultValue("local")]
-            [Description("Store type; local (default) or azure")]
+            [Description("Store type; local or azure")]
             public string Type { get; set; }
 
             [CommandOption("--connection-string")]

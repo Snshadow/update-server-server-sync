@@ -32,6 +32,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// Progress indicator during source open operations. Not used by UpstreamUpdatesSource.
         /// </summary>
         public event EventHandler<PackageStoreEventArgs> OpenProgress;
+#pragma warning restore 0067
 
         /// <summary>
         /// Create a new MicrosoftUpdate package source that retrieves updates from the specified endpoint

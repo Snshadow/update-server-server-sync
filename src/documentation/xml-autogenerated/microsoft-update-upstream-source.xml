@@ -480,11 +480,11 @@
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamCategoriesSource.GetFiles``1(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
             <summary>
-            Not implemented for an upstream update source. Also, do not contain files.
+            Not implemented for an upstream update source
             </summary>
             <typeparam name="T">Type of file to retrieve.</typeparam>
-            <param name="packageIdentity">Identity of the category to retrieve files for.</param>
-            <returns>List of files in the category</returns>
+            <param name="packageIdentity">Identity of the package to retrieve files for.</param>
+            <returns>List of files in the package</returns>
             <exception cref="T:System.NotImplementedException"></exception>
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter">

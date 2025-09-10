@@ -93,7 +93,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 var categoriesLookup = allCategories.ToLookup(package => package.Id.ID);
 
-                Console.Write("\r\nQuery results:\r\n-----------------------------");
+                Console.Write("\nQuery results:\n-----------------------------");
                 int counter = 0;
 
                 var allUpdatesLookup = metadataStore.OfType<MicrosoftUpdatePackage>().ToLookup(package => package.Id.ID);

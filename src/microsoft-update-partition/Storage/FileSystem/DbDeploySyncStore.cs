@@ -5,13 +5,14 @@ using Microsoft.Data.Sqlite;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
+using System.Globalization;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
     /// <summary>
-    /// Represents the database context for deployments and synchronization, managing the connection and table creation.
+    /// Represents the <see cref="DbContext"/> for deployments and synchronization.
     /// </summary>
-    public class DeploySyncDbContext : IDisposable
+    public class DeploySyncDbContext : DbContext
     {
         private readonly SqliteConnection _connection;
         private bool _isDisposed;
@@ -24,16 +25,20 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             _connection = new SqliteConnection($"Data Source={databasePath}");
             _connection.Open();
+
+            // Enable WAL(Write-Ahead Logging) for performance.
+            using var walCommand = _connection.CreateCommand();
+            walCommand.CommandText = "PRAGMA journal_mode = 'WAL'";
+            walCommand.ExecuteNonQuery();
+
             InitializeDatabase();
         }
 
-        /// <summary>
-        /// Initializes the database by creating the necessary tables if they don't exist.
-        /// </summary>
-        private void InitializeDatabase()
+        /// <inheritdoc/>
+        protected override void InitializeDatabase()
         {
             var command = _connection.CreateCommand();
-            command.CommandText = @"
+            command.CommandText = """
             CREATE TABLE IF NOT EXISTS Deployments (
                 RevisionId INTEGER PRIMARY KEY,
                 Action INTEGER NOT NULL,
@@ -44,20 +49,15 @@ namespace Microsoft.PackageGraph.Storage.Local
                 ComputerId TEXT PRIMARY KEY,
                 LastSyncTime TEXT NOT NULL
             );
-        ";
+            """;
             command.ExecuteNonQuery();
         }
 
-        /// <summary>
-        /// Gets the active database connection.
-        /// </summary>
-        /// <returns>The SQLite connection.</returns>
-        public SqliteConnection GetConnection() => _connection;
+        /// <inheritdoc/>
+        public override SqliteConnection GetConnection() => _connection;
 
-        /// <summary>
-        /// Releases the resources used by the database connection.
-        /// </summary>
-        public void Dispose()
+        /// <inheritdoc/>
+        public override void Dispose()
         {
             if (!_isDisposed)
             {
@@ -93,11 +93,17 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "INSERT OR REPLACE INTO Deployments (RevisionId, Action, Deadline, LastChangeTime) VALUES (@RevisionId, @Action, @Deadline, @LastChangeTime)";
-            command.Parameters.AddWithValue("@RevisionId", deployment.RevisionId);
-            command.Parameters.AddWithValue("@Action", (int)deployment.Action);
-            command.Parameters.AddWithValue("@Deadline", (object)deployment.Deadline?.ToString("o") ?? DBNull.Value);
-            command.Parameters.AddWithValue("@LastChangeTime", deployment.LastChangeTime.ToString("o"));
+            command.CommandText = """
+            INSERT INTO Deployments (RevisionId, Action, Deadline, LastChangeTime)
+                VALUES (@RevisionId, @Action, @Deadline, @LastChangeTime)
+                ON CONFLICT(RevisionId) DO UPDATE SET 
+                    Action = @Action, Deadline = @Deadline, LastChangeTime = @LastChangeTime
+                WHERE LastChangeTime < @LastChangeTime
+            """;
+            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = deployment.RevisionId;
+            command.Parameters.Add("@Action", SqliteType.Integer).Value = deployment.Action;
+            command.Parameters.Add("@Deadline", SqliteType.Text).Value = (object)deployment.Deadline?.ToString("o") ?? DBNull.Value;
+            command.Parameters.Add("@LastChangeTime", SqliteType.Text).Value = deployment.LastChangeTime.ToString("o");
             command.ExecuteNonQuery();
         }
 
@@ -110,7 +116,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
             command.CommandText = "DELETE FROM Deployments WHERE RevisionId = @RevisionId";
-            command.Parameters.AddWithValue("@RevisionId", revisionId);
+            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = revisionId;
             command.ExecuteNonQuery();
         }
 
@@ -124,7 +130,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT Action, Deadline, LastChangeTime FROM Deployments WHERE RevisionId = @RevisionId";
-            command.Parameters.AddWithValue("@RevisionId", revisionId);
+            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = revisionId;
 
             using var reader = command.ExecuteReader();
             if (reader.Read())
@@ -133,7 +139,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 {
                     RevisionId = revisionId,
                     Action = (DeploymentAction)reader.GetInt32(0),
-                    Deadline = !reader.IsDBNull(1) ? reader.GetDateTime(1) : null,
+                    Deadline = reader.IsDBNull(1) ? null : reader.GetDateTime(1),
                     LastChangeTime = reader.GetDateTime(2)
                 };
             }
@@ -167,9 +173,13 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "INSERT OR REPLACE INTO ComputerSyncStatus (ComputerId, LastSyncTime) VALUES (@ComputerId, @LastSyncTime)";
-            command.Parameters.AddWithValue("@ComputerId", computerId);
-            command.Parameters.AddWithValue("@LastSyncTime", syncTime.ToString("o"));
+            command.CommandText = """
+            INSERT INTO ComputerSyncStatus (ComputerId, LastSyncTime) VALUES (@ComputerId, @LastSyncTime)
+                ON CONFLICT(ComputerId) DO UPDATE SET LastSyncTime = @LastSyncTime
+                WHERE LastSyncTime < @LastSyncTime
+            """;
+            command.Parameters.Add("@ComputerId", SqliteType.Text).Value = computerId;
+            command.Parameters.Add("@LastSyncTime", SqliteType.Text).Value = syncTime.ToString("o");
             command.ExecuteNonQuery();
         }
 
@@ -182,7 +192,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
             command.CommandText = "DELETE FROM ComputerSyncStatus WHERE ComputerId = @ComputerId";
-            command.Parameters.AddWithValue("@ComputerId", computerId);
+            command.Parameters.Add("@ComputerId", SqliteType.Text).Value = computerId;
             command.ExecuteNonQuery();
         }
 
@@ -196,15 +206,15 @@ namespace Microsoft.PackageGraph.Storage.Local
             var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT LastSyncTime FROM ComputerSyncStatus WHERE ComputerId = @ComputerId";
-            command.Parameters.AddWithValue("@ComputerId", computerId);
+            command.Parameters.Add("@ComputerId", SqliteType.Text).Value = computerId;
 
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
+            var result = command.ExecuteScalar() as string;
+            if (result is not null)
             {
-                return new ComputerSync
+                return new ComputerSync()
                 {
                     ComputerId = computerId,
-                    LastSyncTime = reader.GetDateTime(0)
+                    LastSyncTime = DateTime.Parse(result, DateTimeFormatInfo.InvariantInfo)
                 };
             }
 

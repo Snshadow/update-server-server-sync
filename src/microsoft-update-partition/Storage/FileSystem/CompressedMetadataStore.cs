@@ -14,16 +14,15 @@ using System.Threading;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
-    class CompressedMetadataStore : IMetadataSink, IMetadataSource
+    class CompressedMetadataStore : FileBasedBackingStoreBase, IMetadataSink, IMetadataSource
     {
         private ZipFile InputFile;
-        ZipOutputStream OutputFile;
+        private ZipOutputStream OutputFile;
 
-        Dictionary<string, long> ZipEntriesIndex;
+        private bool _isDisposed;
+        private readonly Lock WriteLock = new();
 
-        private bool IsDisposed = false;
-
-        readonly Lock WriteLock = new();
+        private Dictionary<string, long> ZipEntriesIndex;
 
         public event EventHandler<PackageStoreEventArgs> MetadataCopyProgress;
 
@@ -32,61 +31,49 @@ namespace Microsoft.PackageGraph.Storage.Local
         public event EventHandler<PackageStoreEventArgs> PackagesAddProgress;
 #pragma warning restore 0067
 
-        private CompressedMetadataStore()
+        public CompressedMetadataStore(string path) : base(path)
         {
         }
 
         public static CompressedMetadataStore OpenExisting(string path)
         {
-            var newZipStorage = new CompressedMetadataStore
+            var zipStorage = new CompressedMetadataStore(path)
             {
                 InputFile = new ZipFile(path)
             };
-            newZipStorage.ZipEntriesIndex = newZipStorage.InputFile.OfType<ZipEntry>().ToDictionary(entry => entry.Name, entry => entry.ZipFileIndex);
+            zipStorage.ZipEntriesIndex = zipStorage.InputFile.OfType<ZipEntry>().ToDictionary(entry => entry.Name, entry => entry.ZipFileIndex);
 
-            return newZipStorage;
+            return zipStorage;
         }
 
         public static CompressedMetadataStore CreateNew(string path)
         {
-            var newZipStorage = new CompressedMetadataStore
+            var newZipStorage = new CompressedMetadataStore(path)
             {
                 OutputFile = new ZipOutputStream(File.Create(path))
             };
             newZipStorage.OutputFile.SetLevel(1);
+
             return newZipStorage;
         }
 
         private static string GetPackageMetadataPath(IPackageIdentity identity)
         {
-            return $"metadata/partitions/{identity.Partition}/{GetPackageIndex(identity)}/{identity.OpenIdHex}.xml";
+            return $"metadata/partitions/{identity.Partition}/{GetPackagePathIndex(identity)}/{identity.OpenIdHex}.xml";
         }
 
         private static string GetPackageFilesPath(IPackageIdentity identity)
         {
-            return $"filemetadata/partitions/{identity.Partition}/{GetPackageIndex(identity)}/{identity.OpenIdHex}.files.json";
+            return $"filemetadata/partitions/{identity.Partition}/{GetPackagePathIndex(identity)}/{identity.OpenIdHex}.files.json";
         }
 
-        private static string GetPackageIndex(IPackageIdentity identity)
+        private static string GetPackagePathIndex(IPackageIdentity identity)
         {
             // The index is the last 8 bits of the update ID.
             return identity.OpenId.Last().ToString();
         }
 
-        public bool ContainsMetadata(IPackageIdentity packageIdentity)
-        {
-            if (InputFile is not null)
-            {
-                var metadataPath = GetPackageMetadataPath(packageIdentity);
-                return ZipEntriesIndex.TryGetValue(metadataPath, out var _);
-            }
-            else
-            {
-                throw new Exception("Read not supported");
-            }
-        }
-
-        public Stream GetMetadata(IPackageIdentity packageIdentity)
+        public override Stream GetMetadata(IPackageIdentity packageIdentity)
         {
             if (InputFile is not null)
             {
@@ -111,27 +98,62 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
-        public void Dispose()
+        public bool ContainsMetadata(IPackageIdentity packageIdentity)
         {
-            if (!IsDisposed)
+            if (InputFile is not null)
             {
-                if (OutputFile is not null)
-                {
-                    OutputFile.Close();
-                    OutputFile.Dispose();
-                    OutputFile = null;
-                }
-                else
-                {
-                    InputFile?.Close();
-                    InputFile = null;
-                }
-
-                IsDisposed = true;
+                var metadataPath = GetPackageMetadataPath(packageIdentity);
+                return ZipEntriesIndex.TryGetValue(metadataPath, out var _);
+            }
+            else
+            {
+                throw new Exception("Read not supported");
             }
         }
 
-        public void AddPackage(IPackage package)
+        public override List<T> GetFiles<T>(IPackageIdentity packageIdentity)
+        {
+            if (InputFile is null)
+            {
+                throw new Exception("Read not supported");
+            }
+
+            if (PartitionRegistration.TryGetPartitionFromPackageId(packageIdentity, out var partitionDefinition) &&
+                partitionDefinition.HasExternalContentFileMetadata)
+            {
+                var filesPath = GetPackageFilesPath(packageIdentity);
+                if (ZipEntriesIndex.TryGetValue(filesPath, out long entryIndex))
+                {
+                    using var filesStream = InputFile.GetInputStream(entryIndex);
+                    using var filesReader = new StreamReader(filesStream);
+                    var serializer = new JsonSerializer();
+                    return serializer.Deserialize(filesReader, typeof(List<T>)) as List<T>;
+                }
+            }
+
+            return new List<T>();
+        }
+
+        public override void AddPackages(IEnumerable<IPackage> packages)
+        {
+            foreach (var package in packages)
+            {
+                AddPackage(package);
+            }
+        }
+
+        public override IPackage GetPackage(IPackageIdentity packageIdentity)
+        {
+            if (PartitionRegistration.TryGetPartitionFromPackageId(packageIdentity, out var partitionDefinition))
+            {
+                using var metadataStream = GetMetadata(packageIdentity);
+                return partitionDefinition.Factory.FromStream(metadataStream, this);
+            }
+
+            throw new KeyNotFoundException();
+        }
+
+        public override void AddPackage(IPackage package)
         {
             if (OutputFile is null)
             {
@@ -144,7 +166,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 if (PartitionRegistration.TryGetPartitionFromPackage(package, out var partitionDefinition) &&
                     partitionDefinition.HasExternalContentFileMetadata &&
-                    (package.Files?.Any() ?? false))
+                    (package.Files?.Any() == true))
                 {
                     WritePackageFiles(package);
                 }
@@ -166,54 +188,22 @@ namespace Microsoft.PackageGraph.Storage.Local
             OutputFile.PutNextEntry(new ZipEntry(filesFilePath));
 
             var serializer = new JsonSerializer();
-            using (var textWriter = new StreamWriter(OutputFile, Encoding.UTF8, 4096, true))
+            using (var jsonWriter = new StreamWriter(OutputFile, Encoding.UTF8, 4096, true))
             {
-                serializer.Serialize(textWriter, package.Files);
+                serializer.Serialize(jsonWriter, package.Files);
             }
 
             OutputFile.CloseEntry();
         }
 
-        public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
+        public override IEnumerator<IPackage> GetEnumerator()
         {
             if (InputFile is null)
             {
                 throw new Exception("Read not supported");
             }
 
-            if (PartitionRegistration.TryGetPartitionFromPackageId(packageIdentity, out var partitionDefinition) &&
-                    partitionDefinition.HasExternalContentFileMetadata)
-            {
-                var filesPath = GetPackageFilesPath(packageIdentity);
-                if (ZipEntriesIndex.TryGetValue(filesPath, out long entryIndex))
-                {
-                    using var filesStream = InputFile.GetInputStream(entryIndex);
-                    using var filesReader = new StreamReader(filesStream);
-                    var serializer = new JsonSerializer();
-                    return serializer.Deserialize(filesReader, typeof(List<T>)) as List<T>;
-                }
-            }
-
-            return new List<T>();
-        }
-
-        public void AddPackages(IEnumerable<IPackage> packages)
-        {
-            foreach (var package in packages)
-            {
-                AddPackage(package);
-            }
-        }
-
-        public void Flush()
-        {
-            if (OutputFile is not null)
-            {
-                lock (WriteLock)
-                {
-                    OutputFile.Flush();
-                }
-            }
+            return new MetadataEnumerator(GetPackagesList(), this);
         }
 
         private List<KeyValuePair<string, PartitionDefinition>> GetPackagesList()
@@ -240,24 +230,50 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private IPackage GetPackage(string path, string partitionName)
         {
-            var packageStream = GetEntryStream(path);
             if (PartitionRegistration.TryGetPartition(partitionName, out var partitionDefinition))
             {
-                return partitionDefinition.Factory.FromStream(packageStream, this);
+                using var metadataStream = GetMetadataFromPath(path);
+                return partitionDefinition.Factory.FromStream(metadataStream, this);
             }
 
-            throw new NotImplementedException();
+            throw new KeyNotFoundException();
         }
 
-        public IEnumerator<IPackage> GetEnumerator()
+        private Stream GetMetadataFromPath(string path)
         {
-            if (InputFile is null)
+            if (ZipEntriesIndex.TryGetValue(path, out long entryIndex))
             {
-                throw new Exception("Read not supported");
+                return InputFile.GetInputStream(entryIndex);
             }
+            else
+            {
+                throw new KeyNotFoundException();
+            }
+        }
 
-            var packagePaths = GetPackagesList();
-            return new MetadataEnumerator(packagePaths, this);
+        public override void Flush()
+        {
+            if (OutputFile is not null)
+            {
+                lock (WriteLock)
+                {
+                    OutputFile?.Flush();
+                }
+            }
+        }
+
+        public override void Dispose()
+        {
+            if (!_isDisposed)
+            {
+                OutputFile?.Close();
+                OutputFile = null;
+
+                InputFile?.Close();
+                InputFile = null;
+
+                _isDisposed = true;
+            }
         }
 
         public void CopyTo(IMetadataSink destination, CancellationToken cancelToken)

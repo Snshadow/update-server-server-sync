@@ -8,6 +8,7 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
+using Microsoft.PackageGraph.Storage.Index;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -56,7 +57,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 }
                 else if (_FastLookupSource is not null)
                 {
-                    _FastLookupSource.TrySimpleKeyLookup<string>(_Id, Storage.Index.AvailableIndexes.TitlesIndexName, out string title);
+                    _FastLookupSource.TrySimpleKeyLookup<string>(_Id, AvailableIndexes.TitlesIndexName, out string title);
                     return title;
                 }
                 else if (_MetadataSource is not null)
@@ -198,7 +199,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 }
                 else if (_MetadataSource is not null)
                 {
-                    _Files = _MetadataSource.GetFiles<UpdateFile>(this._Id).Cast<UpdateFile>().ToList();
+                    _Files = _MetadataSource.GetFiles<UpdateFile>(this._Id);
                     _FilesLoaded = true;
                 }
 
@@ -381,7 +382,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
             if (metadataStore is not null)
             {
-                createdUpdate._Files = metadataStore.GetFiles<UpdateFile>(createdUpdate._Id).Cast<UpdateFile>().ToList();
+                createdUpdate._Files = metadataStore.GetFiles<UpdateFile>(createdUpdate._Id);
                 createdUpdate._FilesLoaded = true;
             }
 

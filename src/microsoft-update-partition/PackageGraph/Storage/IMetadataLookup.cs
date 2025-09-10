@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.ObjectModel;
-using Microsoft.PackageGraph.Storage.Index;
 using System;
 using System.Collections.Generic;
 

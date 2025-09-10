@@ -28,7 +28,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
 
         internal AtLeastOne(IEnumerable<Guid> ids)
         {
-            Simple = new List<Simple>(ids.Select(id => new Simple(id)));
+            Simple = ids.Select(id => new Simple(id)).ToList();
             IsCategory = ids.Last().Equals(Guid.Empty);
 
             if (IsCategory)
@@ -39,7 +39,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
 
         internal AtLeastOne(IEnumerable<Guid> ids, bool isCategory)
         {
-            Simple = new List<Simple>(ids.Select(id => new Simple(id)));
+            Simple = ids.Select(id => new Simple(id)).ToList();
             IsCategory = isCategory;
         }
     }

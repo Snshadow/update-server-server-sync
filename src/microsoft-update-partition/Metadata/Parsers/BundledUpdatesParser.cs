@@ -24,7 +24,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             while (result.MoveNext())
             {
                 var guid = Guid.Parse(result.Current.GetAttribute("UpdateID", ""));
-                var revision = Int32.Parse(result.Current.GetAttribute("RevisionNumber", ""));
+                var revision = int.Parse(result.Current.GetAttribute("RevisionNumber", ""));
 
                 bundledUpdates.Add(new MicrosoftUpdatePackageIdentity(guid, revision));
             }
@@ -36,7 +36,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             while (atLeastOneResult.MoveNext())
             {
                 var guid = Guid.Parse(atLeastOneResult.Current.GetAttribute("UpdateID", ""));
-                var revision = Int32.Parse(atLeastOneResult.Current.GetAttribute("RevisionNumber", ""));
+                var revision = int.Parse(atLeastOneResult.Current.GetAttribute("RevisionNumber", ""));
 
                 bundledUpdates.Add(new MicrosoftUpdatePackageIdentity(guid, revision));
             }

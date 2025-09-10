@@ -250,7 +250,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             revisionIdRequest.GetRevisionIdList.filter.GetConfig = false;
 
             var revisionsIdReply = ServerSyncClient.GetRevisionIdListAsync(revisionIdRequest).GetAwaiter().GetResult();
-            if (revisionsIdReply is null || revisionsIdReply.GetRevisionIdListResponse1 is null || revisionsIdReply.GetRevisionIdListResponse1.GetRevisionIdListResult is null)
+            if (revisionsIdReply?.GetRevisionIdListResponse1?.GetRevisionIdListResult is null)
             {
                 throw new Exception("Failed to get revision ID list");
             }
@@ -308,7 +308,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     {
                         updateDataReply = ServerSyncClient.GetUpdateDataAsync(updateDataRequest).GetAwaiter().GetResult();
                     }
-                    catch (System.TimeoutException)
+                    catch (TimeoutException)
                     {
                         updateDataReply = null;
                     }
@@ -375,7 +375,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     {
                         updateDataReply = ServerSyncClient.GetUpdateDataAsync(updateDataRequest).GetAwaiter().GetResult();
                     }
-                    catch (System.TimeoutException)
+                    catch (TimeoutException)
                     {
                         updateDataReply = null;
                     }

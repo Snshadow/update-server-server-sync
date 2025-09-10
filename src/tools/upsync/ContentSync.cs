@@ -7,10 +7,10 @@ using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
 using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
-using System.Linq;
-using System.Threading;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {

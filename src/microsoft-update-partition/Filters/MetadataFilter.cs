@@ -4,6 +4,7 @@
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,7 +85,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <returns>A filter for metadata in a updates metadata source</returns>
         public static MetadataFilter FromJson(string source)
         {
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<MetadataFilter>(source);
+            return JsonConvert.DeserializeObject<MetadataFilter>(source);
         }
 
         /// <summary>
@@ -93,7 +94,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <returns>The JSON string</returns>
         public string ToJson()
         {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(this);
+            return JsonConvert.SerializeObject(this);
         }
 
         /// <summary>
@@ -111,7 +112,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             {
                 filteredUpdates = updates.Where(u => u is DriverUpdate);
             }
-            else if (KbArticleFilter?.Count > 0)
+            else if (KbArticleFilter is { Count: > 0 })
             {
                 filteredUpdates = updates.Where(u => u is SoftwareUpdate);
             }
@@ -123,20 +124,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             if (!string.IsNullOrEmpty(HardwareIdFilter))
             {
                 filteredUpdates = filteredUpdates.Where(
-                    u => (u as DriverUpdate)
-                    .GetDriverMetadata()
+                    u => u is DriverUpdate driverUpdate &&
+                    driverUpdate.GetDriverMetadata()
                     .Any(metadata => metadata.HardwareID.Equals(HardwareIdFilter, StringComparison.OrdinalIgnoreCase)));
             }
 
             if (ComputerHardwareIdFilter != Guid.Empty)
             {
                 filteredUpdates = filteredUpdates.Where(
-                    u => (u as DriverUpdate)
-                    .GetDriverMetadata()
+                    u => u is DriverUpdate driverUpdate &&
+                    driverUpdate.GetDriverMetadata()
                     .Any(metadata => metadata.DistributionComputerHardwareId.Contains(ComputerHardwareIdFilter)));
             }
 
-            if (CategoryFilter?.Count > 0)
+            if (CategoryFilter is { Count: > 0 })
             {
                 filteredUpdates = filteredUpdates.Where(u => u.Prerequisites is not null);
 
@@ -148,7 +149,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     .Intersect(CategoryFilter).Any());
             }
 
-            if (KbArticleFilter?.Count > 0)
+            if (KbArticleFilter is { Count: > 0 })
             {
                 var kbLookup = KbArticleFilter.ToHashSet();
                 filteredUpdates = filteredUpdates.Where(u => kbLookup.Contains((u as SoftwareUpdate).KBArticleId));
@@ -157,22 +158,22 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             // Apply the title filter
             if (!string.IsNullOrEmpty(TitleFilter))
             {
-                var filterTokens = TitleFilter.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                var filterTokens = TitleFilter.Trim().Split([' '], StringSplitOptions.RemoveEmptyEntries);
                 filteredUpdates = filteredUpdates.Where(category => category.MatchTitle(filterTokens));
             }
 
             // Apply the id filter
-            if (IdFilter?.Count > 0)
+            if (IdFilter is { Count: > 0 })
             {
                 // Remove all updates that don't match the ID filter
-                filteredUpdates = filteredUpdates.Where(u => IdFilter.Contains((u.Id as MicrosoftUpdatePackageIdentity).ID));
+                filteredUpdates = filteredUpdates.Where(u => IdFilter.Contains(u.Id.ID));
             }
 
             if (SkipSuperseded)
             {
                 filteredUpdates = filteredUpdates
-                    .Where(u => u is not SoftwareUpdate ||
-                    (u is SoftwareUpdate softwareUpdate && ((softwareUpdate.IsSupersededBy?.Count ?? 0) == 0)));
+                    .Where(u => u is not SoftwareUpdate softwareUpdate ||
+                    (softwareUpdate.IsSupersededBy?.Count ?? 0) == 0);
             }
 
             // Return first X matches, if requested

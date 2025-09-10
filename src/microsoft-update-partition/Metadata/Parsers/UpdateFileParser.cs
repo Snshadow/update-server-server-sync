@@ -49,7 +49,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
 
                     newFile.FileName = currentFileNode.GetAttribute("FileName", "");
                     newFile.ModifiedDate = DateTime.Parse(currentFileNode.GetAttribute("Modified", ""));
-                    newFile.Size = UInt64.Parse(currentFileNode.GetAttribute("Size", ""));
+                    newFile.Size = ulong.Parse(currentFileNode.GetAttribute("Size", ""));
                     newFile.PatchingType = currentFileNode.GetAttribute("PatchingType", "");
 
                     parsedFiles.Add(newFile);

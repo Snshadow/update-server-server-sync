@@ -2399,49 +2399,71 @@
             The count of content files left to be downloaded in the current download operation
             </summary>
         </member>
-        <member name="T:Microsoft.PackageGraph.Storage.IDeploymentAndSync">
+        <member name="T:Microsoft.PackageGraph.Storage.IContentFileFactory">
             <summary>
-            Defines an interface for storing and retrieving deployment and sync information
+            Defines a factory for creating content files.
             </summary>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.SaveDeployment(Microsoft.PackageGraph.ObjectModel.IDeployment)">
+        <member name="M:Microsoft.PackageGraph.Storage.IContentFileFactory.Create(System.String)">
+            <summary>
+            Creates a new content file.
+            </summary>
+            <param name="fileName">The name of the file.</param>
+            <returns>A new content file.</returns>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.IDeploySyncStore">
+            <summary>
+            Defines an interface for storing and retrieving deployment and synchronization information
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.SaveDeployment(Microsoft.PackageGraph.ObjectModel.IDeployment)">
             <summary>
             Persists a deployment entry to the underlying storage
             </summary>
             <param name="deployment">The deployment to save</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.DeleteDeployment(System.Int32)">
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.DeleteDeployment(System.Int32)">
             <summary>
             Deletes a deployment entry from the underlying storage
             </summary>
             <param name="revisionId">The revision ID of the deployment to delete</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.GetDeployment(System.Int32)">
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.GetDeployment(System.Int32)">
             <summary>
             Retrieves a deployment entry from the underlying storage
             </summary>
             <param name="revisionId">The revision ID of the deployment to retrieve</param>
             <returns>The requested deployment</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.UpdateComputerSync(System.String,System.DateTime)">
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.UpdateComputerSync(System.String,System.DateTime)">
             <summary>
             Updates the last sync time for a given computer
             </summary>
             <param name="computerId">The ID of the computer that synced</param>
             <param name="syncTime">The time that the computer synced</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.DeleteComputer(System.String)">
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.DeleteComputer(System.String)">
             <summary>
             Deletes the computer from an underlying storage
             </summary>
             <param name="computerId">The ID of the computer to be deleted</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IDeploymentAndSync.GetComputerSync(System.String)">
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.GetComputerSync(System.String)">
             <summary>
             Retrieves a computer synchronization info for a given id.
             </summary>
             <param name="computerId"></param>
             <returns></returns>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.IMetadataBackingStore">
+            <summary>
+            Interface for a backing store for metadata for updates.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataBackingStore.Flush">
+            <summary>
+            Flushes any pending changes to the backing store.
+            </summary>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataFilter">
             <summary>
@@ -2515,6 +2537,44 @@
             Progress reporting for a long-running reindexing operation.
             </summary>
         </member>
+        <member name="T:Microsoft.PackageGraph.Storage.IMetadataMapping">
+            <summary>
+            Defines a mapping between package identities and integer indexes.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataMapping.GetPackageIndex(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <summary>
+            Gets the integer index for a package identity.
+            </summary>
+            <param name="packageIdentity">The package identity to look up.</param>
+            <returns>The package index, or -1 if not found.</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataMapping.GetPackageIdentity(System.Int32)">
+            <summary>
+            Gets the package identity for an integer index.
+            </summary>
+            <param name="packageIndex">The package index to look up.</param>
+            <returns>The package identity, or null if not found.</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataMapping.ContainsPackage(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <summary>
+            Checks if a package identity exists in the mapping.
+            </summary>
+            <param name="packageIdentity">The package identity to check.</param>
+            <returns>True if the package exists, false otherwise.</returns>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.IMetadataMapping.PackageCount">
+            <summary>
+            Gets the total number of packages in the mapping.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataMapping.GetPackageType(System.Int32)">
+            <summary>
+            Gets the package type for a given index.
+            </summary>
+            <param name="packageIndex">The package index.</param>
+            <returns>The package type from <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.StoredPackageType"/>, or -1 if not exist.</returns>
+        </member>
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataSink">
             <summary>
             Interface for an object that can store packages metadata
@@ -2582,7 +2642,7 @@
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataSource.GetFiles``1(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
             <summary>
-            Retrieves content files associated with a package
+            Retrieves content files associated with a package.
             </summary>
             <typeparam name="T">The type of content file applicable to the package, depending on the partition</typeparam>
             <param name="packageIdentity">The identity of the package</param>
@@ -2684,6 +2744,51 @@
             <summary>
             Progress reporting for a long-running reindexing operation.
             </summary>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.IMetadataStoreOperations">
+            <summary>
+            Defines CRUD operations for a metadata store.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataStoreOperations.AddPackage(Microsoft.PackageGraph.ObjectModel.IPackage)">
+            <summary>
+            Adds a package to the store.
+            </summary>
+            <param name="package">The package to add.</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataStoreOperations.AddPackages(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Adds a collection of packages to the store.
+            </summary>
+            <param name="packages">The packages to add.</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataStoreOperations.GetMetadata(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <summary>
+            Gets the metadata for a package as a stream.
+            </summary>
+            <param name="packageIdentity">The identity of the package to retrieve metadata for.</param>
+            <returns>A stream containing the package metadata.</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataStoreOperations.GetFiles``1(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <summary>
+            Gets the list of files for a package.
+            </summary>
+            <typeparam name="T">The type of content file to return.</typeparam>
+            <param name="packageIdentity">The identity of the package to retrieve files for.</param>
+            <returns>A list of content files.</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataStoreOperations.GetPackageIdentities">
+            <summary>
+            Gets all package identities in the store.
+            </summary>
+            <returns>An enumerable of package identities.</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataStoreOperations.GetPackage(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <summary>
+            Gets a package from the store.
+            </summary>
+            <param name="packageIdentity">The identity of the package to retrieve.</param>
+            <returns>The package.</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Azure.BlobContentStore">
             <summary>
@@ -2842,9 +2947,30 @@
             Hashes file contents and checks hashes with value expected from update file metadata
             </summary>
         </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.DbContext">
+            <summary>
+            Represents the database context, managing the connection and table creation.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DbContext.GetConnection">
+            <summary>
+            Gets the active database connection.
+            </summary>
+            <returns>The SQLite connection.</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DbContext.InitializeDatabase">
+            <summary>
+            Initializes the database by creating the necessary tables if they don't exist.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DbContext.Dispose">
+            <summary>
+            Releases the resources used by the database connection.
+            </summary>
+        </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext">
             <summary>
-            Represents the database context for deployments and synchronization, managing the connection and table creation.
+            Represents the <see cref="T:Microsoft.PackageGraph.Storage.Local.DbContext"/> for deployments and synchronization.
             </summary>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.#ctor(System.String)">
@@ -2854,20 +2980,13 @@
             <param name="databasePath">The path to the SQLite database file.</param>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.InitializeDatabase">
-            <summary>
-            Initializes the database by creating the necessary tables if they don't exist.
-            </summary>
+            <inheritdoc/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.GetConnection">
-            <summary>
-            Gets the active database connection.
-            </summary>
-            <returns>The SQLite connection.</returns>
+            <inheritdoc/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.Dispose">
-            <summary>
-            Releases the resources used by the database connection.
-            </summary>
+            <inheritdoc/>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.DeploymentStore">
             <summary>
@@ -2937,7 +3056,107 @@
             <inheritdoc cref="P:Microsoft.PackageGraph.Storage.IMetadataStore.IsMetadataIndexingSupported"/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DirectoryPackageStore.ReIndex">
-            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IMetadataStore.ReIndex"/>
+            <inheritdoc/>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase">
+            <summary>
+            Abstract base class for file-based metadata backing stores.
+            Provides an in-memory implementation of <see cref="T:Microsoft.PackageGraph.Storage.IMetadataMapping"/>.
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.RootPath">
+            <summary>
+            The root path of the backing store.
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.IdentityToIndexMap">
+            <summary>
+            In-memory mapping from package identity to integer index.
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.IndexToIdentityMap">
+            <summary>
+            In-memory mapping from integer index to package identity.
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.PackageTypeIndex">
+            <summary>
+            In-memory mapping from integer index to package type.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase"/> class.
+            </summary>
+            <param name="path">The root path of the backing store.</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetPackageIndex(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetPackageIdentity(System.Int32)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.ContainsPackage(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <inheritdoc/>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.PackageCount">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetPackageIdentities">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetIdentitiesMap">
+            <summary>
+            Gets the in-memory identity map.
+            </summary>
+            <returns>The dictionary that maps indexes to identities.</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.AddIdentity(Microsoft.PackageGraph.ObjectModel.IPackageIdentity,System.Int32)">
+            <summary>
+            Adds an identity to the in-memory mapping.
+            </summary>
+            <param name="packageIdentity">The package identity.</param>
+            <param name="packageIndex">The package index.</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetPackageType(System.Int32)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.AddPackageType(System.Int32,System.Int32)">
+            <summary>
+            Adds a package type mapping.
+            </summary>
+            <param name="packageIndex">The package index.</param>
+            <param name="packageType">The package type.</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetPackageTypeIndex">
+            <summary>
+            Gets the package type index.
+            </summary>
+            <returns>The package type index.</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.AddPackage(Microsoft.PackageGraph.ObjectModel.IPackage)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.AddPackages(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetMetadata(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetFiles``1(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetPackage(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.Flush">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.Dispose">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetEnumerator">
+            <inheritdoc/>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore">
             <summary>
@@ -3012,6 +3231,59 @@
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.Get(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Get(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)"/>
         </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.BackingStoreType">
+            <summary>
+            Defines the backing store types for a DirectoryPackageStore
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.Storage.Local.BackingStoreType.Compressed">
+            <summary>
+            The store is backed by a collection of compressed zip files.
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.Storage.Local.BackingStoreType.Directory">
+            <summary>
+            The store is backed by a directory structure.
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.Storage.Local.BackingStoreType.Sqlite">
+            <summary>
+            The store is backed by a SQLite database.
+            </summary>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.BackingStoreConfiguration">
+            <summary>
+            Configuration for creating a metadata backing store.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.Local.BackingStoreConfiguration.Path">
+            <summary>
+            Gets or sets the path to the backing store.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.Local.BackingStoreConfiguration.StoreType">
+            <summary>
+            Gets or sets the type of the backing store.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.Local.BackingStoreConfiguration.Mode">
+            <summary>
+            Gets or sets the file mode for opening the store.
+            </summary>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.MetadataBackingStoreFactory">
+            <summary>
+            Factory for creating metadata backing stores.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.MetadataBackingStoreFactory.Create(Microsoft.PackageGraph.Storage.Local.BackingStoreConfiguration,Microsoft.PackageGraph.Storage.Local.TableOfContent)">
+            <summary>
+            Creates a metadata backing store based on the specified configuration.
+            </summary>
+            <param name="configuration">The configuration for the backing store.</param>
+            <param name="toc">The table of contents for compressed stores.</param>
+            <returns>An instance of <see cref="T:Microsoft.PackageGraph.Storage.IMetadataBackingStore"/>.</returns>
+        </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.PackageStore">
             <summary>
             Creates an instance of <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> that stores update metadata locally in a specified directory.
@@ -3039,6 +3311,16 @@
             </summary>
             <param name="path">Path to the directory to check.</param>
             <returns>True if a store exists under the directory, false otherwise</returns>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.SqliteMetadataBackingStore">
+            <summary>
+            Stores metadata in a SQLite database.
+            </summary>
+        </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.SqliteMetadataBackingStore.BlobStream">
+            <summary>
+            Read-only stream used for reading SQLIte BLOB data.
+            </summary>
         </member>
     </members>
 </doc>

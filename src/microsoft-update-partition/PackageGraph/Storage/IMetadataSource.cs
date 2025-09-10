@@ -27,8 +27,8 @@ namespace Microsoft.PackageGraph.Storage
         /// <summary>
         /// Constructor for a package store event
         /// </summary>
-        public PackageStoreEventArgs() 
-        { 
+        public PackageStoreEventArgs()
+        {
         }
     }
 
@@ -55,9 +55,8 @@ namespace Microsoft.PackageGraph.Storage
         /// <returns>True if the source has raw metadata</returns>
         bool ContainsMetadata(IPackageIdentity packageIdentity);
 
-
         /// <summary>
-        /// Retrieves content files associated with a package
+        /// Retrieves content files associated with a package.
         /// </summary>
         /// <typeparam name="T">The type of content file applicable to the package, depending on the partition</typeparam>
         /// <param name="packageIdentity">The identity of the package</param>

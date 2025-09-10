@@ -174,7 +174,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     microsoftUpdateSource.CopyTo(store, CancellationToken.None);
 
                     Console.WriteLine();
-                    Console.WriteLine("Done!");
+                    ConsoleOutput.WriteGreen("Done!");
                 }
             }
         }
@@ -223,15 +223,15 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     Console.Write("Retrieving updates metadata [{0}]: 0%", e.Maximum);
                     break;
 
+                case MetadataQueryStage.GetUpdateMetadataProgress:
+                    UpdateConsoleForMessageRefresh();
+                    Console.Write("Retrieving updates metadata [{0}]: {1:000.00}%", e.Maximum, e.PercentDone);
+                    break;
+
                 case MetadataQueryStage.GetUpdateMetadataEnd:
                     UpdateConsoleForMessageRefresh();
                     Console.Write("Retrieving updates metadata [{0}]: 100.00%", e.Maximum);
                     ConsoleOutput.WriteGreen(" Done!");
-                    break;
-
-                case MetadataQueryStage.GetUpdateMetadataProgress:
-                    UpdateConsoleForMessageRefresh();
-                    Console.Write("Retrieving updates metadata [{0}]: {1:000.00}%", e.Maximum, e.PercentDone);
                     break;
             }
         }
