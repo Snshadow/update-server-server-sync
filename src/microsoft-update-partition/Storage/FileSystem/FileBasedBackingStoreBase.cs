@@ -15,6 +15,11 @@ namespace Microsoft.PackageGraph.Storage.Local
     /// </summary>
     public abstract class FileBasedBackingStoreBase : IMetadataBackingStore
     {
+        private const string IdentitiesFileName = ".identities.json";
+        private const string TypesFileName = ".types.json";
+        private const string IdentitiesDirectoryName = "identities";
+        private const string IndexesContainerFileName = ".indexes.zip";
+
         /// <summary>
         /// The root path of the backing store.
         /// </summary>
@@ -35,6 +40,11 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// </summary>
         protected readonly Dictionary<int, int> PackageTypeIndex = new();
 
+        private void Initialize()
+        {
+
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="FileBasedBackingStoreBase"/> class.
         /// </summary>
@@ -42,6 +52,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         public FileBasedBackingStoreBase(string path)
         {
             RootPath = path;
+
+            Initialize();
         }
 
         /// <inheritdoc/>
@@ -112,6 +124,9 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         /// <inheritdoc/>
         public abstract void Flush();
+
+        /// <inheritdoc/>
+        public abstract bool IsValid();
 
         /// <inheritdoc/>
         public abstract void Dispose();

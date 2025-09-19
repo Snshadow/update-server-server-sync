@@ -22,11 +22,31 @@ namespace Microsoft.PackageGraph.Storage.Local
         public event EventHandler<PackageStoreEventArgs> PackagesAddProgress;
 #pragma warning restore 0067
 
-        public DirectoryMetadataStore(string path) : base(path)
+        public DirectoryMetadataStore(string path, FileMode mode) : base(path)
         {
-            if (!Directory.Exists(path))
+            switch (mode)
             {
-                Directory.CreateDirectory(path);
+                case FileMode.CreateNew:
+                    if (Directory.Exists(path))
+                    {
+                        throw new IOException($"Directory already exists: {path}");
+                    }
+                    break;
+                case FileMode.Open:
+                    if (!Directory.Exists(path))
+                    {
+                        throw new FileNotFoundException($"Directory not found: {path}", path);
+                    }
+                    break;
+                case FileMode.Create:
+                case FileMode.OpenOrCreate:
+                    if (!Directory.Exists(path))
+                    {
+                        Directory.CreateDirectory(path);
+                    }
+                    break;
+                default:
+                    throw new NotSupportedException($"The file mode {mode} is not supported.");
             }
         }
 
@@ -153,6 +173,11 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public override void Flush()
         {
+        }
+
+        public override bool IsValid()
+        {
+            return Directory.Exists(RootPath);
         }
 
         public override void Dispose()

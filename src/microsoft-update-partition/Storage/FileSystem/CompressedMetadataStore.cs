@@ -262,6 +262,12 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
+        public override bool IsValid()
+        {
+            // TODO implement this
+            return true;
+        }
+
         public override void Dispose()
         {
             if (!_isDisposed)

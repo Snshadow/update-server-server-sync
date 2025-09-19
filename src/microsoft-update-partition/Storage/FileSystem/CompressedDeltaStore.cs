@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.ObjectModel;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,18 +12,63 @@ namespace Microsoft.PackageGraph.Storage.Local
 {
     class CompressedDeltaStore : FileBasedBackingStoreBase
     {
-        private readonly TableOfContent TOC;
+        private const string TableOfContentsFileName = ".toc.json";
+
+        private TableOfContent TOC;
         private readonly List<CompressedMetadataStore> DeltaMetadataStores;
         private bool NewDeltaSubdirectoryCreated = false;
 
-        public CompressedDeltaStore(string path, TableOfContent toc) : base(path)
+        public CompressedDeltaStore(string path, FileMode mode) : base(path)
         {
-            TOC = toc;
+            switch (mode)
+            {
+                case FileMode.CreateNew:
+                case FileMode.Create:
+                    TOC = new TableOfContent();
+                    break;
+                case FileMode.Open:
+                    ReadToc();
+                    break;
+                case FileMode.OpenOrCreate:
+                    if (!File.Exists(Path.Combine(RootPath, TableOfContentsFileName)))
+                    {
+                        TOC = new TableOfContent();
+                    }
+                    else
+                    {
+                        ReadToc();
+                    }
+                    break;
+                default:
+                    throw new NotSupportedException($"The file mode {mode} is not supported.");
+            }
+
             DeltaMetadataStores = new List<CompressedMetadataStore>();
             for (int i = 0; i < TOC.DeltaSectionCount; i++)
             {
                 DeltaMetadataStores.Add(CompressedMetadataStore.OpenExisting(Path.Combine(path, $"{i}.zip")));
             }
+        }
+
+        private void ReadToc()
+        {
+            using (var tocFileStream = File.OpenText(Path.Combine(RootPath, TableOfContentsFileName)))
+            {
+                var serializer = new JsonSerializer();
+                TOC = serializer.Deserialize(tocFileStream, typeof(TableOfContent)) as TableOfContent;
+            }
+
+            if (TOC?.TocVersion != TableOfContent.CurrentVersion)
+            {
+                throw new InvalidDataException();
+            }
+        }
+
+        private void WriteToc()
+        {
+            using var tocFileStream = File.CreateText(Path.Combine(RootPath, TableOfContentsFileName));
+            var serializer = new JsonSerializer();
+            serializer.Serialize(tocFileStream, TOC);
         }
 
         public override void AddPackage(IPackage package)
@@ -73,6 +120,8 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 DeltaMetadataStores.Last().Flush();
             }
+
+            WriteToc();
         }
 
         public override Stream GetMetadata(IPackageIdentity packageIdentity)

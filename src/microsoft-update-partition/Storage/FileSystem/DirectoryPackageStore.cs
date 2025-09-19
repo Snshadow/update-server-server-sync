@@ -16,19 +16,10 @@ namespace Microsoft.PackageGraph.Storage.Local
 {
     class DirectoryPackageStore : IDeploySyncStore, IMetadataSink, IMetadataStore, IMetadataLookup
     {
-        readonly string TargetPath;
+        private readonly string TargetPath;
 
-        // TODO hide constants into FileBasedBackingStoreBase
-        private const string TableOfContentsFileName = ".toc.json";
-        private const string IdentitiesFileName = ".identities.json";
-        private const string TypesFileName = ".types.json";
-        private const string IdentitiesDirectoryName = "identities";
-        private const string IndexesContainerFileName = ".indexes.zip";
+        private readonly MetadataBackingStore _metadataBackingStore;
 
-        readonly IMetadataBackingStore _metadataBackingStore;
-
-        // TODO hide this into FileBasedBackingStoreBase
-        private TableOfContent TOC;
         private readonly Lock WriteLock = new();
 
         private readonly DeploySyncDbContext DbContext;
@@ -50,7 +41,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         private bool _IsReindexingRequired = false;
 
         // TODO wrap this into FileBasedBackingStoreBase to support swapping with sqlite implementation
-        readonly private ZipStreamIndexContainer Indexes;
+        private readonly ZipStreamIndexContainer Indexes;
 
 #pragma warning disable 0067
         public event EventHandler<PackageStoreEventArgs> MetadataCopyProgress;
@@ -65,13 +56,10 @@ namespace Microsoft.PackageGraph.Storage.Local
         public DirectoryPackageStore(BackingStoreConfiguration configuration)
         {
             TargetPath = configuration.Path;
-            TOC = new TableOfContent();
 
             if (Directory.Exists(TargetPath) && IsValidDirectory(TargetPath))
             {
-                ReadToc();
-
-                _metadataBackingStore = MetadataBackingStoreFactory.Create(configuration, TOC);
+                _metadataBackingStore = MetadataBackingStoreFactory.Create(configuration);
 
                 ReadIdentities();
 
@@ -103,13 +91,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 Directory.CreateDirectory(TargetPath);
                 Indexes = ZipStreamIndexContainer.Create();
-                TOC = new TableOfContent
-                {
-                    TocVersion = TableOfContent.CurrentVersion,
-                };
 
-                _metadataBackingStore = MetadataBackingStoreFactory.Create(configuration, TOC);
-
+                _metadataBackingStore = MetadataBackingStoreFactory.Create(configuration);
 
                 DbContext = new DeploySyncDbContext(Path.Combine(TargetPath, "deploySync.db"));
                 Deployments = new DeploymentStore(DbContext);
@@ -177,29 +160,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
 
             File.Move(tempIndexContainerPath, indexContainerPath);
-        }
-
-        // TODO hide this into file based implementation
-        private void ReadToc()
-        {
-            using (var tocFileStream = File.OpenText(Path.Combine(TargetPath, TableOfContentsFileName)))
-            {
-                var serializer = new JsonSerializer();
-                TOC = serializer.Deserialize(tocFileStream, typeof(TableOfContent)) as TableOfContent;
-            }
-
-            if (TOC?.TocVersion != TableOfContent.CurrentVersion)
-            {
-                throw new InvalidDataException();
-            }
-        }
-
-        // TODO hide this into file based implementation
-        private void WriteToc()
-        {
-            using var tocFileStream = File.CreateText(Path.Combine(TargetPath, TableOfContentsFileName));
-            var serializer = new JsonSerializer();
-            serializer.Serialize(tocFileStream, TOC);
         }
 
         // TODO hide this into file based implementation

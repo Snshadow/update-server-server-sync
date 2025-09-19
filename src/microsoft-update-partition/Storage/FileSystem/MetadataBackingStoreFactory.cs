@@ -55,14 +55,13 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// Creates a metadata backing store based on the specified configuration.
         /// </summary>
         /// <param name="configuration">The configuration for the backing store.</param>
-        /// <param name="toc">The table of contents for compressed stores.</param>
         /// <returns>An instance of <see cref="IMetadataBackingStore"/>.</returns>
-        public static IMetadataBackingStore Create(BackingStoreConfiguration configuration, TableOfContent toc)
+        public static IMetadataBackingStore Create(BackingStoreConfiguration configuration)
         {
             return configuration.StoreType switch
             {
-                BackingStoreType.Compressed => new CompressedDeltaStore(configuration.Path, toc),
-                BackingStoreType.Directory => new DirectoryMetadataStore(configuration.Path),
+                BackingStoreType.Compressed => new CompressedDeltaStore(configuration.Path, configuration.Mode),
+                BackingStoreType.Directory => new DirectoryMetadataStore(configuration.Path, configuration.Mode),
                 BackingStoreType.Sqlite => new SqliteMetadataBackingStore(configuration.Path, configuration.Mode),
                 _ => throw new NotSupportedException($"Backing store type {configuration.StoreType} is not supported.")
             };

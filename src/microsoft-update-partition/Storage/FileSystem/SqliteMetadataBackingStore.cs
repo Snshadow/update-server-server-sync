@@ -10,7 +10,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -22,7 +21,7 @@ namespace Microsoft.PackageGraph.Storage.Local
     /// <summary>
     /// Stores metadata in a SQLite database.
     /// </summary>
-    class SqliteMetadataBackingStore : DbContext, IMetadataBackingStore, IMetadataSink, IMetadataSource
+    class SqliteMetadataBackingStore : DbContext, MetadataBackingStore, IMetadataSink, IMetadataSource
     {
         private readonly SqliteConnection _connection;
         private bool _isDisposed;
@@ -35,21 +34,22 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private static readonly ThreadLocal<SqliteTransaction> _currentTransaction = new();
 
-        public SqliteMetadataBackingStore(string databasePath, FileMode mode)
+        public SqliteMetadataBackingStore(string path, FileMode mode)
         {
+            var dbPath = Path.Combine(path, "metadata.db");
             switch (mode)
             {
                 case FileMode.CreateNew:
                 case FileMode.Create:
-                    if (File.Exists(databasePath))
+                    if (File.Exists(dbPath))
                     {
-                        File.Delete(databasePath);
+                        File.Delete(dbPath);
                     }
                     break;
                 case FileMode.Open:
-                    if (!File.Exists(databasePath))
+                    if (!File.Exists(dbPath))
                     {
-                        throw new FileNotFoundException($"Database not found: {databasePath}", databasePath);
+                        throw new FileNotFoundException($"Database not found: {dbPath}", dbPath);
                     }
                     break;
                 case FileMode.OpenOrCreate:
@@ -58,7 +58,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     throw new NotSupportedException($"The file mode {mode} is not supported.");
             }
 
-            _connection = new SqliteConnection($"Data Source={databasePath};");
+            _connection = new SqliteConnection($"Data Source={dbPath};");
             _connection.Open();
 
             // Enable WAL(Write-Ahead Logging) for performance.
