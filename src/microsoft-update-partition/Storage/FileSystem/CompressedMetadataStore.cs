@@ -6,6 +6,7 @@ using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,7 +15,7 @@ using System.Threading;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
-    class CompressedMetadataStore : FileBasedBackingStoreBase, IMetadataSink, IMetadataSource
+    class CompressedMetadataStore : IEnumerable<IPackage>, IMetadataSink, IMetadataSource
     {
         private ZipFile InputFile;
         private ZipOutputStream OutputFile;
@@ -31,13 +32,13 @@ namespace Microsoft.PackageGraph.Storage.Local
         public event EventHandler<PackageStoreEventArgs> PackagesAddProgress;
 #pragma warning restore 0067
 
-        public CompressedMetadataStore(string path) : base(path)
+        internal CompressedMetadataStore()
         {
         }
 
-        public static CompressedMetadataStore OpenExisting(string path)
+        internal static CompressedMetadataStore OpenExisting(string path)
         {
-            var zipStorage = new CompressedMetadataStore(path)
+            var zipStorage = new CompressedMetadataStore()
             {
                 InputFile = new ZipFile(path)
             };
@@ -46,9 +47,9 @@ namespace Microsoft.PackageGraph.Storage.Local
             return zipStorage;
         }
 
-        public static CompressedMetadataStore CreateNew(string path)
+        internal static CompressedMetadataStore CreateNew(string path)
         {
-            var newZipStorage = new CompressedMetadataStore(path)
+            var newZipStorage = new CompressedMetadataStore()
             {
                 OutputFile = new ZipOutputStream(File.Create(path))
             };
@@ -73,7 +74,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             return identity.OpenId.Last().ToString();
         }
 
-        public override Stream GetMetadata(IPackageIdentity packageIdentity)
+        public Stream GetMetadata(IPackageIdentity packageIdentity)
         {
             if (InputFile is not null)
             {
@@ -111,7 +112,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
-        public override List<T> GetFiles<T>(IPackageIdentity packageIdentity)
+        public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
         {
             if (InputFile is null)
             {
@@ -131,10 +132,10 @@ namespace Microsoft.PackageGraph.Storage.Local
                 }
             }
 
-            return new List<T>();
+            return new();
         }
 
-        public override void AddPackages(IEnumerable<IPackage> packages)
+        public void AddPackages(IEnumerable<IPackage> packages)
         {
             foreach (var package in packages)
             {
@@ -142,7 +143,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
-        public override IPackage GetPackage(IPackageIdentity packageIdentity)
+        public IPackage GetPackage(IPackageIdentity packageIdentity)
         {
             if (PartitionRegistration.TryGetPartitionFromPackageId(packageIdentity, out var partitionDefinition))
             {
@@ -153,7 +154,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             throw new KeyNotFoundException();
         }
 
-        public override void AddPackage(IPackage package)
+        public void AddPackage(IPackage package)
         {
             if (OutputFile is null)
             {
@@ -196,7 +197,9 @@ namespace Microsoft.PackageGraph.Storage.Local
             OutputFile.CloseEntry();
         }
 
-        public override IEnumerator<IPackage> GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public IEnumerator<IPackage> GetEnumerator()
         {
             if (InputFile is null)
             {
@@ -251,7 +254,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
-        public override void Flush()
+        internal void Flush()
         {
             if (OutputFile is not null)
             {
@@ -262,13 +265,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
-        public override bool IsValid()
-        {
-            // TODO implement this
-            return true;
-        }
-
-        public override void Dispose()
+        public void Dispose()
         {
             if (!_isDisposed)
             {

@@ -159,7 +159,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var tocReader = new StreamReader(tocEntry);
             var jsonSerializer = new JsonSerializer();
             var toc = jsonSerializer.Deserialize(tocReader, typeof(IndexTableOfContents)) as IndexTableOfContents;
-            if (toc.Version == IndexTableOfContents.CurrentVersion)
+            if (toc?.Version == IndexTableOfContents.CurrentVersion)
             {
                 var registeredIndexes = GetRegisteredIndexes();
 

@@ -36,15 +36,5 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             return new DirectoryPackageStore(path, FileMode.OpenOrCreate);
         }
-
-        /// <summary>
-        /// Checks if a IMetadataStore exists in the specified directory
-        /// </summary>
-        /// <param name="path">Path to the directory to check.</param>
-        /// <returns>True if a store exists under the directory, false otherwise</returns>
-        public static bool Exists(string path)
-        {
-            return DirectoryPackageStore.Exists(path);
-        }
     }
 }

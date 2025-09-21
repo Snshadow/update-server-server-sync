@@ -38,6 +38,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     {
                         ReadToc();
                     }
+
                     break;
                 default:
                     throw new NotSupportedException($"The file mode {mode} is not supported.");
@@ -71,7 +72,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             serializer.Serialize(tocFileStream, TOC);
         }
 
-        public override void AddPackage(IPackage package)
+        public override int AddPackage(IPackage package)
         {
             if (!NewDeltaSubdirectoryCreated)
             {
@@ -94,10 +95,19 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             TOC.DeltaSectionPackageCount[^1] = TOC.DeltaSectionPackageCount[^1] + 1;
 
-            var newPackageIndex = IdentityToIndexMap.Count;
+            var newPackageIndex = PackageCount;
             AddIdentity(package.Id, newPackageIndex);
 
             DeltaMetadataStores.Last().AddPackage(package);
+
+            Indexes.IndexPackage(package, newPackageIndex);
+            IsIndexDirty = true;
+
+            PendingPackages.Add(package);
+
+            IsDirty = true;
+
+            return newPackageIndex;
         }
 
         public override void AddPackages(IEnumerable<IPackage> packages)
@@ -124,6 +134,12 @@ namespace Microsoft.PackageGraph.Storage.Local
             WriteToc();
         }
 
+        public static new bool IsValid(string path)
+        {
+            return FileBasedBackingStoreBase.IsValid(path) &&
+                File.Exists(Path.Combine(path, TableOfContentsFileName));
+        }
+
         public override Stream GetMetadata(IPackageIdentity packageIdentity)
         {
             var packageIndex = GetPackageIndex(packageIdentity);
@@ -139,7 +155,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         public override List<T> GetFiles<T>(IPackageIdentity packageIdentity)
         {
             var packageIndex = GetPackageIndex(packageIdentity);
-            if (packageIndex < 0)
+            if (packageIndex == -1)
             {
                 throw new KeyNotFoundException();
             }

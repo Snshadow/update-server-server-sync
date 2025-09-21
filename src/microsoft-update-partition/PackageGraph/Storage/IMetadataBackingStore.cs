@@ -18,9 +18,21 @@ namespace Microsoft.PackageGraph.Storage
         void Flush();
 
         /// <summary>
-        /// Checks if the existing store is valid.
+        /// True if the path has the valid store, false otherwise.
         /// </summary>
+        /// <param name="path">Path used by the metadata store.</param>
         /// <returns></returns>
-        bool IsValid();
+        static abstract bool IsValid(string path);
+
+        /// <summary>
+        /// Reindex an underlying store.
+        /// </summary>
+        /// <param name="forceReindex">If true, always reindex a store.</param>
+        void CheckIndex(bool forceReindex = false);
+
+        /// <summary>
+        /// A list of packages that were added recently to the store.
+        /// </summary>
+        List<IPackage> PendingPackages { get; }
     }
 }

@@ -2,6 +2,10 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.ObjectModel;
+using Microsoft.PackageGraph.Partitions;
+using Microsoft.PackageGraph.Storage.Index;
+using Newtonsoft.Json;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -40,20 +44,56 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// </summary>
         protected readonly Dictionary<int, int> PackageTypeIndex = new();
 
-        private void Initialize()
-        {
+        /// <summary>
+        /// Zip stream that contains indexes for fast lookup.
+        /// </summary>
+        private protected readonly ZipStreamIndexContainer Indexes;
 
-        }
+        /// <inheritdoc/>
+        public bool IsReindexingRequired { get; protected set; }
+
+        /// <summary>
+        /// Metadata store needs to be updated.
+        /// </summary>
+        protected bool IsDirty;
+
+        /// <summary>
+        /// Package indexes need to be updated.
+        /// </summary>
+        protected bool IsIndexDirty;
+
+        /// <inheritdoc/>
+        public List<IPackage> PendingPackages { get; } = new();
+
+        /// <inheritdoc/>
+        public event EventHandler<PackageStoreEventArgs> PackageIndexingProgress;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FileBasedBackingStoreBase"/> class.
         /// </summary>
         /// <param name="path">The root path of the backing store.</param>
-        public FileBasedBackingStoreBase(string path)
+        protected FileBasedBackingStoreBase(string path)
         {
             RootPath = path;
 
-            Initialize();
+            if (IsValid(RootPath))
+            {
+                var indexContainerPath = Path.Combine(RootPath, IndexesContainerFileName);
+                Indexes = ZipStreamIndexContainer.Open(File.Exists(indexContainerPath)
+                    ? File.OpenRead(indexContainerPath)
+                    : null);
+            }
+            else
+            {
+                Indexes = ZipStreamIndexContainer.Create();
+            }
+
+            if (Indexes.GetStatus() != ZipStreamIndexContainer.IndexContainerStatus.Valid)
+            {
+                IsReindexingRequired = true;
+            }
+
+            ReadIdentities();
         }
 
         /// <inheritdoc/>
@@ -70,12 +110,6 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         /// <inheritdoc/>
         public IEnumerable<IPackageIdentity> GetPackageIdentities() => IdentityToIndexMap.Keys.ToList();
-
-        /// <summary>
-        /// Gets the in-memory identity map.
-        /// </summary>
-        /// <returns>The dictionary that maps indexes to identities.</returns>
-        public IReadOnlyDictionary<int, IPackageIdentity> GetIdentitiesMap() => IndexToIdentityMap;
 
         /// <summary>
         /// Adds an identity to the in-memory mapping.
@@ -108,7 +142,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         public IReadOnlyDictionary<int, int> GetPackageTypeIndex() => PackageTypeIndex;
 
         /// <inheritdoc/>
-        public abstract void AddPackage(IPackage package);
+        public abstract int AddPackage(IPackage package);
 
         /// <inheritdoc/>
         public abstract void AddPackages(IEnumerable<IPackage> packages);
@@ -123,10 +157,163 @@ namespace Microsoft.PackageGraph.Storage.Local
         public abstract IPackage GetPackage(IPackageIdentity packageIdentity);
 
         /// <inheritdoc/>
-        public abstract void Flush();
+        public virtual void Flush()
+        {
+            if (IsDirty)
+            {
+                var packageTypesFile = Path.Combine(RootPath, TypesFileName);
+                using (var typesWriter = File.CreateText(packageTypesFile))
+                {
+                    var serializer = new JsonSerializer();
+                    serializer.Serialize(typesWriter, GetPackageTypeIndex());
+                }
+
+                WriteIndexes();
+
+                foreach (var partitionEntry in PartitionRegistration.GetAllPartitions())
+                {
+                    if (!partitionEntry.HandlesIdentities)
+                    {
+                        continue;
+                    }
+
+                    var partitionIdentites = partitionEntry.Factory.FilterPartitionIdentities(IndexToIdentityMap);
+
+                    var partitionDirectoryPath = Path.Combine(RootPath, IdentitiesDirectoryName, partitionEntry.Name);
+                    if (!Directory.Exists(partitionDirectoryPath))
+                    {
+                        Directory.CreateDirectory(partitionDirectoryPath);
+                    }
+
+                    var partitionIdentitiesFile = Path.Combine(partitionDirectoryPath, IdentitiesFileName);
+                    using var identitiesWriter = File.CreateText(partitionIdentitiesFile);
+                    var serializer = new JsonSerializer();
+                    serializer.Serialize(identitiesWriter, partitionIdentites);
+                }
+
+                IsDirty = false;
+
+                PendingPackages.Clear();
+            }
+            else if (IsIndexDirty)
+            {
+                WriteIndexes();
+                IsIndexDirty = false;
+            }
+        }
 
         /// <inheritdoc/>
-        public abstract bool IsValid();
+        public static bool IsValid(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                return false;
+            }
+
+            var identitiesDirectory = Path.Combine(path, IdentitiesDirectoryName);
+            if (!Directory.Exists(identitiesDirectory))
+            {
+                return false;
+            }
+
+            var partitions = Directory.GetDirectories(identitiesDirectory);
+            foreach (var partition in partitions)
+            {
+                var identitiesFile = Path.Combine(partition, IdentitiesFileName);
+                if (!File.Exists(identitiesFile))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void ReadIdentities()
+        {
+            var partitionDirectories = Directory.GetDirectories(Path.Combine(RootPath, IdentitiesDirectoryName));
+            foreach (var partitionDirectory in partitionDirectories)
+            {
+                var identitiesFilePath = Path.Combine(partitionDirectory, IdentitiesFileName);
+                var partitionName = Path.GetFileName(partitionDirectory);
+
+                if (PartitionRegistration.TryGetPartition(partitionName, out var partitionDefinition))
+                {
+                    using var identitiesFileReader = File.OpenText(identitiesFilePath);
+                    var partitionIdentities = partitionDefinition.Factory.IdentitiesFromJson(identitiesFileReader);
+                    foreach (var identityEntry in partitionIdentities)
+                    {
+                        AddIdentity(identityEntry.Value, identityEntry.Key);
+                    }
+                }
+            }
+
+            var typesFile = Path.Combine(RootPath, TypesFileName);
+            using var typesFileReader = File.OpenText(typesFile);
+            var serializer = new JsonSerializer();
+            var packageTypeIndex = serializer.Deserialize(typesFileReader, typeof(Dictionary<int, int>)) as Dictionary<int, int>;
+            foreach (var entry in packageTypeIndex ?? [])
+            {
+                AddPackageType(entry.Key, entry.Value);
+            }
+        }
+
+        private void WriteIndexes()
+        {
+            var indexContainerPath = Path.Combine(RootPath, IndexesContainerFileName);
+            var tempIndexContainerPath = indexContainerPath + ".tmp";
+            using (var fileStream = File.Create(tempIndexContainerPath))
+            {
+                Indexes.Save(fileStream);
+            }
+
+            Indexes.CloseInput();
+
+            if (File.Exists(indexContainerPath))
+            {
+                File.Delete(indexContainerPath);
+            }
+
+            File.Move(tempIndexContainerPath, indexContainerPath);
+        }
+
+        /// <inheritdoc/>
+        public void ReIndex()
+        {
+            CheckIndex(true);
+        }
+
+        /// <inheritdoc/>
+        public void CheckIndex(bool forceReindex = false)
+        {
+            if (!IsReindexingRequired && !forceReindex)
+            {
+                return;
+            }
+
+            Indexes.ResetIndex();
+
+            PackageStoreEventArgs progressEvent = new()
+            {
+                Total = PackageCount,
+                Current = 0
+            };
+
+            foreach (var parsedPackage in (IEnumerable<IPackage>)this)
+            {
+                Indexes.IndexPackage(parsedPackage, GetPackageIndex(parsedPackage.Id));
+
+                if (progressEvent.Current % 100 == 0)
+                {
+                    PackageIndexingProgress?.Invoke(this, progressEvent);
+                }
+
+                progressEvent.Current++;
+            }
+
+            IsReindexingRequired = false;
+            IsIndexDirty = true;
+        }
 
         /// <inheritdoc/>
         public abstract void Dispose();
@@ -135,5 +322,64 @@ namespace Microsoft.PackageGraph.Storage.Local
         public abstract IEnumerator<IPackage> GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        /// <inheritdoc/>
+        public bool TrySimpleKeyLookup<T>(IPackageIdentity packageIdentity, string indexName, out T value)
+        {
+            var packageIndex = GetPackageIndex(packageIdentity);
+            if (packageIndex == -1)
+            {
+                throw new KeyNotFoundException();
+            }
+
+            return Indexes.TrySimpleKeyLookup(packageIndex, indexName, out value);
+        }
+
+        /// <inheritdoc/>
+        public bool TryPackageLookupByCustomKey<T>(T key, string indexName, out IPackageIdentity value)
+        {
+            if (Indexes.TryPackageLookupByCustomKey(key, indexName, out int packageIndex))
+            {
+                value = GetPackageIdentity(packageIndex);
+                return value != null;
+            }
+            else
+            {
+                value = null;
+                return false;
+            }
+        }
+
+        /// <inheritdoc/>
+        public bool TryPackageListLookupByCustomKey<T>(T key, string indexName, out List<IPackageIdentity> value)
+        {
+            if (Indexes.TryPackageListLookupByCustomKey(key, indexName, out List<int> packageIndex))
+            {
+                value = packageIndex.Select(index => GetPackageIdentity(index)).ToList();
+                return true;
+            }
+            else
+            {
+                value = null;
+                return false;
+            }
+        }
+
+        /// <inheritdoc/>
+        public bool TryListKeyLookup<T>(IPackageIdentity packageIdentity, string indexName, out List<T> value)
+        {
+            var packageIndex = GetPackageIndex(packageIdentity);
+            if (packageIndex < 0)
+            {
+                throw new KeyNotFoundException();
+            }
+
+            return Indexes.TryListKeyLookup(packageIndex, indexName, out value);
+        }
+
+        internal List<IndexDefinition> GetAvailableIndexes()
+        {
+            return Indexes.GetLoadedIndexes();
+        }
     }
 }

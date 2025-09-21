@@ -102,8 +102,11 @@ namespace Microsoft.PackageGraph.Storage.Local
             """;
             command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = deployment.RevisionId;
             command.Parameters.Add("@Action", SqliteType.Integer).Value = deployment.Action;
-            command.Parameters.Add("@Deadline", SqliteType.Text).Value = (object)deployment.Deadline?.ToString("o") ?? DBNull.Value;
-            command.Parameters.Add("@LastChangeTime", SqliteType.Text).Value = deployment.LastChangeTime.ToString("o");
+            command.Parameters.Add("@Deadline", SqliteType.Text).Value =
+                (object)deployment.Deadline?.ToString("o", DateTimeFormatInfo.InvariantInfo) ?? DBNull.Value;
+            command.Parameters.Add("@LastChangeTime", SqliteType.Text).Value =
+                deployment.LastChangeTime.ToString("o", DateTimeFormatInfo.InvariantInfo);
+
             command.ExecuteNonQuery();
         }
 
@@ -179,7 +182,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 WHERE LastSyncTime < @LastSyncTime
             """;
             command.Parameters.Add("@ComputerId", SqliteType.Text).Value = computerId;
-            command.Parameters.Add("@LastSyncTime", SqliteType.Text).Value = syncTime.ToString("o");
+            command.Parameters.Add("@LastSyncTime", SqliteType.Text).Value = syncTime.ToString("o", DateTimeFormatInfo.InvariantInfo);
             command.ExecuteNonQuery();
         }
 

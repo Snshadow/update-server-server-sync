@@ -277,14 +277,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             {
                 return new GZipStream(new MemoryStream(_MetadataBytes, false), CompressionMode.Decompress);
             }
-            else if (_MetadataSource is not null)
-            {
-                return _MetadataSource.GetMetadata(_Id);
-            }
-            else
-            {
-                return null;
-            }
+
+            return _MetadataSource?.GetMetadata(_Id);
         }
 
         private byte[] _MetadataBytes;

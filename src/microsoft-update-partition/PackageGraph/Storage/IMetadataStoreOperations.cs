@@ -16,7 +16,8 @@ namespace Microsoft.PackageGraph.Storage
         /// Adds a package to the store.
         /// </summary>
         /// <param name="package">The package to add.</param>
-        void AddPackage(IPackage package);
+        /// <returns>An index of a added package.</returns>
+        int AddPackage(IPackage package);
 
         /// <summary>
         /// Adds a collection of packages to the store.
@@ -51,5 +52,12 @@ namespace Microsoft.PackageGraph.Storage
         /// <param name="packageIdentity">The identity of the package to retrieve.</param>
         /// <returns>The package.</returns>
         IPackage GetPackage(IPackageIdentity packageIdentity);
+
+        /// <summary>
+        /// Adds package type information to a store.
+        /// </summary>
+        /// <param name="packageIndex">Index of a package.</param>
+        /// <param name="packageType">A type enum of a package.</param>
+        void AddPackageType(int packageIndex, int packageType);
     }
 }

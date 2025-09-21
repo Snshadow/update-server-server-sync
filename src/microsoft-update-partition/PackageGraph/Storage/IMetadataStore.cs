@@ -12,7 +12,7 @@ namespace Microsoft.PackageGraph.Storage
     /// Store containing metadata for <see cref="IPackage"/> originating from any partition of the package graph.
     /// </para>
     /// </summary>
-    public interface IMetadataStore : IEnumerable<IPackage>, IDisposable, IMetadataSource, IMetadataSink
+    public interface IMetadataStore : IEnumerable<IPackage>, IMetadataSource, IMetadataSink
     {
         /// <summary>
         /// Checks if the store contains a package by identity

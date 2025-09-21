@@ -112,7 +112,13 @@ namespace Microsoft.PackageGraph.Storage.Local
             return new List<T>();
         }
 
-        public override void AddPackage(IPackage package)
+        void IMetadataSink.AddPackage(IPackage package)
+        {
+            _ = AddPackage(package);
+        }
+
+        /// <inheritdoc/>
+        public override int AddPackage(IPackage package)
         {
             lock (WriteLock)
             {
@@ -125,6 +131,18 @@ namespace Microsoft.PackageGraph.Storage.Local
                     WritePackageFiles(package);
                 }
             }
+
+            var newPackageIndex = PackageCount;
+            AddIdentity(package.Id, newPackageIndex);
+
+            Indexes.IndexPackage(package, newPackageIndex);
+            IsIndexDirty = true;
+
+            PendingPackages.Add(package);
+
+            IsDirty = true;
+
+            return newPackageIndex;
         }
 
         private void WritePackageMetadata(IPackage package)
@@ -173,11 +191,6 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public override void Flush()
         {
-        }
-
-        public override bool IsValid()
-        {
-            return Directory.Exists(RootPath);
         }
 
         public override void Dispose()
