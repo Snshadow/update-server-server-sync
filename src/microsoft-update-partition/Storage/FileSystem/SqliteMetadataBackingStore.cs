@@ -5,8 +5,10 @@ using Microsoft.Data.Sqlite;
 using Microsoft.PackageGraph.MicrosoftUpdate.Index;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Partitions;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -98,10 +100,11 @@ namespace Microsoft.PackageGraph.Storage.Local
              * Metadatas: Contains full metadata xml and file digests
              *  RevisionId -> server specific update id
              *  Metadata -> update metadata xml
-             *  Files -> jsonb objects containing list of files primary hex digest
+             *  Categories -> json object containing list of categories of this update
+             *  Files -> jsonb object containing list of files primary hex digest
+             *  Prerequisites -> jsonb object containing data of prerequisites of this update
              * SoftwareInformation: Contains information specific for software updates
              *  RevisionId -> server specific update id
-             *  Prerequisites -> jsonb object containing data of prerequisites of this update
              *  Bundled -> json object containing array of id of updates bundled in this update
              * Superseded: Contains superseded update ids for updates
              *  RevisionId -> server specific update id
@@ -128,13 +131,14 @@ namespace Microsoft.PackageGraph.Storage.Local
             CREATE TABLE IF NOT EXISTS Metadata (
                 RevisionId INTEGER PRIMARY KEY,
                 Metadata BLOB NOT NULL,
+                Categories BLOB,
                 Files BLOB,
+                Prerequisties BLOB,
                 FOREIGN KEY (RevisionId) REFERENCES Identities(Id)
             );
             CREATE TABLE IF NOT EXISTS SoftwareInformation (
                 RevisionId INTEGER PRIMARY KEY,
                 KbArticleId TEXT,
-                Prerequisties BLOB,
                 Bundled BLOB,
                 UNIQUE(KbArticleId),
                 FOREIGN KEY (RevisionId) REFERENCES Identities(Id)
@@ -249,7 +253,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public int AddPackage(IPackage package)
         {
-            if (package?.Id is not MicrosoftUpdatePackageIdentity microsoftUpdatePackageIdentity)
+            if (package is not MicrosoftUpdatePackage microsoftUpdate ||
+                microsoftUpdate.Id is not MicrosoftUpdatePackageIdentity microsoftUpdatePackageIdentity)
             {
                 return -1;
             }
@@ -268,8 +273,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             using var insertMetadataCommand = _connection.CreateCommand();
             insertMetadataCommand.CommandText = """
-            INSERT INTO Metadata (IdentityId, Metadata, Files)
-                VALUES (@IdentityId, zeroblob(@length), jsonb(@Files));
+            INSERT INTO Metadata (IdentityId, Metadata, Categories Files)
+                VALUES (@IdentityId, zeroblob(@length), jsonb(@Categories), jsonb(@Files));
             SELECT last_insert_rowid();
             """;
             insertMetadataCommand.Parameters.Add("@IdentityId", SqliteType.Integer).Value = identityId;
@@ -277,9 +282,25 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var metadataStream = package.GetMetadataStream();
             insertMetadataCommand.Parameters.Add("@length", SqliteType.Integer).Value = metadataStream.Length;
 
+            List<Guid> categoryGuids = new();
+            foreach (var prereq in microsoftUpdate.Prerequisites.OfType<AtLeastOne>().Where(p => p.IsCategory))
+            {
+                categoryGuids.AddRange(prereq.Simple.Select(s => s.UpdateId));
+            }
+
+            if (categoryGuids.Count > 0)
+            {
+                insertMetadataCommand.Parameters.Add("@Categories", SqliteType.Blob).Value =
+                    Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(categoryGuids));
+            }
+            else
+            {
+                insertMetadataCommand.Parameters.Add("@Categories", SqliteType.Blob).Value = DBNull.Value;
+            }
+
             if (PartitionRegistration.TryGetPartitionFromPackage(package, out var partitionDefinition) &&
-                    partitionDefinition.HasExternalContentFileMetadata &&
-                    package.Files?.Any() == true)
+                partitionDefinition.HasExternalContentFileMetadata &&
+                package.Files?.Any() == true)
             {
                 var digests = JsonConvert.SerializeObject(package.Files.Select(f => f.Digest.DigestBase64));
                 insertMetadataCommand.Parameters.Add("@Files", SqliteType.Blob).Value = Encoding.UTF8.GetBytes(digests);
@@ -289,6 +310,16 @@ namespace Microsoft.PackageGraph.Storage.Local
             else
             {
                 insertMetadataCommand.Parameters.Add("@Files", SqliteType.Blob).Value = DBNull.Value;
+            }
+
+            if (microsoftUpdate.Prerequisites.Count > 0)
+            {
+                insertMetadataCommand.Parameters.Add("@Prerequisites", SqliteType.Blob).Value =
+                    Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(microsoftUpdate.Prerequisites));
+            }
+            else
+            {
+                insertMetadataCommand.Parameters.Add("@Prerequisites", SqliteType.Blob).Value = DBNull.Value;
             }
 
             var rowid = (long)insertMetadataCommand.ExecuteScalar();
@@ -304,13 +335,11 @@ namespace Microsoft.PackageGraph.Storage.Local
                 // Insert software update specific datas into database.
                 using var insertSoftwareCommand = _connection.CreateCommand();
                 insertSoftwareCommand.CommandText = """
-                INSERT INTO SoftwareInformations (RevisionId, KbArticleId, Prerequisites, Bundles)
-                    VALUES (@RevisionId, @KbArticleId, jsonb(@Prerequisites), jsonb(@Bundles));
+                INSERT INTO SoftwareInformations (RevisionId, KbArticleId, Bundles)
+                    VALUES (@RevisionId, @KbArticleId, jsonb(@Bundles));
                 """;
                 insertSoftwareCommand.Parameters.Add("@RevisionId", SqliteType.Integer).Value = identityId;
                 insertSoftwareCommand.Parameters.Add("@KbArticleId", SqliteType.Text).Value = softwareUpdate.KBArticleId;
-                insertSoftwareCommand.Parameters.Add("@Prerequisites", SqliteType.Blob).Value =
-                    Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(softwareUpdate.Prerequisites));
                 insertSoftwareCommand.Parameters.Add("@Bundled", SqliteType.Blob).Value =
                     Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(softwareUpdate.BundledUpdates));
 
@@ -380,6 +409,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     addFileCommand.Parameters.Add("@Urls", SqliteType.Blob).Value = (byte[])[];
                     addFileCommand.Parameters.Add("@PatchingType", SqliteType.Text).Value = "";
                 }
+
                 addFileCommand.ExecuteNonQuery();
             }
         }
@@ -402,7 +432,6 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
         {
-            // TODO should get data from dedicated table
             var identityId = GetPackageIndex(packageIdentity);
             if (identityId == -1)
             {
@@ -529,41 +558,47 @@ namespace Microsoft.PackageGraph.Storage.Local
                 return false;
             }
 
-            value = default;
-            var success = false;
-
             using var command = _connection.CreateCommand();
             command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = packageIndex;
 
             switch (indexName)
             {
+                case Index.AvailableIndexes.TitlesIndexName:
+                    command.CommandText = "SELECT Title FROM Identities WHERE Id = @RevisionId";
+                    var title = command.ExecuteScalar() as int?;
+                    if (title is not null)
+                    {
+                        value = (T)Convert.ChangeType(title, typeof(T));
+                        return true;
+                    }
+                    break;
+
                 case AvailableIndexes.KbArticleIndexName:
                     command.CommandText = "SELECT KbArticleId FROM SoftwareInformation WHERE RevisionId = @RevisionId";
-                    var result = command.ExecuteScalar();
-                    break;
-
-                case AvailableIndexes.IsBundleIndexName:
-                    command.CommandText = "SELECT Bundled ->> '$' FROM SoftwareInformation WHERE RevisionId = @RevisionId";
-                    var bundledResult = command.ExecuteScalar();
-                    break;
-
-                case AvailableIndexes.IsSupersededIndexName:
-                    if (packageIdentity is not MicrosoftUpdatePackageIdentity muIdentity)
+                    var kbArticle = command.ExecuteScalar() as string;
+                    if (!string.IsNullOrEmpty(kbArticle))
                     {
-                        break;
+                        value = (T)Convert.ChangeType(kbArticle, typeof(T));
+                        return true;
                     }
-                    command.CommandText = "SELECT EXISTS(SELECT 1 FROM Superseded WHERE SupersededGuid = @Guid)";
-                    command.Parameters.AddWithValue("@Guid", muIdentity.ID.ToString());
-                    var exists = (long)command.ExecuteScalar();
-                    value = (T)Convert.ChangeType(exists == 1, typeof(T));
-                    success = true;
+                    break;
+
+                case AvailableIndexes.CategoriesIndexName:
+                    command.CommandText = "SELECT json(Categories) FROM Metadatas WHERE RevisionId = @RevisionId";
+                    var categories = command.ExecuteScalar() as string;
+                    if (!string.IsNullOrEmpty(categories))
+                    {
+                        value = JsonConvert.DeserializeObject<T>(categories);
+                        return true;
+                    }
                     break;
 
                 default:
                     throw new NotImplementedException($"Index '{indexName}' not implemented for simple key lookup.");
             }
 
-            return success;
+            value = default;
+            return false;
         }
 
         public bool TryListKeyLookup<T>(IPackageIdentity packageIdentity, string indexName, out List<T> value)
@@ -571,65 +606,72 @@ namespace Microsoft.PackageGraph.Storage.Local
             var packageIndex = GetPackageIndex(packageIdentity);
             if (packageIndex == -1)
             {
-                value = null;
+                value = new();
                 return false;
             }
-
-            value = null;
-            var success = false;
 
             using var command = _connection.CreateCommand();
             command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = packageIndex;
 
             switch (indexName)
             {
+                case AvailableIndexes.PrerequisitesIndexName:
+                    command.CommandText = "SELECT json(Prerequisties) FROM SoftwareInformation WHERE RevisionId = @RevisionId";
+                    var prereq = command.ExecuteScalar() as string;
+                    if (!string.IsNullOrEmpty(prereq))
+                    {
+                        value = JsonConvert.DeserializeObject<List<T>>(prereq);
+                        return true;
+                    }
+                    break;
+
+                case AvailableIndexes.FilesIndexName:
+                    command.CommandText = "SELECT json(Files) FROM Metadata WHERE RevisionId = @RevisionId";
+                    var files = command.ExecuteScalar() as string;
+                    if (!string.IsNullOrEmpty(files))
+                    {
+                        value = JsonConvert.DeserializeObject<List<T>>(files);
+                        return true;
+                    }
+                    break;
+
                 case AvailableIndexes.IsSupersedingIndexName:
                     command.CommandText = "SELECT SupersededGuid FROM Superseded WHERE RevisionId = @RevisionId";
-                    var guids = new List<Guid>();
+                    List<Guid> guids = new();
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            guids.Add(Guid.Parse(reader.GetString(0)));
+                            guids.Add(reader.GetGuid(0));
                         }
                     }
                     if (typeof(T) == typeof(Guid))
                     {
                         value = guids.Cast<T>().ToList();
-                        success = true;
+                        return true;
                     }
                     break;
 
-                case AvailableIndexes.PrerequisitesIndexName:
-                    command.CommandText = "SELECT Prerequisties ->> '$' FROM SoftwareInformation WHERE RevisionId = @RevisionId";
-                    var prereqResult = command.ExecuteScalar();
-                    if (prereqResult != null && prereqResult != DBNull.Value)
+                case AvailableIndexes.IsBundleIndexName:
+                    command.CommandText = "SELECT Bundled FROM SoftwareInformation WHERE RevisionId = @RevisionId";
+                    var bundled = command.ExecuteScalar() as string;
+                    if (!string.IsNullOrEmpty(bundled))
                     {
-                        var prereqJson = (string)prereqResult;
-                        value = JsonConvert.DeserializeObject<List<T>>(prereqJson);
-                        success = true;
+                        value = JsonConvert.DeserializeObject<List<T>>(bundled);
+                        return true;
                     }
                     break;
 
-                case AvailableIndexes.FilesIndexName:
-                    command.CommandText = "SELECT Files ->> '$' FROM Metadata WHERE RevisionId = @RevisionId";
-                    var filesResult = command.ExecuteScalar();
-                    if (filesResult != null && filesResult != DBNull.Value)
-                    {
-                        var filesJson = (string)filesResult;
-                        if (typeof(T) == typeof(string))
-                        {
-                            value = JsonConvert.DeserializeObject<List<string>>(filesJson) as List<T>;
-                            success = true;
-                        }
-                    }
+                case AvailableIndexes.DriverMetadataIndexName:
+                    // TODO implement this
                     break;
 
                 default:
                     throw new NotImplementedException($"Index '{indexName}' not implemented for list key lookup.");
             }
 
-            return success;
+            value = new();
+            return false;
         }
 
         public bool TryPackageLookupByCustomKey<T>(T key, string indexName, out IPackageIdentity value)
@@ -669,7 +711,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             switch (indexName)
             {
-                case AvailableIndexes.IsSupersedingIndexName: // "superseded by"
+                case AvailableIndexes.IsSupersededIndexName:
                     command.CommandText = "SELECT RevisionId FROM Superseded WHERE SupersededGuid = @SupersededGuid";
                     command.Parameters.Add("@SupersededGuid", SqliteType.Text).Value = key.ToString();
 
