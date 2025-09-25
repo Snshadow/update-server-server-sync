@@ -126,7 +126,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 filteredUpdates = filteredUpdates.Where(
                     u => u is DriverUpdate driverUpdate &&
                     driverUpdate.GetDriverMetadata()
-                    .Any(metadata => metadata.HardwareID.Equals(HardwareIdFilter, StringComparison.OrdinalIgnoreCase)));
+                    .Any(metadata => metadata.HardwareId.Equals(HardwareIdFilter, StringComparison.OrdinalIgnoreCase)));
             }
 
             if (ComputerHardwareIdFilter != Guid.Empty)

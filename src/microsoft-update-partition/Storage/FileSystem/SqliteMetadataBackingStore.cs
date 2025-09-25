@@ -38,7 +38,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public event EventHandler<PackageStoreEventArgs> PackageIndexingProgress;
 
-        public List<IPackage> PendingPackages { get; }
+        public List<IPackage> PendingPackages { get; } = [];
 
         public SqliteMetadataBackingStore(string path, FileMode mode)
         {
@@ -162,10 +162,6 @@ namespace Microsoft.PackageGraph.Storage.Local
         public static bool IsValid(string path)
         {
             var dbPath = Path.Combine(path, DbName);
-            if (!File.Exists(dbPath))
-            {
-                return false;
-            }
 
             try
             {
@@ -188,6 +184,18 @@ namespace Microsoft.PackageGraph.Storage.Local
             return true;
         }
 
+        public bool IsReindexingRequired
+        {
+            get
+            {
+                using var checkCommand = _connection.CreateCommand();
+                checkCommand.CommandText = "PRAGMA quick_check";
+                var checkResult = checkCommand.ExecuteScalar() as string;
+
+                return checkResult != "ok";
+            }
+        }
+
         public void ReIndex()
         {
             CheckIndex(true);
@@ -201,18 +209,12 @@ namespace Microsoft.PackageGraph.Storage.Local
             optimizeCommand.ExecuteNonQuery();
 
             // Check if the database is currently consistent. 
-            if (!forceReindex)
+            if (!forceReindex && !IsReindexingRequired)
             {
-                using var checkCommand = _connection.CreateCommand();
-                checkCommand.CommandText = "PRAGMA quick_check";
-                var checkResult = checkCommand.ExecuteScalar() as string;
-                if (checkResult == "ok")
-                {
-                    return;
-                }
+                return;
             }
 
-            // Run REINDEX
+            // Reindex the database.
             using var reindexCommand = _connection.CreateCommand();
             reindexCommand.CommandText = "REINDEX";
             reindexCommand.ExecuteNonQuery();
@@ -328,6 +330,8 @@ namespace Microsoft.PackageGraph.Storage.Local
                 }
             }
 
+            PendingPackages.Add(package);
+
             return identityId;
         }
 
@@ -382,6 +386,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void Flush()
         {
+            PendingPackages.Clear();
         }
 
         public IEnumerator<IPackage> GetEnumerator()
@@ -515,7 +520,194 @@ namespace Microsoft.PackageGraph.Storage.Local
             return command.ExecuteScalar() as int? ?? -1;
         }
 
+        public bool TrySimpleKeyLookup<T>(IPackageIdentity packageIdentity, string indexName, out T value)
+        {
+            var packageIndex = GetPackageIndex(packageIdentity);
+            if (packageIndex == -1)
+            {
+                value = default;
+                return false;
+            }
 
+            value = default;
+            var success = false;
+
+            using var command = _connection.CreateCommand();
+            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = packageIndex;
+
+            switch (indexName)
+            {
+                case AvailableIndexes.KbArticleIndexName:
+                    command.CommandText = "SELECT KbArticleId FROM SoftwareInformation WHERE RevisionId = @RevisionId";
+                    var result = command.ExecuteScalar();
+                    break;
+
+                case AvailableIndexes.IsBundleIndexName:
+                    command.CommandText = "SELECT Bundled ->> '$' FROM SoftwareInformation WHERE RevisionId = @RevisionId";
+                    var bundledResult = command.ExecuteScalar();
+                    break;
+
+                case AvailableIndexes.IsSupersededIndexName:
+                    if (packageIdentity is not MicrosoftUpdatePackageIdentity muIdentity)
+                    {
+                        break;
+                    }
+                    command.CommandText = "SELECT EXISTS(SELECT 1 FROM Superseded WHERE SupersededGuid = @Guid)";
+                    command.Parameters.AddWithValue("@Guid", muIdentity.ID.ToString());
+                    var exists = (long)command.ExecuteScalar();
+                    value = (T)Convert.ChangeType(exists == 1, typeof(T));
+                    success = true;
+                    break;
+
+                default:
+                    throw new NotImplementedException($"Index '{indexName}' not implemented for simple key lookup.");
+            }
+
+            return success;
+        }
+
+        public bool TryListKeyLookup<T>(IPackageIdentity packageIdentity, string indexName, out List<T> value)
+        {
+            var packageIndex = GetPackageIndex(packageIdentity);
+            if (packageIndex == -1)
+            {
+                value = null;
+                return false;
+            }
+
+            value = null;
+            var success = false;
+
+            using var command = _connection.CreateCommand();
+            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = packageIndex;
+
+            switch (indexName)
+            {
+                case AvailableIndexes.IsSupersedingIndexName:
+                    command.CommandText = "SELECT SupersededGuid FROM Superseded WHERE RevisionId = @RevisionId";
+                    var guids = new List<Guid>();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            guids.Add(Guid.Parse(reader.GetString(0)));
+                        }
+                    }
+                    if (typeof(T) == typeof(Guid))
+                    {
+                        value = guids.Cast<T>().ToList();
+                        success = true;
+                    }
+                    break;
+
+                case AvailableIndexes.PrerequisitesIndexName:
+                    command.CommandText = "SELECT Prerequisties ->> '$' FROM SoftwareInformation WHERE RevisionId = @RevisionId";
+                    var prereqResult = command.ExecuteScalar();
+                    if (prereqResult != null && prereqResult != DBNull.Value)
+                    {
+                        var prereqJson = (string)prereqResult;
+                        value = JsonConvert.DeserializeObject<List<T>>(prereqJson);
+                        success = true;
+                    }
+                    break;
+
+                case AvailableIndexes.FilesIndexName:
+                    command.CommandText = "SELECT Files ->> '$' FROM Metadata WHERE RevisionId = @RevisionId";
+                    var filesResult = command.ExecuteScalar();
+                    if (filesResult != null && filesResult != DBNull.Value)
+                    {
+                        var filesJson = (string)filesResult;
+                        if (typeof(T) == typeof(string))
+                        {
+                            value = JsonConvert.DeserializeObject<List<string>>(filesJson) as List<T>;
+                            success = true;
+                        }
+                    }
+                    break;
+
+                default:
+                    throw new NotImplementedException($"Index '{indexName}' not implemented for list key lookup.");
+            }
+
+            return success;
+        }
+
+        public bool TryPackageLookupByCustomKey<T>(T key, string indexName, out IPackageIdentity value)
+        {
+            value = null;
+            var success = false;
+
+            using var command = _connection.CreateCommand();
+
+            switch (indexName)
+            {
+                case AvailableIndexes.KbArticleIndexName:
+                    command.CommandText = "SELECT RevisionId FROM SoftwareInformation WHERE KbArticleId = @KbArticleId";
+                    command.Parameters.Add("@KbArticleId", SqliteType.Text).Value = key.ToString();
+                    var result = command.ExecuteScalar();
+                    if (result != null && result != DBNull.Value)
+                    {
+                        var packageIndex = Convert.ToInt32(result);
+                        value = GetPackageIdentity(packageIndex);
+                        success = value != null;
+                    }
+                    break;
+
+                default:
+                    throw new NotImplementedException($"Index '{indexName}' not implemented for package lookup by custom key.");
+            }
+
+            return success;
+        }
+
+        public bool TryPackageListLookupByCustomKey<T>(T key, string indexName, out List<IPackageIdentity> value)
+        {
+            value = null;
+            var success = false;
+
+            using var command = _connection.CreateCommand();
+
+            switch (indexName)
+            {
+                case AvailableIndexes.IsSupersedingIndexName: // "superseded by"
+                    command.CommandText = "SELECT RevisionId FROM Superseded WHERE SupersededGuid = @SupersededGuid";
+                    command.Parameters.Add("@SupersededGuid", SqliteType.Text).Value = key.ToString();
+
+                    var packageIndices = new List<int>();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            packageIndices.Add(reader.GetInt32(0));
+                        }
+                    }
+
+                    value = packageIndices.Select(GetPackageIdentity).Where(id => id != null).ToList();
+                    success = true;
+                    break;
+
+                case AvailableIndexes.BundledWithIndexName:
+                    command.CommandText = "SELECT RevisionId FROM SoftwareInformation, json_each(Bundled) WHERE json_each.value = @BundledId";
+                    command.Parameters.Add("@BundledId", SqliteType.Integer).Value = Convert.ToInt32(key);
+
+                    var bundlePackageIndices = new List<int>();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            bundlePackageIndices.Add(reader.GetInt32(0));
+                        }
+                    }
+                    value = bundlePackageIndices.Select(GetPackageIdentity).Where(id => id != null).ToList();
+                    success = true;
+                    break;
+
+                default:
+                    throw new NotImplementedException($"Index '{indexName}' not implemented for package list lookup by custom key.");
+            }
+
+            return success;
+        }
 
         /// <summary>
         /// Read-only stream used for reading SQLite BLOB data.

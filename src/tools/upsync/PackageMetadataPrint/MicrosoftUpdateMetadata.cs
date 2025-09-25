@@ -234,7 +234,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     Console.ForegroundColor = ConsoleColor.DarkCyan;
                     Console.WriteLine("    Driver metadata:");
                     Console.ResetColor();
-                    Console.WriteLine("        HardwareId : {0}", driverMetadata.HardwareID);
+                    Console.WriteLine("        HardwareId : {0}", driverMetadata.HardwareId);
                     Console.WriteLine("        Date       : {0}", driverMetadata.Versioning.Date);
                     Console.WriteLine("        Version    : {0}", driverMetadata.Versioning.VersionString);
                     Console.WriteLine("        Class      : {0}", driverMetadata.Class);

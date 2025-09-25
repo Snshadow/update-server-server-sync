@@ -286,7 +286,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <inheritdoc/>
         public void CheckIndex(bool forceReindex = false)
         {
-            if (!IsReindexingRequired && !forceReindex)
+            if (!forceReindex && !IsReindexingRequired)
             {
                 return;
             }
@@ -327,12 +327,9 @@ namespace Microsoft.PackageGraph.Storage.Local
         public bool TrySimpleKeyLookup<T>(IPackageIdentity packageIdentity, string indexName, out T value)
         {
             var packageIndex = GetPackageIndex(packageIdentity);
-            if (packageIndex == -1)
-            {
-                throw new KeyNotFoundException();
-            }
-
-            return Indexes.TrySimpleKeyLookup(packageIndex, indexName, out value);
+            return packageIndex == -1 ?
+                throw new KeyNotFoundException() :
+                Indexes.TrySimpleKeyLookup(packageIndex, indexName, out value);
         }
 
         /// <inheritdoc/>
@@ -369,12 +366,9 @@ namespace Microsoft.PackageGraph.Storage.Local
         public bool TryListKeyLookup<T>(IPackageIdentity packageIdentity, string indexName, out List<T> value)
         {
             var packageIndex = GetPackageIndex(packageIdentity);
-            if (packageIndex < 0)
-            {
-                throw new KeyNotFoundException();
-            }
-
-            return Indexes.TryListKeyLookup(packageIndex, indexName, out value);
+            return packageIndex == -1 ?
+                throw new KeyNotFoundException() :
+                Indexes.TryListKeyLookup(packageIndex, indexName, out value);
         }
 
         internal List<IndexDefinition> GetAvailableIndexes()

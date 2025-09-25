@@ -219,7 +219,6 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 ConsoleOutput.WriteRed("Unsupported package type. Supported package types are:");
                 SupportedPackages.Keys.ToList().ForEach(packageTypeName => Console.WriteLine(packageTypeName));
-                return;
             }
         }
     }

@@ -22,7 +22,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// Hardware ID string
         /// </value>
         [JsonProperty]
-        public string HardwareID { get; private set; }
+        public string HardwareId { get; private set; }
 
         /// <summary>
         /// Gets the Windows Hardware Quality Lab driver ID
@@ -31,7 +31,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         /// WHQL driver ID string
         /// </value>
         [JsonProperty]
-        public string WhqlDriverID { get; private set; }
+        public string WhqlDriverId { get; private set; }
 
         /// <summary>
         /// Gets the driver manufacturer
@@ -121,7 +121,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
 
         internal DriverMetadata(XPathNavigator driverMetadataNavigator, XmlNamespaceManager namespaceManager)
         {
-            string[] attributeQueries = new string[] {
+            string[] attributeQueries = new [] {
                 "HardwareID", "WhqlDriverID", "Manufacturer", "Company", "Provider", "DriverVerDate", "DriverVerVersion", "Class" };
 
             FeatureScores = GetFeatureScoresList(driverMetadataNavigator, namespaceManager);
@@ -153,7 +153,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
                     }
                     else if (propertyName == "HardwareID")
                     {
-                        HardwareID = propertyString.ToLowerInvariant();
+                        HardwareId = propertyString.ToLowerInvariant();
                     }
                     else
                     {
@@ -190,7 +190,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
             hwIdQuery.SetContext(namespaceManager);
             var hwIdResult = driverMetadataNavigator.Evaluate(hwIdQuery) as XPathNodeIterator;
             var returnList = new List<Guid>();
-            if (hwIdResult.Count > 0)
+            if (hwIdResult?.Count > 0)
             {
                 while (hwIdResult.MoveNext())
                 {
@@ -213,12 +213,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
                 return 1;
             }
 
-            if (obj is not DriverMetadata)
+            if (obj is not DriverMetadata other)
             {
                 return -1;
             }
 
-            var other = obj as DriverMetadata;
             return this.Versioning.CompareTo(other.Versioning);
         }
     }

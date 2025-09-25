@@ -142,14 +142,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
             // Build the hardware ID dictionary
             for (int i = 0; i < driverMetadata.Count; i++)
             {
-                if (HardwareIdMap.ContainsKey(driverMetadata[i].HardwareID))
+                if (HardwareIdMap.ContainsKey(driverMetadata[i].HardwareId))
                 {
                     // Save the metadata index that corresponds to the HW ID
-                    HardwareIdMap[driverMetadata[i].HardwareID].Add(startIndexInMetadataStore + i);
+                    HardwareIdMap[driverMetadata[i].HardwareId].Add(startIndexInMetadataStore + i);
                 }
                 else
                 {
-                    HardwareIdMap.Add(driverMetadata[i].HardwareID, new List<int>() { startIndexInMetadataStore + i });
+                    HardwareIdMap.Add(driverMetadata[i].HardwareId, new List<int>() { startIndexInMetadataStore + i });
                 }
             }
         }
