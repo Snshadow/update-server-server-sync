@@ -57,7 +57,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             ComputerSync = new ComputerSyncStore(DbContext);
         }
 
-        public DirectoryPackageStore(string path, FileMode mode, BackingStoreType storeType = BackingStoreType.Compressed) :
+        public DirectoryPackageStore(string path, FileMode mode, BackingStoreType storeType = BackingStoreType.Sqlite) :
             this(new BackingStoreConfiguration { Path = path, Mode = mode, StoreType = storeType })
         {
         }
@@ -168,8 +168,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             lock (WriteLock)
             {
-                _metadataBackingStore.AddPackage(package);
-
+                packageIndex = _metadataBackingStore.AddPackage(package);
                 AddPackageType(packageIndex, package);
             }
         }

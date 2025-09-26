@@ -82,6 +82,8 @@ namespace Microsoft.PackageGraph.Storage.Local
                 Indexes = ZipStreamIndexContainer.Open(File.Exists(indexContainerPath)
                     ? File.OpenRead(indexContainerPath)
                     : null);
+
+                ReadIdentities();
             }
             else
             {
@@ -92,8 +94,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 IsReindexingRequired = true;
             }
-
-            ReadIdentities();
         }
 
         /// <inheritdoc/>

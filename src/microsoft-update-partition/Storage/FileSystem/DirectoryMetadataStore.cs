@@ -189,10 +189,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             throw new KeyNotFoundException();
         }
 
-        public override void Flush()
-        {
-        }
-
         public override void Dispose()
         {
         }

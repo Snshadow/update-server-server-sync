@@ -16,7 +16,7 @@ namespace Microsoft.PackageGraph.Storage
         /// Adds a package to the store.
         /// </summary>
         /// <param name="package">The package to add.</param>
-        /// <returns>An index of a added package.</returns>
+        /// <returns>An index of an added package.</returns>
         int AddPackage(IPackage package);
 
         /// <summary>

@@ -14,7 +14,7 @@ namespace Microsoft.PackageGraph.Storage.Local
     /// </summary>
     public class DeploySyncDbContext : DbContext
     {
-        private readonly SqliteConnection _connection;
+        private readonly ThreadSafeSqliteConnection _connection;
         private bool _isDisposed;
 
         /// <summary>
@@ -23,11 +23,10 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <param name="databasePath">The path to the SQLite database file.</param>
         public DeploySyncDbContext(string databasePath)
         {
-            _connection = new SqliteConnection($"Data Source={databasePath}");
-            _connection.Open();
+            _connection = new ThreadSafeSqliteConnection($"Data Source={databasePath}");
 
             // Enable WAL(Write-Ahead Logging) for performance.
-            using var walCommand = _connection.CreateCommand();
+            using var walCommand = _connection.Connection.CreateCommand();
             walCommand.CommandText = "PRAGMA journal_mode = 'WAL'";
             walCommand.ExecuteNonQuery();
 
@@ -37,7 +36,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <inheritdoc/>
         protected override void InitializeDatabase()
         {
-            var command = _connection.CreateCommand();
+            var command = _connection.Connection.CreateCommand();
             command.CommandText = """
             CREATE TABLE IF NOT EXISTS Deployments (
                 RevisionId INTEGER PRIMARY KEY,
@@ -54,7 +53,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         }
 
         /// <inheritdoc/>
-        public override SqliteConnection GetConnection() => _connection;
+        public override SqliteConnection GetConnection() => _connection.Connection;
 
         /// <inheritdoc/>
         public override void Dispose()

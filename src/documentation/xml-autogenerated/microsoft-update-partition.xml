@@ -1021,7 +1021,7 @@
             A driver update matches one or more hardware ids; each match has its own metadata that describes it.
             </summary>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata.HardwareID">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata.HardwareId">
             <summary>
             Gets the hardware IDs this driver update is applicable to
             </summary>
@@ -1029,7 +1029,7 @@
             Hardware ID string
             </value>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata.WhqlDriverID">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata.WhqlDriverId">
             <summary>
             Gets the Windows Hardware Quality Lab driver ID
             </summary>
@@ -2465,6 +2465,24 @@
             Flushes any pending changes to the backing store.
             </summary>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataBackingStore.IsValid(System.String)">
+            <summary>
+            True if the path has the valid store, false otherwise.
+            </summary>
+            <param name="path">Path used by the metadata store.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataBackingStore.CheckIndex(System.Boolean)">
+            <summary>
+            Reindex an underlying store.
+            </summary>
+            <param name="forceReindex">If true, always reindex a store.</param>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.IMetadataBackingStore.PendingPackages">
+            <summary>
+            A list of packages that were added recently to the store.
+            </summary>
+        </member>
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataFilter">
             <summary>
             Interface for filtering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> or for selectively quering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/>
@@ -2755,6 +2773,7 @@
             Adds a package to the store.
             </summary>
             <param name="package">The package to add.</param>
+            <returns>An index of an added package.</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataStoreOperations.AddPackages(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
@@ -2789,6 +2808,13 @@
             </summary>
             <param name="packageIdentity">The identity of the package to retrieve.</param>
             <returns>The package.</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataStoreOperations.AddPackageType(System.Int32,System.Int32)">
+            <summary>
+            Adds package type information to a store.
+            </summary>
+            <param name="packageIndex">Index of a package.</param>
+            <param name="packageType">A type enum of a package.</param>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Azure.BlobContentStore">
             <summary>
@@ -2968,6 +2994,27 @@
             Releases the resources used by the database connection.
             </summary>
         </member>
+        <member name="T:Microsoft.PackageGraph.Storage.Local.ThreadSafeSqliteConnection">
+            <summary>
+            Represents thread-safe connection for SQLite database.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ThreadSafeSqliteConnection.#ctor(System.String)">
+            <summary>
+            Creates thread-safe SQLite connection with connection string.
+            </summary>
+            <param name="connectionString">Connection string the SQLite database.</param>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.Local.ThreadSafeSqliteConnection.Connection">
+            <summary>
+            Create or get the opened SQLite connection for the calling thread.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ThreadSafeSqliteConnection.Dispose">
+            <summary>
+            Disposes SQLite connection across threads and releases other resources.
+            </summary>
+        </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext">
             <summary>
             Represents the <see cref="T:Microsoft.PackageGraph.Storage.Local.DbContext"/> for deployments and synchronization.
@@ -3049,6 +3096,9 @@
             <param name="computerId"></param>
             <returns>A synchronization information of a computer</returns>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DirectoryMetadataStore.AddPackage(Microsoft.PackageGraph.ObjectModel.IPackage)">
+            <inheritdoc/>
+        </member>
         <member name="P:Microsoft.PackageGraph.Storage.Local.DirectoryPackageStore.IsReindexingRequired">
             <inheritdoc cref="P:Microsoft.PackageGraph.Storage.IMetadataStore.IsReindexingRequired"/>
         </member>
@@ -3084,6 +3134,30 @@
             In-memory mapping from integer index to package type.
             </summary>
         </member>
+        <member name="F:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.Indexes">
+            <summary>
+            Zip stream that contains indexes for fast lookup.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.IsReindexingRequired">
+            <inheritdoc/>
+        </member>
+        <member name="F:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.IsDirty">
+            <summary>
+            Metadata store needs to be updated.
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.IsIndexDirty">
+            <summary>
+            Package indexes need to be updated.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.PendingPackages">
+            <inheritdoc/>
+        </member>
+        <member name="E:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.PackageIndexingProgress">
+            <inheritdoc/>
+        </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.#ctor(System.String)">
             <summary>
             Initializes a new instance of the <see cref="T:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase"/> class.
@@ -3104,12 +3178,6 @@
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetPackageIdentities">
             <inheritdoc/>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetIdentitiesMap">
-            <summary>
-            Gets the in-memory identity map.
-            </summary>
-            <returns>The dictionary that maps indexes to identities.</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.AddIdentity(Microsoft.PackageGraph.ObjectModel.IPackageIdentity,System.Int32)">
             <summary>
@@ -3152,10 +3220,31 @@
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.Flush">
             <inheritdoc/>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.IsValid(System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.ReIndex">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.CheckIndex(System.Boolean)">
+            <inheritdoc/>
+        </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.Dispose">
             <inheritdoc/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetEnumerator">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.TrySimpleKeyLookup``1(Microsoft.PackageGraph.ObjectModel.IPackageIdentity,System.String,``0@)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.TryPackageLookupByCustomKey``1(``0,System.String,Microsoft.PackageGraph.ObjectModel.IPackageIdentity@)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.TryPackageListLookupByCustomKey``1(``0,System.String,System.Collections.Generic.List{Microsoft.PackageGraph.ObjectModel.IPackageIdentity}@)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.TryListKeyLookup``1(Microsoft.PackageGraph.ObjectModel.IPackageIdentity,System.String,System.Collections.Generic.List{``0}@)">
             <inheritdoc/>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore">
@@ -3276,12 +3365,11 @@
             Factory for creating metadata backing stores.
             </summary>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.MetadataBackingStoreFactory.Create(Microsoft.PackageGraph.Storage.Local.BackingStoreConfiguration,Microsoft.PackageGraph.Storage.Local.TableOfContent)">
+        <member name="M:Microsoft.PackageGraph.Storage.Local.MetadataBackingStoreFactory.Create(Microsoft.PackageGraph.Storage.Local.BackingStoreConfiguration)">
             <summary>
             Creates a metadata backing store based on the specified configuration.
             </summary>
             <param name="configuration">The configuration for the backing store.</param>
-            <param name="toc">The table of contents for compressed stores.</param>
             <returns>An instance of <see cref="T:Microsoft.PackageGraph.Storage.IMetadataBackingStore"/>.</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.PackageStore">
@@ -3305,13 +3393,6 @@
             <param name="path">Path to the directory to open or create</param>
             <returns>An instance of IMetadataStore</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.PackageStore.Exists(System.String)">
-            <summary>
-            Checks if a IMetadataStore exists in the specified directory
-            </summary>
-            <param name="path">Path to the directory to check.</param>
-            <returns>True if a store exists under the directory, false otherwise</returns>
-        </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.SqliteMetadataBackingStore">
             <summary>
             Stores metadata in a SQLite database.
@@ -3319,7 +3400,7 @@
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.SqliteMetadataBackingStore.BlobStream">
             <summary>
-            Read-only stream used for reading SQLIte BLOB data.
+            Read-only stream used for reading SQLite BLOB data.
             </summary>
         </member>
     </members>

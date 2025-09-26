@@ -32,7 +32,10 @@ namespace Microsoft.PackageGraph.Storage.Local
                 case FileMode.OpenOrCreate:
                     if (!File.Exists(Path.Combine(RootPath, TableOfContentsFileName)))
                     {
-                        TOC = new TableOfContent();
+                        TOC = new TableOfContent()
+                        {
+                            TocVersion = TableOfContent.CurrentVersion
+                        };
                     }
                     else
                     {
@@ -126,6 +129,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public override void Flush()
         {
+            base.Flush();
+
             if (NewDeltaSubdirectoryCreated)
             {
                 DeltaMetadataStores.Last().Flush();

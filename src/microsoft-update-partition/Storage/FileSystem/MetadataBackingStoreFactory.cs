@@ -58,6 +58,32 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <returns>An instance of <see cref="IMetadataBackingStore"/>.</returns>
         public static IMetadataBackingStore Create(BackingStoreConfiguration configuration)
         {
+            switch (configuration.Mode)
+            {
+                case FileMode.CreateNew:
+                case FileMode.Create:
+                    if (Directory.Exists(configuration.Path))
+                    {
+                        Directory.Delete(configuration.Path, true);
+                    }
+                    Directory.CreateDirectory(configuration.Path);
+                    break;
+                case FileMode.Open:
+                    if (!Directory.Exists(configuration.Path))
+                    {
+                        throw new FileNotFoundException($"Directory does not exist: {configuration.Path}", configuration.Path);
+                    }
+                    break;
+                case FileMode.OpenOrCreate:
+                    if (!Directory.Exists(configuration.Path))
+                    {
+                        Directory.CreateDirectory(configuration.Path);
+                    }
+                    break;
+                default:
+                    throw new NotSupportedException($"The file mode {configuration.Mode} is not supported.");
+            }
+
             return configuration.StoreType switch
             {
                 BackingStoreType.Compressed => new CompressedDeltaStore(configuration.Path, configuration.Mode),
