@@ -38,6 +38,14 @@ namespace Microsoft.PackageGraph.Storage.Local
         private readonly string _connectionString;
         private readonly ThreadLocal<SqliteConnection> _connection = new(true);
 
+        private SqliteConnection InitializeAndOpen()
+        {
+            var connection = new SqliteConnection(_connectionString);
+            connection.Open();
+
+            return connection;
+        }
+
         /// <summary>
         /// Creates thread-safe SQLite connection with connection string.
         /// </summary>
@@ -48,21 +56,19 @@ namespace Microsoft.PackageGraph.Storage.Local
         }
 
         /// <summary>
-        /// Create or get the opened SQLite connection for the calling thread.
+        /// Creates or gets the opened SQLite connection for the calling thread.
         /// </summary>
         public SqliteConnection Connection
         {
             get
             {
-                var connection = _connection.Value ?? new SqliteConnection(_connectionString);
-                _connection.Value ??= connection;
-                connection.Open();
-                return connection;
+                _connection.Value ??= InitializeAndOpen();
+                return _connection.Value;
             }
         }
 
         /// <summary>
-        /// Disposes SQLite connection across threads and releases other resources.
+        /// Disposes SQLite connections across threads and releases other resources.
         /// </summary>
         public void Dispose()
         {

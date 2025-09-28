@@ -3007,12 +3007,12 @@
         </member>
         <member name="P:Microsoft.PackageGraph.Storage.Local.ThreadSafeSqliteConnection.Connection">
             <summary>
-            Create or get the opened SQLite connection for the calling thread.
+            Creates or gets the opened SQLite connection for the calling thread.
             </summary>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.ThreadSafeSqliteConnection.Dispose">
             <summary>
-            Disposes SQLite connection across threads and releases other resources.
+            Disposes SQLite connections across threads and releases other resources.
             </summary>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext">
