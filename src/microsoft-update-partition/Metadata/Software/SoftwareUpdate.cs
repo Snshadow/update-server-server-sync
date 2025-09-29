@@ -94,7 +94,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 }
                 else
                 {
-                    _FastLookupSource?.TryPackageListLookupByCustomKey<Guid>(Id.ID, AvailableIndexes.IsSupersededIndexName, out _IsSupersededBy);
+                    _FastLookupSource.TryPackageListLookupByCustomKey<Guid>(Id.ID, AvailableIndexes.IsSupersededIndexName, out _IsSupersededBy);
                 }
 
                 _IsSupersededByLoaded = true;

@@ -12,7 +12,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -728,7 +727,6 @@ namespace Microsoft.PackageGraph.Storage.Local
                     FROM Metadatas AS m INNER JOIN json_each(m.Prerequisites) AS p
                     WHERE m.RevisionId = @RevisionId
                     """;
-                    command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = packageIndex;
 
                     List<IPrerequisite> prerequisites = [];
 
@@ -853,7 +851,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                     break;
 
-                case AvailableIndexes.IsSupersedingIndexName:
+                case AvailableIndexes.IsSupersededIndexName:
                     if (key is Guid supersededGuid)
                     {
                         command.CommandText = """

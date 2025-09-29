@@ -2982,7 +2982,7 @@
             <summary>
             Gets the active database connection.
             </summary>
-            <returns>The SQLite connection.</returns>
+            <returns>The database connection.</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DbContext.InitializeDatabase">
             <summary>

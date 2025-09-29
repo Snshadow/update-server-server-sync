@@ -24,8 +24,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
 
         public override void IndexPackage(IPackage package, int packageIndex)
         {
-            if (package is MicrosoftUpdatePackage microsoftUpdate &&
-                (microsoftUpdate.Prerequisites?.Count ?? 0) > 0)
+            if (package is MicrosoftUpdatePackage { Prerequisites.Count: > 0 } microsoftUpdate)
             {
                 var prerequisiteGuids = new List<List<Guid>>();
                 foreach (var prereq in microsoftUpdate.Prerequisites)

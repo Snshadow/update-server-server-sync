@@ -16,7 +16,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <summary>
         /// Gets the active database connection.
         /// </summary>
-        /// <returns>The SQLite connection.</returns>
+        /// <returns>The database connection.</returns>
         public abstract DbConnection GetConnection();
 
         /// <summary>

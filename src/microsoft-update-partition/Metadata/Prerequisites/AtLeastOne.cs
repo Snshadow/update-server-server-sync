@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,13 +19,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
         /// <value>
         /// List of simple prerequisites
         /// </value>
+        [JsonProperty]
         public List<Simple> Simple { get; private set; }
 
         /// <summary>
         /// Check if the AtLestOne prerequisite is a "category" prerequisite. Category prerequisites are not true prerequisites,
         /// just a way to encode a product and classification for an update.
         /// </summary>
+        [JsonProperty]
         public bool IsCategory { get; private set; }
+
+        [JsonConstructor]
+        private AtLeastOne() { }
 
         internal AtLeastOne(IEnumerable<Guid> ids)
         {

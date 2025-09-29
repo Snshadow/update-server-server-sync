@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Newtonsoft.Json;
 using System;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
@@ -16,7 +16,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
         /// <summary>
         /// The update ID or detectoid ID that is required before an update can be installed.
         /// </summary>
+        [JsonProperty]
         public Guid UpdateId { get; private set; }
+
+        [JsonConstructor]
+        private Simple() { }
 
         internal Simple(Guid id)
         {
