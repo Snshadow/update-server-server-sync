@@ -13,6 +13,11 @@ namespace Microsoft.PackageGraph.Storage
     public interface IMetadataSink : IDisposable
     {
         /// <summary>
+        /// Gets a value indicating whether the sink supports parallel processing.
+        /// </summary>
+        bool SupportsParallelProcessing { get; }
+
+        /// <summary>
         /// Adds a list of packages to the packages collection
         /// </summary>
         /// <param name="packages">The packages to add to this sink</param>

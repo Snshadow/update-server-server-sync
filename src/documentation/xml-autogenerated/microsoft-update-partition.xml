@@ -2460,6 +2460,11 @@
             Interface for a backing store for metadata for updates.
             </summary>
         </member>
+        <member name="P:Microsoft.PackageGraph.Storage.IMetadataBackingStore.SupportsParallelProcessing">
+            <summary>
+            Gets a value indicating whether the store supports parallel processing.
+            </summary>
+        </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataBackingStore.Flush">
             <summary>
             Flushes any pending changes to the backing store.
@@ -2596,6 +2601,11 @@
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataSink">
             <summary>
             Interface for an object that can store packages metadata
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.IMetadataSink.SupportsParallelProcessing">
+            <summary>
+            Gets a value indicating whether the sink supports parallel processing.
             </summary>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataSink.AddPackages(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
@@ -2989,32 +2999,6 @@
             Initializes the database by creating the necessary tables if they don't exist.
             </summary>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.DbContext.Dispose">
-            <summary>
-            Releases the resources used by the database connection.
-            </summary>
-        </member>
-        <member name="T:Microsoft.PackageGraph.Storage.Local.ThreadSafeSqliteConnection">
-            <summary>
-            Represents thread-safe connection for SQLite database.
-            </summary>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.ThreadSafeSqliteConnection.#ctor(System.String)">
-            <summary>
-            Creates thread-safe SQLite connection with connection string.
-            </summary>
-            <param name="connectionString">Connection string the SQLite database.</param>
-        </member>
-        <member name="P:Microsoft.PackageGraph.Storage.Local.ThreadSafeSqliteConnection.Connection">
-            <summary>
-            Creates or gets the opened SQLite connection for the calling thread.
-            </summary>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.ThreadSafeSqliteConnection.Dispose">
-            <summary>
-            Disposes SQLite connections across threads and releases other resources.
-            </summary>
-        </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext">
             <summary>
             Represents the <see cref="T:Microsoft.PackageGraph.Storage.Local.DbContext"/> for deployments and synchronization.
@@ -3024,15 +3008,12 @@
             <summary>
             Initializes a new instance of the <see cref="T:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext"/> class.
             </summary>
-            <param name="databasePath">The path to the SQLite database file.</param>
+            <param name="dbPath">The path to the SQLite database file.</param>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.InitializeDatabase">
             <inheritdoc/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.GetConnection">
-            <inheritdoc/>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploySyncDbContext.Dispose">
             <inheritdoc/>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.DeploymentStore">
@@ -3051,6 +3032,12 @@
             Saves a deployment to the database
             </summary>
             <param name="deployment">The deployment to save</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.SaveDeployments(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IDeployment})">
+            <summary>
+            Saves a list of deployments to the database in a single transaction.
+            </summary>
+            <param name="deployments">The deployments to save.</param>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.DeleteDeployment(System.Int32)">
             <summary>
@@ -3083,6 +3070,12 @@
             <param name="computerId">The ID of the computer</param>
             <param name="syncTime">The time of the synchronization</param>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore.UpdateComputerSyncs(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IComputerSync})">
+            <summary>
+            Updates the synchronization status for multiple computers in a single transaction.
+            </summary>
+            <param name="computerSyncs">The computer sync data to save.</param>
+        </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore.DeleteComputer(System.String)">
             <summary>
             Deletes the synchronization status for a computer
@@ -3113,6 +3106,9 @@
             Abstract base class for file-based metadata backing stores.
             Provides an in-memory implementation of <see cref="T:Microsoft.PackageGraph.Storage.IMetadataMapping"/>.
             </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.SupportsParallelProcessing">
+            <inheritdoc/>
         </member>
         <member name="F:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.RootPath">
             <summary>

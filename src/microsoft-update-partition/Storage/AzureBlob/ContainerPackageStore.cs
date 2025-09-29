@@ -23,6 +23,8 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
     class ContainerPackageStore : IMetadataStore, IMetadataLookup
     {
+        public bool SupportsParallelProcessing => true;
+
         public event EventHandler<PackageStoreEventArgs> MetadataCopyProgress;
         public event EventHandler<PackageStoreEventArgs> PackageIndexingProgress;
 

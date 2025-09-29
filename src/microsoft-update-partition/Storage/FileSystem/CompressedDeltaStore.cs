@@ -14,6 +14,8 @@ namespace Microsoft.PackageGraph.Storage.Local
     {
         private const string TableOfContentsFileName = ".toc.json";
 
+        public override bool SupportsParallelProcessing => true;
+
         private TableOfContent TOC;
         private readonly List<CompressedMetadataStore> DeltaMetadataStores;
         private bool NewDeltaSubdirectoryCreated = false;

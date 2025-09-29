@@ -5,6 +5,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace Microsoft.PackageGraph.Storage.Local
@@ -14,21 +15,15 @@ namespace Microsoft.PackageGraph.Storage.Local
     /// </summary>
     public class DeploySyncDbContext : DbContext
     {
-        private readonly ThreadSafeSqliteConnection _connection;
-        private bool _isDisposed;
+        private readonly string _dbPath;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeploySyncDbContext"/> class.
         /// </summary>
-        /// <param name="databasePath">The path to the SQLite database file.</param>
-        public DeploySyncDbContext(string databasePath)
+        /// <param name="dbPath">The path to the SQLite database file.</param>
+        public DeploySyncDbContext(string dbPath)
         {
-            _connection = new ThreadSafeSqliteConnection($"Data Source={databasePath}");
-
-            // Enable WAL(Write-Ahead Logging) for performance.
-            using var walCommand = _connection.Connection.CreateCommand();
-            walCommand.CommandText = "PRAGMA journal_mode = 'WAL'";
-            walCommand.ExecuteNonQuery();
+            _dbPath = dbPath;
 
             InitializeDatabase();
         }
@@ -36,8 +31,17 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <inheritdoc/>
         protected override void InitializeDatabase()
         {
-            var command = _connection.Connection.CreateCommand();
-            command.CommandText = """
+            using var connection = GetConnection();
+
+            // Enable WAL(Write-Ahead Logging) for performance.
+            using (var walCommand = connection.CreateCommand())
+            {
+                walCommand.CommandText = "PRAGMA journal_mode = 'WAL'";
+                walCommand.ExecuteNonQuery();
+            }
+
+            using var createTableCommand = connection.CreateCommand();
+            createTableCommand.CommandText = """
             CREATE TABLE IF NOT EXISTS Deployments (
                 RevisionId INTEGER PRIMARY KEY,
                 Action INTEGER NOT NULL,
@@ -49,22 +53,16 @@ namespace Microsoft.PackageGraph.Storage.Local
                 LastSyncTime TEXT NOT NULL
             );
             """;
-            command.ExecuteNonQuery();
+            createTableCommand.ExecuteNonQuery();
         }
 
         /// <inheritdoc/>
-        public override SqliteConnection GetConnection() => _connection.Connection;
-
-        /// <inheritdoc/>
-        public override void Dispose()
+        public override SqliteConnection GetConnection()
         {
-            if (!_isDisposed)
-            {
-                _connection.Dispose();
+            var connection = new SqliteConnection($"Data Source={_dbPath}");
+            connection.Open();
 
-                _isDisposed = true;
-            }
-            GC.SuppressFinalize(this);
+            return connection;
         }
     }
 
@@ -90,23 +88,42 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <param name="deployment">The deployment to save</param>
         public void SaveDeployment(IDeployment deployment)
         {
-            var connection = _context.GetConnection();
+            SaveDeployments([deployment]);
+        }
+
+        /// <summary>
+        /// Saves a list of deployments to the database in a single transaction.
+        /// </summary>
+        /// <param name="deployments">The deployments to save.</param>
+        public void SaveDeployments(IEnumerable<IDeployment> deployments)
+        {
+            using var connection = _context.GetConnection();
+            using var transaction = connection.BeginTransaction();
             using var command = connection.CreateCommand();
+
+            command.Transaction = transaction;
             command.CommandText = """
             INSERT INTO Deployments (RevisionId, Action, Deadline, LastChangeTime)
                 VALUES (@RevisionId, @Action, @Deadline, @LastChangeTime)
-                ON CONFLICT(RevisionId) DO UPDATE SET 
+                ON CONFLICT(RevisionId) DO UPDATE SET
                     Action = @Action, Deadline = @Deadline, LastChangeTime = @LastChangeTime
                 WHERE LastChangeTime < @LastChangeTime
             """;
-            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = deployment.RevisionId;
-            command.Parameters.Add("@Action", SqliteType.Integer).Value = deployment.Action;
-            command.Parameters.Add("@Deadline", SqliteType.Text).Value =
-                (object)deployment.Deadline?.ToString("o", DateTimeFormatInfo.InvariantInfo) ?? DBNull.Value;
-            command.Parameters.Add("@LastChangeTime", SqliteType.Text).Value =
-                deployment.LastChangeTime.ToString("o", DateTimeFormatInfo.InvariantInfo);
+            var revisionIdParam = command.Parameters.Add("@RevisionId", SqliteType.Integer);
+            var actionParam = command.Parameters.Add("@Action", SqliteType.Integer);
+            var deadlineParam = command.Parameters.Add("@Deadline", SqliteType.Text);
+            var lastChangeTimeParam = command.Parameters.Add("@LastChangeTime", SqliteType.Text);
 
-            command.ExecuteNonQuery();
+            foreach (var deployment in deployments)
+            {
+                revisionIdParam.Value = deployment.RevisionId;
+                actionParam.Value = deployment.Action;
+                deadlineParam.Value = (object)deployment.Deadline?.ToString("o", DateTimeFormatInfo.InvariantInfo) ?? DBNull.Value;
+                lastChangeTimeParam.Value = deployment.LastChangeTime.ToString("o", DateTimeFormatInfo.InvariantInfo);
+                command.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
         }
 
         /// <summary>
@@ -115,7 +132,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <param name="revisionId">The revision id of a deployment to delete</param>
         public void DeleteDeployment(int revisionId)
         {
-            var connection = _context.GetConnection();
+            using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
             command.CommandText = "DELETE FROM Deployments WHERE RevisionId = @RevisionId";
             command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = revisionId;
@@ -129,7 +146,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <returns>The deployment, or null if not found</returns>
         public IDeployment GetDeployment(int revisionId)
         {
-            var connection = _context.GetConnection();
+            using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT Action, Deadline, LastChangeTime FROM Deployments WHERE RevisionId = @RevisionId";
             command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = revisionId;
@@ -173,16 +190,36 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <param name="syncTime">The time of the synchronization</param>
         public void UpdateComputerSync(string computerId, DateTime syncTime)
         {
-            var connection = _context.GetConnection();
+            UpdateComputerSyncs(new[] { new ComputerSync { ComputerId = computerId, LastSyncTime = syncTime } });
+        }
+
+        /// <summary>
+        /// Updates the synchronization status for multiple computers in a single transaction.
+        /// </summary>
+        /// <param name="computerSyncs">The computer sync data to save.</param>
+        public void UpdateComputerSyncs(IEnumerable<IComputerSync> computerSyncs)
+        {
+            using var connection = _context.GetConnection();
+            using var transaction = connection.BeginTransaction();
             using var command = connection.CreateCommand();
+
+            command.Transaction = transaction;
             command.CommandText = """
             INSERT INTO ComputerSyncStatus (ComputerId, LastSyncTime) VALUES (@ComputerId, @LastSyncTime)
                 ON CONFLICT(ComputerId) DO UPDATE SET LastSyncTime = @LastSyncTime
                 WHERE LastSyncTime < @LastSyncTime
             """;
-            command.Parameters.Add("@ComputerId", SqliteType.Text).Value = computerId;
-            command.Parameters.Add("@LastSyncTime", SqliteType.Text).Value = syncTime.ToString("o", DateTimeFormatInfo.InvariantInfo);
-            command.ExecuteNonQuery();
+            var computerIdParam = command.Parameters.Add("@ComputerId", SqliteType.Text);
+            var lastSyncTimeParam = command.Parameters.Add("@LastSyncTime", SqliteType.Text);
+
+            foreach (var sync in computerSyncs)
+            {
+                computerIdParam.Value = sync.ComputerId;
+                lastSyncTimeParam.Value = sync.LastSyncTime.ToString("o", DateTimeFormatInfo.InvariantInfo);
+                command.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
         }
 
         /// <summary>
@@ -191,7 +228,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <param name="computerId">The ID of a computer</param>
         public void DeleteComputer(string computerId)
         {
-            var connection = _context.GetConnection();
+            using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
             command.CommandText = "DELETE FROM ComputerSyncStatus WHERE ComputerId = @ComputerId";
             command.Parameters.Add("@ComputerId", SqliteType.Text).Value = computerId;
@@ -205,13 +242,13 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <returns>A synchronization information of a computer</returns>
         public IComputerSync GetComputerSync(string computerId)
         {
-            var connection = _context.GetConnection();
+            using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT LastSyncTime FROM ComputerSyncStatus WHERE ComputerId = @ComputerId";
             command.Parameters.Add("@ComputerId", SqliteType.Text).Value = computerId;
 
             var result = command.ExecuteScalar() as string;
-            if (result is not null)
+            if (!string.IsNullOrEmpty(result))
             {
                 return new ComputerSync()
                 {

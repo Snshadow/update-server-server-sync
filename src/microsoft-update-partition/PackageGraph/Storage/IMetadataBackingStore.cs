@@ -13,6 +13,11 @@ namespace Microsoft.PackageGraph.Storage
     interface IMetadataBackingStore : IDisposable, IEnumerable<IPackage>, IMetadataLookup, IMetadataMapping, IMetadataStoreOperations
     {
         /// <summary>
+        /// Gets a value indicating whether the store supports parallel processing.
+        /// </summary>
+        bool SupportsParallelProcessing { get; }
+
+        /// <summary>
         /// Flushes any pending changes to the backing store.
         /// </summary>
         void Flush();

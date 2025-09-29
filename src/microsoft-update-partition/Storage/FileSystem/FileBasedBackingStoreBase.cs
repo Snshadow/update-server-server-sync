@@ -19,10 +19,14 @@ namespace Microsoft.PackageGraph.Storage.Local
     /// </summary>
     public abstract class FileBasedBackingStoreBase : IMetadataBackingStore
     {
+
         private const string IdentitiesFileName = ".identities.json";
         private const string TypesFileName = ".types.json";
         private const string IdentitiesDirectoryName = "identities";
         private const string IndexesContainerFileName = ".indexes.zip";
+
+        /// <inheritdoc/>
+        public abstract bool SupportsParallelProcessing { get; }
 
         /// <summary>
         /// The root path of the backing store.

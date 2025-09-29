@@ -110,23 +110,47 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                 var batches = CreateBatchedListFromFlatList(unavailableUpdates, 50);
 
                 MetadataCopyProgress?.Invoke(this, progressArgs);
-                batches.AsParallel().ForAll(batch =>
+
+                if (destination.SupportsParallelProcessing)
                 {
-                    if (cancelToken.IsCancellationRequested)
+                    batches.AsParallel().ForAll(batch =>
                     {
-                        return;
-                    }
+                        if (cancelToken.IsCancellationRequested)
+                        {
+                            return;
+                        }
 
-                    var retrievedPackages = _Client.GetUpdateDataForIds(batch.ToList());
-                    destination.AddPackages(retrievedPackages);
-                    retrievedPackages.ForEach(u => u.ReleaseMetadataBytes());
+                        var retrievedPackages = _Client.GetUpdateDataForIds(batch.ToList());
+                        destination.AddPackages(retrievedPackages);
+                        retrievedPackages.ForEach(u => u.ReleaseMetadataBytes());
 
-                    lock (progressArgs)
+                        lock (progressArgs)
+                        {
+                            progressArgs.Current += retrievedPackages.Count;
+                            MetadataCopyProgress?.Invoke(this, progressArgs);
+                        }
+                    });
+                }
+                else
+                {
+                    foreach (var batch in batches)
                     {
-                        progressArgs.Current += retrievedPackages.Count;
-                        MetadataCopyProgress?.Invoke(this, progressArgs);
+                        if (cancelToken.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
+                        var retrievedPackages = _Client.GetUpdateDataForIds(batch.ToList());
+                        destination.AddPackages(retrievedPackages);
+                        retrievedPackages.ForEach(u => u.ReleaseMetadataBytes());
+
+                        lock (progressArgs)
+                        {
+                            progressArgs.Current += retrievedPackages.Count;
+                            MetadataCopyProgress?.Invoke(this, progressArgs);
+                        }
                     }
-                });
+                }
             }
         }
 

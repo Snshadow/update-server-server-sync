@@ -15,6 +15,8 @@ namespace Microsoft.PackageGraph.Storage.Local
     {
         private readonly Lock WriteLock = new();
 
+        public override bool SupportsParallelProcessing => true;
+
         public event EventHandler<PackageStoreEventArgs> MetadataCopyProgress;
 
 #pragma warning disable 0067

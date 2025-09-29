@@ -126,6 +126,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 if (!string.IsNullOrEmpty(options.Ids))
                 {
                     var server = new UpstreamServerClient(upstreamEndpoint);
+                    var packagesToAdd = new List<MicrosoftUpdatePackage>();
 
                     foreach (var updateId in options.Ids.Split('+'))
                     {
@@ -141,7 +142,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                             else
                             {
                                 ConsoleOutput.WriteGreen($" Found!");
-                                store.AddPackage(foundPackage);
+                                packagesToAdd.Add(foundPackage);
                             }
                         }
                         else
@@ -149,6 +150,11 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                             ConsoleOutput.WriteRed($"Update id must be in GUID format: {updateId}");
                             return;
                         }
+                    }
+
+                    if (packagesToAdd.Count > 0)
+                    {
+                        store.AddPackages(packagesToAdd);
                     }
                 }
                 else

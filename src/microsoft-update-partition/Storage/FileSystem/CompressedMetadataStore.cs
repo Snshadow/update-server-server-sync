@@ -23,6 +23,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         private bool _isDisposed;
         private readonly Lock WriteLock = new();
 
+        public bool SupportsParallelProcessing => true;
+
         private Dictionary<string, long> ZipEntriesIndex;
 
         public event EventHandler<PackageStoreEventArgs> MetadataCopyProgress;

@@ -18,6 +18,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private readonly IMetadataBackingStore _metadataBackingStore;
 
+        public bool SupportsParallelProcessing => _metadataBackingStore.SupportsParallelProcessing;
+
         private readonly Lock WriteLock = new();
 
         private readonly DeploySyncDbContext DbContext;
@@ -121,9 +123,6 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 _metadataBackingStore.Dispose();
 
-                DbContext?.Dispose();
-
-
                 IsDisposed = true;
             }
         }
@@ -158,26 +157,26 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void AddPackage(IPackage package)
         {
+            AddPackages([package]);
+        }
+
+        public void AddPackages(IEnumerable<IPackage> packages)
+        {
             _metadataBackingStore.CheckIndex();
 
-            var packageIndex = _metadataBackingStore.GetPackageIndex(package.Id);
-            if (packageIndex != -1)
+            var packagesToAdd = packages.Where(p => !_metadataBackingStore.ContainsPackage(p.Id)).ToList();
+            if (packagesToAdd.Count == 0)
             {
                 return;
             }
 
             lock (WriteLock)
             {
-                packageIndex = _metadataBackingStore.AddPackage(package);
-                AddPackageType(packageIndex, package);
-            }
-        }
-
-        public void AddPackages(IEnumerable<IPackage> packages)
-        {
-            foreach (var package in packages)
-            {
-                AddPackage(package);
+                _metadataBackingStore.AddPackages(packagesToAdd);
+                foreach (var package in packagesToAdd)
+                {
+                    AddPackageType(_metadataBackingStore.GetPackageIndex(package.Id), package);
+                }
             }
         }
 
