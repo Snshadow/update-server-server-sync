@@ -14,6 +14,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -406,8 +407,13 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             using (var metadataStream = package.GetMetadataStream())
             {
+                // Encode to UTF-8 then gzip compress it to save space.
+                using var encodeStream = Encoding.CreateTranscodingStream(metadataStream, Encoding.Unicode, Encoding.UTF8, true);
                 using var valueStream = new MemoryStream();
-                metadataStream.CopyTo(valueStream);
+                using (var compressStream = new GZipStream(valueStream, CompressionLevel.Optimal, true))
+                {
+                    encodeStream.CopyTo(compressStream);
+                }
 
                 insertMetadataCommand.Parameters["@Metadata"].Value = valueStream.ToArray();
             }
@@ -628,8 +634,8 @@ namespace Microsoft.PackageGraph.Storage.Local
                 return null;
             }
 
-            using var connection = GetConnection();
-            using var command = connection.CreateCommand();
+            var connection = GetConnection();
+            var command = connection.CreateCommand();
             command.CommandText = "SELECT Metadata FROM Metadatas WHERE RevisionId = @RevisionId";
             command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = identityId;
 
@@ -638,10 +644,14 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 reader.Dispose();
                 command.Dispose();
+                connection.Dispose();
                 return null;
             }
 
-            return new BlobStream(command, reader);
+            var compressedStream = new BlobStream(connection, command, reader);
+            var stream = new GZipStream(compressedStream, CompressionMode.Decompress);
+
+            return stream;
         }
 
         public IPackage GetPackage(IPackageIdentity packageIdentity)
@@ -974,12 +984,14 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// </summary>
         private class BlobStream : Stream
         {
+            private readonly SqliteConnection _connection;
             private readonly SqliteCommand _command;
             private readonly SqliteDataReader _reader;
             private readonly Stream _blobStream;
 
-            public BlobStream(SqliteCommand command, SqliteDataReader reader)
+            public BlobStream(SqliteConnection connection, SqliteCommand command, SqliteDataReader reader)
             {
+                _connection = connection;
                 _command = command;
                 _reader = reader;
                 _blobStream = reader.GetStream(0);
@@ -1012,6 +1024,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     _blobStream.Dispose();
                     _reader.Dispose();
                     _command.Dispose();
+                    _connection.Dispose();
                 }
                 base.Dispose(disposing);
             }
