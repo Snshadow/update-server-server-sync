@@ -22,7 +22,7 @@
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.13.1" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
-    <PackageReference Include="Spectre.Console.Cli" Version="0.50.1-preview.0.21" />
+    <PackageReference Include="Spectre.Console.Cli" Version="0.52.0" />
   </ItemGroup>
 
   <ItemGroup>

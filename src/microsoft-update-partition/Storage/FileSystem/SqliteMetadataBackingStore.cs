@@ -18,6 +18,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Xml.Linq;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
@@ -529,7 +530,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 if (file is UpdateFile updateFile)
                 {
                     addFileCommand.Parameters["@ModifiedDate"].Value =
-                        updateFile.ModifiedDate.ToString("o", DateTimeFormatInfo.InvariantInfo);
+                        updateFile.ModifiedDate.ToUniversalTime().ToString("o", DateTimeFormatInfo.InvariantInfo);
                     addFileCommand.Parameters["@Digests"].Value =
                         Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(updateFile.Digests));
                     addFileCommand.Parameters["@Urls"].Value =
@@ -847,11 +848,31 @@ namespace Microsoft.PackageGraph.Storage.Local
                     break;
 
                 case AvailableIndexes.FilesIndexName:
-                    command.CommandText = "SELECT json(Files) FROM Metadatas WHERE RevisionId = @RevisionId";
-                    var files = command.ExecuteScalar() as string;
-                    if (!string.IsNullOrEmpty(files))
+                    command.CommandText = """
+                    SELECT f.Name, f.Size, f.ModifiedDate, json(f.Digests), json(f.Urls), f.PatchingType
+                    FROM Metadatas as m INNER JOIN json_each(m.Files) as d
+                        INNER JOIN Files as f ON f.FileDigest = d.value
+                    WHERE m.RevisionId = @RevisionId
+                    """;
+                    List<IContentFile> files = [];
+                    using (var reader = command.ExecuteReader())
                     {
-                        value = JsonConvert.DeserializeObject<List<T>>(files);
+                        while (reader.Read())
+                        {
+                            files.Add(new UpdateFile()
+                            {
+                                FileName = reader.GetString(0),
+                                Size = (ulong)reader.GetInt64(1),
+                                ModifiedDate = reader.GetDateTime(2),
+                                Digests = JsonConvert.DeserializeObject<List<ContentFileDigest>>(reader.GetString(3)),
+                                Urls = JsonConvert.DeserializeObject<List<UpdateFileUrl>>(reader.GetString(4)),
+                                PatchingType = reader.GetString(5)
+                            });
+                        }
+                    }
+                    if (files.Count > 0)
+                    {
+                        value = files.Cast<T>().ToList();
                         return true;
                     }
                     break;
