@@ -574,57 +574,31 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
 
             using var connection = GetConnection();
-
-            string digests;
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = "SELECT json(Files) FROM Metadatas WHERE RevisionId = @RevisionId";
-                command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = identityId;
-                digests = command.ExecuteScalar() as string;
-                if (string.IsNullOrEmpty(digests))
-                {
-                    return [];
-                }
-            }
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+            SELECT f.Name, f.Size, f.ModifiedDate, json(f.Digests), json(f.Urls), f.PatchingType
+            FROM Metadatas as m INNER JOIN json_each(m.Files) as d
+                INNER JOIN Files as f ON f.FileDigest = d.value
+            WHERE m.RevisionId = @RevisionId
+            """;
+            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = identityId;
 
             List<UpdateFile> files = new();
-            var digestList = JsonConvert.DeserializeObject<List<string>>(digests);
-            foreach (var digest in digestList)
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                using var getFileCommand = connection.CreateCommand();
-                getFileCommand.CommandText = """
-                SELECT Name, Size, ModifiedDate, json(Digests), json(Urls), PatchingType
-                    FROM Files WHERE FileDigest = @FileDigest
-                """;
-                getFileCommand.Parameters.Add("@FileDigest", SqliteType.Text).Value = digest;
-                var reader = getFileCommand.ExecuteReader();
-                while (reader.Read())
+                files.Add(new UpdateFile()
                 {
-                    var deserializer = new JsonSerializer();
-                    List<ContentFileDigest> fileDigests;
-                    List<UpdateFileUrl> fileUrls;
-                    using (var digestStream = new StreamReader(reader.GetStream(3)))
-                    {
-                        fileDigests = deserializer.Deserialize(digestStream, typeof(List<ContentFileDigest>)) as List<ContentFileDigest>;
-                    }
-                    using (var urlStream = new StreamReader(reader.GetStream(4)))
-                    {
-                        fileUrls = deserializer.Deserialize(urlStream, typeof(List<UpdateFileUrl>)) as List<UpdateFileUrl>;
-                    }
-
-                    files.Add(new UpdateFile()
-                    {
-                        FileName = reader.GetString(0),
-                        Size = (ulong)reader.GetInt64(1),
-                        ModifiedDate = reader.GetDateTime(2),
-                        Digests = fileDigests,
-                        Urls = fileUrls,
-                        PatchingType = reader.GetString(5)
-                    });
-                }
+                    FileName = reader.GetString(0),
+                    Size = (ulong)reader.GetInt64(1),
+                    ModifiedDate = reader.GetDateTime(2),
+                    Digests = JsonConvert.DeserializeObject<List<ContentFileDigest>>(reader.GetString(3)),
+                    Urls = JsonConvert.DeserializeObject<List<UpdateFileUrl>>(reader.GetString(4)),
+                    PatchingType = reader.GetString(5)
+                });
             }
 
-            return files.Cast<T>().ToList();
+            return files.Count > 0 ? files.Cast<T>().ToList() : [];
         }
 
         public Stream GetMetadata(IPackageIdentity packageIdentity)
