@@ -208,6 +208,11 @@ namespace Microsoft.PackageGraph.Storage.Local
             return new MetadataEnumerator(this);
         }
 
+        public IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
+        {
+            return _metadataBackingStore.GetEnumerator(filter);
+        }
+
         /// <inheritdoc/>
         public void ReIndex()
         {

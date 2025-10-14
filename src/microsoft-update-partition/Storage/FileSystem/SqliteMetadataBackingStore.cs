@@ -18,7 +18,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Xml.Linq;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
@@ -565,6 +564,12 @@ namespace Microsoft.PackageGraph.Storage.Local
             return GetEnumerator();
         }
 
+        public IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
+        {
+            var identities = GetPackageIdentities(filter);
+            return identities.Select(GetPackage).GetEnumerator();
+        }
+
         public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
         {
             var identityId = GetPackageIndex(packageIdentity);
@@ -1053,7 +1058,97 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void CopyTo(IMetadataSink destination, IMetadataFilter filter, CancellationToken cancelToken)
         {
-            throw new NotImplementedException();
+            var packageEntries = GetPackageIdentities(filter);
+
+            var progressArgs = new PackageStoreEventArgs()
+            {
+                Total = packageEntries.Count(),
+                Current = 0
+            };
+            MetadataCopyProgress?.Invoke(this, progressArgs);
+            packageEntries.AsParallel().ForAll(packageEntry =>
+            {
+                if (cancelToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                destination.AddPackage(GetPackage(packageEntry));
+
+                lock (progressArgs)
+                {
+                    progressArgs.Current++;
+                }
+                if (progressArgs.Current % 100 == 0)
+                {
+                    MetadataCopyProgress?.Invoke(this, progressArgs);
+                }
+            });
+        }
+
+        private List<IPackageIdentity> GetPackageIdentities(IMetadataFilter filter)
+        {
+            var identities = new List<IPackageIdentity>();
+
+            using var connection = GetConnection();
+            using var command = connection.CreateCommand();
+
+            var query = "SELECT DISTINCT i.Guid, i.Revision";
+            var tableBuilder = new StringBuilder("Identities AS i");
+            var whereBuilder = new StringBuilder("1=1");
+
+            if (filter.CategoryQuery?.Any() == true)
+            {
+                tableBuilder.Append("""
+                INNER JOIN Metadatas AS m
+                INNER JOIN json_each(m.Categories) AS c 
+                ON i.Id = m.RevisionId
+                """);
+
+                var index = 0;
+                List<string> categoryParams = [];
+                foreach (var categoryGuid in filter.CategoryQuery)
+                {
+                    var paramName = $"@Category{index}";
+                    categoryParams.Add(paramName);
+                    command.Parameters.Add(paramName, SqliteType.Text).Value = categoryGuid;
+                    index++;
+                }
+                whereBuilder.Append($" AND c.value IN ({string.Join(",", categoryParams)})");
+            }
+
+            if (!string.IsNullOrEmpty(filter.TitleQuery))
+            {
+                whereBuilder.Append(" AND i.Title LIKE @Title");
+                command.Parameters.Add("@Title", SqliteType.Text).Value = $"%{filter.TitleQuery}%";
+            }
+
+            if (filter.IdQuery?.Any() == true)
+            {
+                var index = 0;
+                List<string> idParams = [];
+                foreach (var id in filter.IdQuery)
+                {
+                    var paramName = $"@Id{index}";
+                    idParams.Add(paramName);
+                    command.Parameters.Add(paramName, SqliteType.Text).Value = id;
+                    index++;
+                }
+                whereBuilder.Append($" AND i.Guid IN ({string.Join(",", idParams)})");
+            }
+
+            command.CommandText = $"{query} FROM {tableBuilder} WHERE {whereBuilder}";
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var guid = reader.GetGuid(0);
+                var revision = reader.GetInt32(1);
+
+                identities.Add(new MicrosoftUpdatePackageIdentity(guid, revision));
+            }
+
+            return identities;
         }
     }
 }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.ObjectModel;
+using System;
 using System.Collections.Generic;
 
 namespace Microsoft.PackageGraph.Storage
@@ -12,10 +13,25 @@ namespace Microsoft.PackageGraph.Storage
     public interface IMetadataFilter
     {
         /// <summary>
-        /// Apply the filter to a <see cref="IMetadataSource"/> and returns the matching packages
+        /// Gets the query for titles in the filter.
         /// </summary>
-        /// <param name="source">The metadata store to filter</param>
+        string TitleQuery { get; }
+
+        /// <summary>
+        /// Gets the query for categories in the filter.
+        /// </summary>
+        IEnumerable<Guid> CategoryQuery { get; }
+
+        /// <summary>
+        /// Gets the query for update IDs in the filter.
+        /// </summary>
+        IEnumerable<Guid> IdQuery { get; }
+
+        /// <summary>
+        /// Apply the filter to a collection of packages
+        /// </summary>
+        /// <param name="packages">The packages to filter</param>
         /// <returns>Matching packages</returns>
-        IEnumerable<IPackage> Apply(IMetadataStore source);
+        IEnumerable<IPackage> Apply(IEnumerable<IPackage> packages);
     }
 }

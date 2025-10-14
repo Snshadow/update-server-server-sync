@@ -40,6 +40,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         [JsonProperty]
         public List<Guid> ClassificationsFilter { get; internal set; }
 
+        /// <inheritdoc/>
+        public string TitleQuery => null;
+
+        /// <inheritdoc/>
+        public IEnumerable<Guid> IdQuery => null;
+
+        /// <inheritdoc/>
+        public IEnumerable<Guid> CategoryQuery => null;
 
         /// <summary>
         /// Creates an empty filter.
@@ -180,11 +188,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <summary>
         /// Applies the filter to a <see cref="IMetadataStore"/> and returns the matched packages
         /// </summary>
-        /// <param name="source">The metadata <see cref="IMetadataStore"/> to filter</param>
+        /// <param name="packages">The packages to filter</param>
         /// <returns>List of packages that match the filter</returns>
-        public IEnumerable<IPackage> Apply(IMetadataStore source)
+        public IEnumerable<IPackage> Apply(IEnumerable<IPackage> packages)
         {
-            var filteredUpdates = source.OfType<MicrosoftUpdatePackage>();
+            var filteredUpdates = packages.OfType<MicrosoftUpdatePackage>();
 
             return filteredUpdates.Where(u =>
             {
@@ -195,7 +203,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                 else
                 {
                     var prereqs = u.Prerequisites.OfType<AtLeastOne>().SelectMany(p => p.Simple).Select(s => s.UpdateId).ToList();
-                    return prereqs.Intersect(ClassificationsFilter).Any() && prereqs.Intersect(ProductsFilter).Any();
+                    var classificationsMatch = ClassificationsFilter.Count == 0 || prereqs.Intersect(ClassificationsFilter).Any();
+                    var productsMatch = ProductsFilter.Count == 0 || prereqs.Intersect(ProductsFilter).Any();
+                    return classificationsMatch && productsMatch;
                 }
             });
         }

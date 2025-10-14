@@ -109,19 +109,28 @@
             </summary>
             <returns>The JSON string</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.Apply``1(Microsoft.PackageGraph.Storage.IMetadataStore)">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.TitleQuery">
+            <inheritdoc />
+        </member>
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.CategoryQuery">
+            <inheritdoc />
+        </member>
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IdQuery">
+            <inheritdoc />
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.Apply``1(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
             Apply the filter to a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> and returns the matching packages of the specified type.
             </summary>
             <typeparam name="T">Package type to query. The type must inherit <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/></typeparam>
-            <param name="source">The metadata store to filter</param>
+            <param name="packages">The packages to filter</param>
             <returns>Matching packages</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.Apply(Microsoft.PackageGraph.Storage.IMetadataStore)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
             Apply the filter to a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> and returns matching packages of type <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/>
             </summary>
-            <param name="source">The metadata store to filter</param>
+            <param name="packages">The packages to filter</param>
             <returns>Matching packages</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability.ApplicabilityRule">
@@ -2455,6 +2464,18 @@
             <param name="computerId"></param>
             <returns></returns>
         </member>
+        <member name="T:Microsoft.PackageGraph.Storage.IFilterablePackageSet">
+            <summary>
+            Represents a set of packages that can be filtered.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IFilterablePackageSet.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
+            <summary>
+            Returns an enumerator that iterates through the collection.
+            </summary>
+            <param name="filter">The filter to apply.</param>
+            <returns>An enumerator that can be used to iterate through the collection.</returns>
+        </member>
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataBackingStore">
             <summary>
             Interface for a backing store for metadata for updates.
@@ -2493,11 +2514,26 @@
             Interface for filtering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> or for selectively quering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/>
             </summary>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.Apply(Microsoft.PackageGraph.Storage.IMetadataStore)">
+        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.TitleQuery">
             <summary>
-            Apply the filter to a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> and returns the matching packages
+            Gets the query for titles in the filter.
             </summary>
-            <param name="source">The metadata store to filter</param>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.CategoryQuery">
+            <summary>
+            Gets the query for categories in the filter.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.IdQuery">
+            <summary>
+            Gets the query for update IDs in the filter.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Apply the filter to a collection of packages
+            </summary>
+            <param name="packages">The packages to filter</param>
             <returns>Matching packages</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataLookup">
@@ -2932,6 +2968,9 @@
             <param name="container">Container name that contains the metadata store</param>
             <returns>True if the metadata store exists, false otherwise</returns>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.CompressedMetadataStore.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
+            <inheritdoc/>
+        </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.ContentDownloader">
             <summary>
             Simple HTTP content downloader implementation
@@ -3092,6 +3131,9 @@
         <member name="M:Microsoft.PackageGraph.Storage.Local.DirectoryMetadataStore.AddPackage(Microsoft.PackageGraph.ObjectModel.IPackage)">
             <inheritdoc/>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DirectoryMetadataStore.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
+            <inheritdoc/>
+        </member>
         <member name="P:Microsoft.PackageGraph.Storage.Local.DirectoryPackageStore.IsReindexingRequired">
             <inheritdoc cref="P:Microsoft.PackageGraph.Storage.IMetadataStore.IsReindexingRequired"/>
         </member>
@@ -3229,6 +3271,9 @@
             <inheritdoc/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetEnumerator">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
             <inheritdoc/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase.TrySimpleKeyLookup``1(Microsoft.PackageGraph.ObjectModel.IPackageIdentity,System.String,``0@)">

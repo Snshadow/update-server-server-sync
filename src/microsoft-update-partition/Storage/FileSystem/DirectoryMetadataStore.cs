@@ -262,7 +262,35 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public void CopyTo(IMetadataSink destination, IMetadataFilter filter, CancellationToken cancelToken)
         {
-            throw new NotImplementedException();
+            var packages = filter.Apply(this);
+
+            var progressArgs = new PackageStoreEventArgs() { Total = packages.Count(), Current = 0 };
+            MetadataCopyProgress?.Invoke(this, progressArgs);
+            packages.AsParallel().ForAll(package =>
+            {
+                if (cancelToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                destination.AddPackage(package);
+
+                lock (progressArgs)
+                {
+                    progressArgs.Current++;
+                }
+
+                if (progressArgs.Current % 100 == 0)
+                {
+                    MetadataCopyProgress?.Invoke(this, progressArgs);
+                }
+            });
+        }
+
+        /// <inheritdoc/>
+        public new IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
+        {
+            return filter.Apply(this).GetEnumerator();
         }
 
         class MetadataEnumerator : IEnumerator<IPackage>

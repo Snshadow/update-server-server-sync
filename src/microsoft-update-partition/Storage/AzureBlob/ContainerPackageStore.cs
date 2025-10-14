@@ -334,6 +334,11 @@ namespace Microsoft.PackageGraph.Storage.Azure
             return GetEnumerator();
         }
 
+        public IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
+        {
+            return filter.Apply(this).GetEnumerator();
+        }
+
         private List<KeyValuePair<IPackageIdentity, PartitionDefinition>> GetPackagesList()
         {
             var packagePaths = new List<KeyValuePair<IPackageIdentity, PartitionDefinition>>();

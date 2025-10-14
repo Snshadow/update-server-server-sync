@@ -241,5 +241,16 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         {
             throw new NotImplementedException();
         }
+
+        /// <summary>
+        /// Not implemented for an upstream categories source
+        /// </summary>
+        /// <param name="filter">The filter to apply.</param>
+        /// <returns>Category metadata as stream</returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -487,6 +487,14 @@
             <returns>List of files in the package</returns>
             <exception cref="T:System.NotImplementedException"></exception>
         </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamCategoriesSource.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
+            <summary>
+            Not implemented for an upstream categories source
+            </summary>
+            <param name="filter">The filter to apply.</param>
+            <returns>Category metadata as stream</returns>
+            <exception cref="T:System.NotImplementedException"></exception>
+        </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter">
             <summary>
             Implements a filter for updates based by product and/or classification.
@@ -511,6 +519,15 @@
             If this list if empty, no updates will match the filter. Add classification IDs to this list to have them match the filter.
             </summary>
             <value>List of classification identities.</value>
+        </member>
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.TitleQuery">
+            <inheritdoc/>
+        </member>
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.IdQuery">
+            <inheritdoc/>
+        </member>
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.CategoryQuery">
+            <inheritdoc/>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.#ctor">
             <summary>
@@ -568,11 +585,11 @@
             </summary>
             <returns>Hash code</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.Apply(Microsoft.PackageGraph.Storage.IMetadataStore)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
             Applies the filter to a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> and returns the matched packages
             </summary>
-            <param name="source">The metadata <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> to filter</param>
+            <param name="packages">The packages to filter</param>
             <returns>List of packages that match the filter</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamUpdatesSource">
@@ -635,6 +652,14 @@
             <typeparam name="T">Type of file to retrieve.</typeparam>
             <param name="packageIdentity">Identity of the package to retrieve files for.</param>
             <returns>List of files in the package</returns>
+            <exception cref="T:System.NotImplementedException"></exception>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamUpdatesSource.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
+            <summary>
+            Not implemented for an upstream updates source
+            </summary>
+            <param name="filter">The filter to apply.</param>
+            <returns>Update metadata as stream</returns>
             <exception cref="T:System.NotImplementedException"></exception>
         </member>
     </members>

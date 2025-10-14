@@ -10,7 +10,7 @@ namespace Microsoft.PackageGraph.Storage
     /// <summary>
     /// Interface for a backing store for metadata for updates.
     /// </summary>
-    interface IMetadataBackingStore : IDisposable, IEnumerable<IPackage>, IMetadataLookup, IMetadataMapping, IMetadataStoreOperations
+    interface IMetadataBackingStore : IDisposable, IEnumerable<IPackage>, IFilterablePackageSet, IMetadataLookup, IMetadataMapping, IMetadataStoreOperations
     {
         /// <summary>
         /// Gets a value indicating whether the store supports parallel processing.

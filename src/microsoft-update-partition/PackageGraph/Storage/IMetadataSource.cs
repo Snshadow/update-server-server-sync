@@ -39,7 +39,7 @@ namespace Microsoft.PackageGraph.Storage
     /// stored locally and queries.
     /// </para>
     /// </summary>
-    public interface IMetadataSource
+    public interface IMetadataSource : IFilterablePackageSet
     {
         /// <summary>
         /// Get raw metadata for a package identity

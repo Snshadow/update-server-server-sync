@@ -97,16 +97,25 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             return JsonConvert.SerializeObject(this);
         }
 
+        /// <inheritdoc />
+        public string TitleQuery => TitleFilter;
+
+        /// <inheritdoc />
+        public IEnumerable<Guid> CategoryQuery => CategoryFilter;
+
+        /// <inheritdoc />
+        public IEnumerable<Guid> IdQuery => IdFilter;
+
         /// <summary>
         /// Apply the filter to a <see cref="IMetadataSource"/> and returns the matching packages of the specified type.
         /// </summary>
         /// <typeparam name="T">Package type to query. The type must inherit <see cref="MicrosoftUpdatePackage"/></typeparam>
-        /// <param name="source">The metadata store to filter</param>
+        /// <param name="packages">The packages to filter</param>
         /// <returns>Matching packages</returns>
-        public IEnumerable<T> Apply<T>(IMetadataStore source) where T : MicrosoftUpdatePackage
+        public IEnumerable<T> Apply<T>(IEnumerable<IPackage> packages) where T : MicrosoftUpdatePackage
         {
             IEnumerable<T> filteredUpdates;
-            var updates = source.OfType<T>();
+            var updates = packages.OfType<T>();
 
             if (!string.IsNullOrEmpty(HardwareIdFilter) || (Guid.Empty != ComputerHardwareIdFilter))
             {
@@ -190,11 +199,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Apply the filter to a <see cref="IMetadataSource"/> and returns matching packages of type <see cref="MicrosoftUpdatePackage"/>
         /// </summary>
-        /// <param name="source">The metadata store to filter</param>
+        /// <param name="packages">The packages to filter</param>
         /// <returns>Matching packages</returns>
-        public IEnumerable<IPackage> Apply(IMetadataStore source)
+        public IEnumerable<IPackage> Apply(IEnumerable<IPackage> packages)
         {
-            return Apply<MicrosoftUpdatePackage>(source);
+            return Apply<MicrosoftUpdatePackage>(packages);
         }
     }
 }
