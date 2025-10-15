@@ -12,20 +12,16 @@ namespace Microsoft.PackageGraph.Storage
     /// </summary>
     public interface IMetadataFilter
     {
-        /// <summary>
-        /// Gets the query for titles in the filter.
-        /// </summary>
-        string TitleQuery { get; }
-
-        /// <summary>
-        /// Gets the query for categories in the filter.
-        /// </summary>
-        IEnumerable<Guid> CategoryQuery { get; }
 
         /// <summary>
         /// Gets the query for update IDs in the filter.
         /// </summary>
-        IEnumerable<Guid> IdQuery { get; }
+        IEnumerable<Guid> IdFilter { get; }
+
+        /// <summary>
+        /// Gets the query for titles in the filter.
+        /// </summary>
+        string TitleFilter { get; }
 
         /// <summary>
         /// Apply the filter to a collection of packages

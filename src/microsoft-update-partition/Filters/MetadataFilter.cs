@@ -25,19 +25,31 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// Get or set the Classification or Product filter. 
         /// </summary>
         /// <value>List of classification or product IDs (ID only, no revision)</value>
-        public List<Guid> CategoryFilter;
+
+        /// <summary>
+        /// Gets or sets the product filter.
+        /// </summary>
+        /// <value>List of product IDs</value>
+        public List<Guid> ProductFilter { get; set; }
+
+        /// <summary>
+        /// Gets or sets the classification filter.
+        /// </summary>
+        /// <value>List of classification IDs</value>
+        public List<Guid> ClassificationFilter { get; set; }
 
         /// <summary>
         /// Get or set the ID filter.
         /// </summary>
         /// <value>List of update IDs (ID only, no revision)</value>
-        public List<Guid> IdFilter;
+        public List<Guid> IdFilter { get; set; }
+        IEnumerable<Guid> IMetadataFilter.IdFilter => IdFilter;
 
         /// <summary>
         /// Get or set the title filter.
         /// </summary>
         /// <value>Title filter string</value>
-        public string TitleFilter;
+        public string TitleFilter { get; set; }
 
         /// <summary>
         /// Get or set whether to filter out superseded updates
@@ -97,15 +109,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             return JsonConvert.SerializeObject(this);
         }
 
-        /// <inheritdoc />
-        public string TitleQuery => TitleFilter;
-
-        /// <inheritdoc />
-        public IEnumerable<Guid> CategoryQuery => CategoryFilter;
-
-        /// <inheritdoc />
-        public IEnumerable<Guid> IdQuery => IdFilter;
-
         /// <summary>
         /// Apply the filter to a <see cref="IMetadataSource"/> and returns the matching packages of the specified type.
         /// </summary>
@@ -146,16 +149,22 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     .Any(metadata => metadata.DistributionComputerHardwareId.Contains(ComputerHardwareIdFilter)));
             }
 
-            if (CategoryFilter is { Count: > 0 })
+            if (ProductFilter is { Count: > 0 })
             {
-                filteredUpdates = filteredUpdates.Where(u => u.Prerequisites is not null);
+                filteredUpdates = filteredUpdates.Where(u =>
+                {
+                    var categories = u.Prerequisites.OfType<AtLeastOne>().Where(p => p.IsCategory).SelectMany(p => p.Simple).Select(s => s.UpdateId);
+                    return categories.Intersect(ProductFilter).Any();
+                });
+            }
 
-                filteredUpdates = filteredUpdates
-                    .Where(u =>
-                    u.Prerequisites.OfType<AtLeastOne>()
-                    .SelectMany(p => p.Simple)
-                    .Select(s => s.UpdateId)
-                    .Intersect(CategoryFilter).Any());
+            if (ClassificationFilter is { Count: > 0 })
+            {
+                filteredUpdates = filteredUpdates.Where(u =>
+                {
+                    var categories = u.Prerequisites.OfType<AtLeastOne>().Where(p => p.IsCategory).SelectMany(p => p.Simple).Select(s => s.UpdateId);
+                    return categories.Intersect(ClassificationFilter).Any();
+                });
             }
 
             if (KbArticleFilter is { Count: > 0 })

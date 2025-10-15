@@ -520,13 +520,13 @@
             </summary>
             <value>List of classification identities.</value>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.TitleQuery">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.TitleFilter">
             <inheritdoc/>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.IdQuery">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.IdFilter">
             <inheritdoc/>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.CategoryQuery">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.CategoryFilter">
             <inheritdoc/>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.#ctor">

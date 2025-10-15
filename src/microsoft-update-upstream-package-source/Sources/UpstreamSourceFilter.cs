@@ -41,13 +41,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         public List<Guid> ClassificationsFilter { get; internal set; }
 
         /// <inheritdoc/>
-        public string TitleQuery => null;
+        public string TitleFilter => null;
 
         /// <inheritdoc/>
-        public IEnumerable<Guid> IdQuery => null;
+        public IEnumerable<Guid> IdFilter => null;
 
         /// <inheritdoc/>
-        public IEnumerable<Guid> CategoryQuery => null;
+        public IEnumerable<Guid> CategoryFilter => null;
 
         /// <summary>
         /// Creates an empty filter.

@@ -51,22 +51,19 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 }
             }
 
-            var classificationFilter = StringGuidsToGuids(filterOptions.ClassificationsFilter);
-            if (classificationFilter is null)
+            filter.ClassificationFilter = StringGuidsToGuids(filterOptions.ClassificationsFilter);
+            if (filter.ClassificationFilter is null)
             {
                 ConsoleOutput.WriteRed("The classification filter must contain only GUIDs!");
                 return null;
             }
 
-            var productsFilter = StringGuidsToGuids(filterOptions.ProductsFilter);
-            if (productsFilter is null)
+            filter.ProductFilter = StringGuidsToGuids(filterOptions.ProductsFilter);
+            if (filter.ProductFilter is null)
             {
                 ConsoleOutput.WriteRed("The product ID filter must contain only GUIDs!");
                 return null;
             }
-
-            filter.CategoryFilter = new List<Guid>(productsFilter);
-            filter.CategoryFilter.AddRange(classificationFilter);
 
             filter.IdFilter = StringGuidsToGuids(filterOptions.IdFilter);
             if (filter.IdFilter is null)

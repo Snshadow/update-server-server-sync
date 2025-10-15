@@ -43,19 +43,29 @@
             </para>
             </summary>
         </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.CategoryFilter">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ProductFilter">
             <summary>
             Get or set the Classification or Product filter. 
             </summary>
             <value>List of classification or product IDs (ID only, no revision)</value>
+            <summary>
+            Gets or sets the product filter.
+            </summary>
+            <value>List of product IDs</value>
         </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IdFilter">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ClassificationFilter">
+            <summary>
+            Gets or sets the classification filter.
+            </summary>
+            <value>List of classification IDs</value>
+        </member>
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IdFilter">
             <summary>
             Get or set the ID filter.
             </summary>
             <value>List of update IDs (ID only, no revision)</value>
         </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.TitleFilter">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.TitleFilter">
             <summary>
             Get or set the title filter.
             </summary>
@@ -108,15 +118,6 @@
             Serializes this filter to JSON
             </summary>
             <returns>The JSON string</returns>
-        </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.TitleQuery">
-            <inheritdoc />
-        </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.CategoryQuery">
-            <inheritdoc />
-        </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IdQuery">
-            <inheritdoc />
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.Apply``1(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
@@ -2514,19 +2515,14 @@
             Interface for filtering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> or for selectively quering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/>
             </summary>
         </member>
-        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.TitleQuery">
-            <summary>
-            Gets the query for titles in the filter.
-            </summary>
-        </member>
-        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.CategoryQuery">
-            <summary>
-            Gets the query for categories in the filter.
-            </summary>
-        </member>
-        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.IdQuery">
+        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.IdFilter">
             <summary>
             Gets the query for update IDs in the filter.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.TitleFilter">
+            <summary>
+            Gets the query for titles in the filter.
             </summary>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">

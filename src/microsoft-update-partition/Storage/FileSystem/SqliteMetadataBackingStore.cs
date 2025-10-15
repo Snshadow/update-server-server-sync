@@ -129,7 +129,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             createTableCommand.CommandText = """
             CREATE TABLE IF NOT EXISTS Identities (
                 Id INTEGER PRIMARY KEY,
-                Guid TEXT NOT NULL,
+                Guid TEXT NOT NULL COLLATE NOCASE,
                 Revision INTEGER NOT NULL,
                 Title TEXT NOT NULL,
                 PackageType INTEGER NOT NULL DEFAULT(-1),
@@ -160,14 +160,14 @@ namespace Microsoft.PackageGraph.Storage.Local
             );
             CREATE TABLE IF NOT EXISTS Bundled (
                 RevisionId INTEGER NOT NULL,
-                Guid TEXT NOT NULL,
+                Guid TEXT NOT NULL COLLATE NOCASE,
                 Revision INTEGER NOT NULL,
                 PRIMARY KEY (RevisionId, Guid, Revision),
                 FOREIGN KEY (RevisionId) REFERENCES Identities(Id)
             ) WITHOUT ROWID;
             CREATE TABLE IF NOT EXISTS Superseded (
                 RevisionId INTEGER NOT NULL,
-                SupersededGuid TEXT NOT NULL,
+                SupersededGuid TEXT NOT NULL COLLATE NOCASE,
                 PRIMARY KEY (RevisionId, SupersededGuid),
                 FOREIGN KEY (RevisionId) REFERENCES Identities(Id)
             ) WITHOUT ROWID;
@@ -1033,8 +1033,12 @@ namespace Microsoft.PackageGraph.Storage.Local
         public void CopyTo(IMetadataSink destination, CancellationToken cancelToken)
         {
             var packageEntries = GetPackageIdentities();
+            var progressArgs = new PackageStoreEventArgs()
+            {
+                Total = packageEntries.Count(),
+                Current = 0
+            };
 
-            var progressArgs = new PackageStoreEventArgs() { Total = packageEntries.Count(), Current = 0 };
             MetadataCopyProgress?.Invoke(this, progressArgs);
             packageEntries.AsParallel().ForAll(packageEntry =>
             {
@@ -1062,7 +1066,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             var progressArgs = new PackageStoreEventArgs()
             {
-                Total = packageEntries.Count(),
+                Total = packageEntries.Count,
                 Current = 0
             };
             MetadataCopyProgress?.Invoke(this, progressArgs);
@@ -1088,56 +1092,139 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private List<IPackageIdentity> GetPackageIdentities(IMetadataFilter filter)
         {
-            var identities = new List<IPackageIdentity>();
+            if (filter is null)
+            {
+                return GetPackageIdentities().ToList();
+            }
+
+            var metadataFilter = filter as MetadataFilter;
+            List<IPackageIdentity> identities = [];
+            Dictionary<MicrosoftUpdatePackageIdentity, MicrosoftUpdatePackage> packageCache = null;
+
+            MicrosoftUpdatePackage GetCachedPackage(IPackageIdentity identity)
+            {
+                if (identity is not MicrosoftUpdatePackageIdentity microsoftIdentity)
+                {
+                    return GetPackage(identity) as MicrosoftUpdatePackage;
+                }
+
+                packageCache ??= [];
+                if (!packageCache.TryGetValue(microsoftIdentity, out var package))
+                {
+                    package = GetPackage(microsoftIdentity) as MicrosoftUpdatePackage;
+                    if (package is not null)
+                    {
+                        packageCache[microsoftIdentity] = package;
+                    }
+                }
+
+                return package;
+            }
 
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
 
-            var query = "SELECT DISTINCT i.Guid, i.Revision";
-            var tableBuilder = new StringBuilder("Identities AS i");
-            var whereBuilder = new StringBuilder("1=1");
+            StringBuilder queryBuilder = new("SELECT DISTINCT i.Guid, i.Revision");
+            StringBuilder tableBuilder = new("Identities AS i");
+            StringBuilder whereBuilder = new("1=1");
 
-            if (filter.CategoryQuery?.Any() == true)
+            var requiresDriverFiltering = metadataFilter switch
+            {
+                { HardwareIdFilter: not null and { Length: > 0 } } => true,
+                { ComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
+                _ => false
+            };
+            var hasProductFilter = metadataFilter is { ProductFilter.Count: > 0 };
+            var hasClassificationFilter = metadataFilter is { ClassificationFilter.Count: > 0 };
+
+            if (hasProductFilter || hasClassificationFilter)
             {
                 tableBuilder.Append("""
-                INNER JOIN Metadatas AS m
-                INNER JOIN json_each(m.Categories) AS c 
-                ON i.Id = m.RevisionId
+
+                INNER JOIN Metadatas AS m ON i.Id = m.RevisionId
+                INNER JOIN json_each(m.Categories) AS c
                 """);
 
-                var index = 0;
-                List<string> categoryParams = [];
-                foreach (var categoryGuid in filter.CategoryQuery)
+                if (hasProductFilter)
                 {
-                    var paramName = $"@Category{index}";
-                    categoryParams.Add(paramName);
-                    command.Parameters.Add(paramName, SqliteType.Text).Value = categoryGuid;
-                    index++;
+                    var productParams = metadataFilter.ProductFilter.Select((id, index) =>
+                    {
+                        var paramName = $"@Product{index}";
+                        command.Parameters.Add(paramName, SqliteType.Text).Value = id;
+                        return paramName;
+                    }).ToList();
+                    whereBuilder.Append($"\nAND c.value IN ({string.Join(",", productParams)})");
                 }
-                whereBuilder.Append($" AND c.value IN ({string.Join(",", categoryParams)})");
+
+                if (hasClassificationFilter)
+                {
+                    var classificationParams = metadataFilter.ClassificationFilter.Select((id, index) =>
+                    {
+                        var paramName = $"@Classification{index}";
+                        command.Parameters.Add(paramName, SqliteType.Text).Value = id;
+                        return paramName;
+                    }).ToList();
+                    whereBuilder.Append($"\nAND c.value IN ({string.Join(",", classificationParams)})");
+                }
             }
 
-            if (!string.IsNullOrEmpty(filter.TitleQuery))
+            if (!string.IsNullOrEmpty(metadataFilter.TitleFilter))
             {
-                whereBuilder.Append(" AND i.Title LIKE @Title");
-                command.Parameters.Add("@Title", SqliteType.Text).Value = $"%{filter.TitleQuery}%";
+                whereBuilder.Append("\nAND i.Title LIKE @Title");
+                command.Parameters.Add("@Title", SqliteType.Text).Value = $"%{filter.TitleFilter}%";
             }
 
-            if (filter.IdQuery?.Any() == true)
+            if (filter.IdFilter?.Any() == true)
             {
                 var index = 0;
                 List<string> idParams = [];
-                foreach (var id in filter.IdQuery)
+                foreach (var id in filter.IdFilter)
                 {
                     var paramName = $"@Id{index}";
                     idParams.Add(paramName);
                     command.Parameters.Add(paramName, SqliteType.Text).Value = id;
                     index++;
                 }
-                whereBuilder.Append($" AND i.Guid IN ({string.Join(",", idParams)})");
+
+                whereBuilder.Append($"\nAND i.Guid IN ({string.Join(",", idParams)})");
             }
 
-            command.CommandText = $"{query} FROM {tableBuilder} WHERE {whereBuilder}";
+            if (metadataFilter is { KbArticleFilter.Count: > 0 })
+            {
+                tableBuilder.Append("\nINNER JOIN SoftwareInformations AS si ON si.RevisionId = i.Id");
+
+                var index = 0;
+                List<string> kbParams = [];
+                foreach (var kb in metadataFilter.KbArticleFilter)
+                {
+                    var paramName = $"@Kb{index}";
+                    kbParams.Add(paramName);
+                    command.Parameters.Add(paramName, SqliteType.Text).Value = kb;
+                    index++;
+                }
+
+                whereBuilder.Append($"\nAND si.KbArticleId IN ({string.Join(",", kbParams)})");
+            }
+
+            if (metadataFilter is { SkipSuperseded: true })
+            {
+                whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM Superseded AS sup WHERE sup.SupersededGuid = i.Guid)");
+            }
+
+            queryBuilder.Append($" FROM {tableBuilder}");
+
+            if (whereBuilder.Length > 0)
+            {
+                queryBuilder.Append($"\nWHERE {whereBuilder}");
+            }
+
+            if (metadataFilter is { FirstX: > 0 } && !requiresDriverFiltering)
+            {
+                queryBuilder.Append("\nLIMIT @Limit");
+                command.Parameters.Add("@Limit", SqliteType.Integer).Value = metadataFilter.FirstX;
+            }
+
+            command.CommandText = queryBuilder.ToString();
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -1146,6 +1233,52 @@ namespace Microsoft.PackageGraph.Storage.Local
                 var revision = reader.GetInt32(1);
 
                 identities.Add(new MicrosoftUpdatePackageIdentity(guid, revision));
+            }
+
+            // TODO push the post-filter limit into SQL by materializing driver metadata indexes.
+            if (metadataFilter is not null && requiresDriverFiltering)
+            {
+                List<IPackageIdentity> driverMatches = [];
+                foreach (var identity in identities)
+                {
+                    var package = GetCachedPackage(identity);
+                    if (package is not DriverUpdate driverUpdate)
+                    {
+                        continue;
+                    }
+
+                    var metadata = driverUpdate.GetDriverMetadata();
+                    if (!string.IsNullOrEmpty(metadataFilter.HardwareIdFilter))
+                    {
+                        var hardwareMatch = metadata.Any(md =>
+                            md.HardwareId.Equals(metadataFilter.HardwareIdFilter, StringComparison.OrdinalIgnoreCase));
+                        if (!hardwareMatch)
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (metadataFilter.ComputerHardwareIdFilter != Guid.Empty)
+                    {
+                        var computerMatch = metadata.Any(md =>
+                            md.DistributionComputerHardwareId.Contains(metadataFilter.ComputerHardwareIdFilter));
+                        if (!computerMatch)
+                        {
+                            continue;
+                        }
+                    }
+
+                    driverMatches.Add(identity);
+                }
+
+                if (metadataFilter.FirstX > 0 && identities.Count > metadataFilter.FirstX)
+                {
+                    identities = driverMatches.Take(metadataFilter.FirstX).ToList();
+                }
+                else
+                {
+                    identities = driverMatches;
+                }
             }
 
             return identities;

@@ -5,10 +5,12 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
+using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,34 +33,28 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             // Apply filters specified on the command line
             IEnumerable<MicrosoftUpdatePackage> filteredPackages;
-            var allCategories = new List<MicrosoftUpdatePackage>();
-            allCategories.AddRange(metadataStore.OfType<ClassificationCategory>());
-            allCategories.AddRange(metadataStore.OfType<ProductCategory>());
-            allCategories.AddRange(metadataStore.OfType<DetectoidCategory>());
 
-            if (packageType == "MicrosoftUpdateClassification")
+            if (metadataStore is IFilterablePackageSet filterableSet && UseFilterableEnumeration(packageType))
             {
-                filteredPackages = filter.Apply<ClassificationCategory>(metadataStore);
-            }
-            else if (packageType == "MicrosoftUpdateProduct")
-            {
-                filteredPackages = filter.Apply<ProductCategory>(metadataStore);
-            }
-            else if (packageType == "MicrosoftUpdateDetectoid")
-            {
-                filteredPackages = filter.Apply<DetectoidCategory>(metadataStore);
-            }
-            else if (packageType == "MicrosoftUpdateUpdate")
-            {
-                filteredPackages = filter.Apply<SoftwareUpdate>(metadataStore);
-            }
-            else if (packageType == "MicrosoftUpdateDriver")
-            {
-                filteredPackages = filter.Apply<DriverUpdate>(metadataStore);
+                var filteredSource = EnumerateFilteredPackages(filterableSet, filter);
+                filteredPackages = packageType switch
+                {
+                    "MicrosoftUpdateUpdate" => filteredSource.OfType<SoftwareUpdate>().Cast<MicrosoftUpdatePackage>(),
+                    "MicrosoftUpdateDriver" => filteredSource.OfType<DriverUpdate>().Cast<MicrosoftUpdatePackage>(),
+                    _ => filteredSource.OfType<MicrosoftUpdatePackage>()
+                };
             }
             else
             {
-                filteredPackages = filter.Apply<MicrosoftUpdatePackage>(metadataStore);
+                filteredPackages = packageType switch
+                {
+                    "MicrosoftUpdateClassification" => filter.Apply<ClassificationCategory>(metadataStore),
+                    "MicrosoftUpdateProduct" => filter.Apply<ProductCategory>(metadataStore),
+                    "MicrosoftUpdateDetectoid" => filter.Apply<DetectoidCategory>(metadataStore),
+                    "MicrosoftUpdateUpdate" => filter.Apply<SoftwareUpdate>(metadataStore),
+                    "MicrosoftUpdateDriver" => filter.Apply<DriverUpdate>(metadataStore),
+                    _ => filter.Apply<MicrosoftUpdatePackage>(metadataStore)
+                };
             }
 
             if (!string.IsNullOrEmpty(options.JsonOutPath))
@@ -91,25 +87,158 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
             else
             {
-                var categoriesLookup = allCategories.ToLookup(package => package.Id.ID);
+                var packageResolver = new PackageResolver(metadataStore);
+                var categoriesLookup = new OnDemandPackageLookup(packageResolver,
+                    static package =>
+                        package is ClassificationCategory or ProductCategory or DetectoidCategory);
+                var updatesLookup = new OnDemandPackageLookup(packageResolver, static _ => true);
 
                 Console.Write("\nQuery results:\n-----------------------------");
                 int counter = 0;
 
-                var allUpdatesLookup = metadataStore.OfType<MicrosoftUpdatePackage>().ToLookup(package => package.Id.ID);
                 foreach (var update in filteredPackages)
                 {
                     counter++;
 
                     if (!options.CountOnly)
                     {
-                        PrintMicrosoftUpdateMetadata(update, metadataStore, categoriesLookup, allUpdatesLookup);
+                        PrintMicrosoftUpdateMetadata(update, metadataStore, categoriesLookup, updatesLookup);
                     }
                 }
 
                 Console.WriteLine("-----------------------------");
                 Console.WriteLine($"Returned {counter} entries");
             }
+        }
+
+        static bool UseFilterableEnumeration(string targetPackageType) => targetPackageType switch
+        {
+            "MicrosoftUpdateClassification" => false,
+            "MicrosoftUpdateProduct" => false,
+            "MicrosoftUpdateDetectoid" => false,
+            _ => true
+        };
+
+        static IEnumerable<IPackage> EnumerateFilteredPackages(IFilterablePackageSet filterableSet, IMetadataFilter filter)
+        {
+            using var enumerator = filterableSet.GetEnumerator(filter);
+            while (enumerator.MoveNext())
+            {
+                yield return enumerator.Current;
+            }
+        }
+
+        private sealed class PackageResolver
+        {
+            private readonly IMetadataStore _store;
+            private readonly IFilterablePackageSet _filterableSet;
+            private Dictionary<Guid, List<MicrosoftUpdatePackageIdentity>> _identityLookup;
+
+            public PackageResolver(IMetadataStore store)
+            {
+                _store = store;
+                _filterableSet = store;
+            }
+
+            public IReadOnlyList<MicrosoftUpdatePackage> Fetch(Guid id)
+            {
+                if (_filterableSet is not null)
+                {
+                    var filter = new MetadataFilter()
+                    {
+                        IdFilter = new List<Guid> { id }
+                    };
+
+                    return EnumerateFilteredPackages(_filterableSet, filter)
+                        .OfType<MicrosoftUpdatePackage>()
+                        .ToList();
+                }
+
+                _identityLookup ??= _store.GetPackageIdentities()
+                    .OfType<MicrosoftUpdatePackageIdentity>()
+                    .GroupBy(identity => identity.ID)
+                    .ToDictionary(group => group.Key, group => group.ToList());
+
+                if (_identityLookup is not null && _identityLookup.TryGetValue(id, out var identities))
+                {
+                    List<MicrosoftUpdatePackage> packages = [];
+                    foreach (var identity in identities)
+                    {
+                        if (_store.GetPackage(identity) is MicrosoftUpdatePackage package)
+                        {
+                            packages.Add(package);
+                        }
+                    }
+                    return packages;
+                }
+
+                return [];
+            }
+        }
+
+        private sealed class OnDemandPackageLookup : ILookup<Guid, MicrosoftUpdatePackage>
+        {
+            private readonly PackageResolver _resolver;
+            private readonly Func<MicrosoftUpdatePackage, bool> _predicate;
+            private readonly Dictionary<Guid, PackageGrouping> _cache = [];
+
+            public OnDemandPackageLookup(PackageResolver resolver, Func<MicrosoftUpdatePackage, bool> predicate)
+            {
+                _resolver = resolver;
+                _predicate = predicate;
+            }
+
+            public int Count => _cache.Values.Count(group => group.HasValues);
+
+            public IEnumerable<MicrosoftUpdatePackage> this[Guid key] => GetOrCreateGrouping(key);
+
+            public bool Contains(Guid key) => GetOrCreateGrouping(key).HasValues;
+
+            public IEnumerator<IGrouping<Guid, MicrosoftUpdatePackage>> GetEnumerator()
+            {
+                return _cache.Values
+                    .Where(group => group.HasValues)
+                    .Cast<IGrouping<Guid, MicrosoftUpdatePackage>>()
+                    .GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+            private PackageGrouping GetOrCreateGrouping(Guid key)
+            {
+                if (_cache.TryGetValue(key, out var grouping))
+                {
+                    return grouping;
+                }
+
+                var packages = _resolver.Fetch(key)
+                    .Where(_predicate)
+                    .ToList();
+
+                grouping = new PackageGrouping(key, packages);
+                _cache[key] = grouping;
+
+                return grouping;
+            }
+        }
+
+        private sealed class PackageGrouping : IGrouping<Guid, MicrosoftUpdatePackage>
+        {
+            private readonly IReadOnlyList<MicrosoftUpdatePackage> _packages;
+
+            public PackageGrouping(Guid key, IReadOnlyList<MicrosoftUpdatePackage> packages)
+            {
+                Key = key;
+                _packages = packages;
+            }
+
+            public Guid Key { get; }
+
+            public bool HasValues => _packages.Count > 0;
+
+            public IEnumerator<MicrosoftUpdatePackage> GetEnumerator() => _packages.GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
         /// <summary>
