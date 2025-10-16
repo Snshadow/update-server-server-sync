@@ -102,74 +102,74 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var createTableCommand = connection.CreateCommand();
             // TODO driver update support
             /* Updates: Contains the stored identities(category, update, etc..)
-             *  Id -> server specific update id(revision id)
-             *  Guid -> global update GUID
-             *  Revision -> global update revision number
-             *  PackageType -> the type of the package
+             *  id -> server specific update id(revision id)
+             *  guid -> global update GUID
+             *  revision -> global update revision number
+             *  package_type -> the type of the package
              * Files: Contains file information used for updates
-             *  FileDigest -> primary file digest as hex string
-             *  Digests -> jsonb object containing array of content file digest
-             *  Urls -> jsonb object containing array of original download url
+             *  file_digest -> primary file digest as hex string
+             *  digests -> jsonb object containing array of content file digest
+             *  urls -> jsonb object containing array of original download url
              * Metadatas: Contains full metadata xml and file digests
-             *  RevisionId -> server specific update id
-             *  Metadata -> update metadata xml
-             *  Categories -> jsonb object containing list of categories of this update
-             *  Files -> jsonb object containing list of files primary hex digest
-             *  Prerequisites -> jsonb object containing data of prerequisites of this update
+             *  revision_id -> server specific update id
+             *  metadata -> update metadata xml
+             *  categories -> jsonb object containing list of categories of this update
+             *  files -> jsonb object containing list of files primary hex digest
+             *  prerequisites -> jsonb object containing data of prerequisites of this update
              * SoftwareInformation: Contains information specific for software updates
-             *  RevisionId -> server specific update id
+             *  revision_id -> server specific update id
              * Bundled: Contains updates bundled with the update
-             *  RevisionId -> server specific update id
-             *  Guid -> bundled update guid
-             *  Revision -> bundled update revision number
+             *  revision_id -> server specific update id
+             *  guid -> bundled update guid
+             *  revision -> bundled update revision number
              * Superseded: Contains superseded update ids for updates
-             *  RevisionId -> server specific update id
-             *  SupersededGuid -> supseded update global GUID
+             *  revision_id -> server specific update id
+             *  superseded_guid -> supseded update global GUID
              */
             createTableCommand.CommandText = """
-            CREATE TABLE IF NOT EXISTS Identities (
-                Id INTEGER PRIMARY KEY,
-                Guid TEXT NOT NULL COLLATE NOCASE,
-                Revision INTEGER NOT NULL,
-                Title TEXT NOT NULL,
-                PackageType INTEGER NOT NULL DEFAULT(-1),
-                UNIQUE(Guid, Revision)
+            CREATE TABLE IF NOT EXISTS identities (
+                id INTEGER PRIMARY KEY,
+                guid TEXT NOT NULL COLLATE NOCASE,
+                revision INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                package_type INTEGER NOT NULL DEFAULT(-1),
+                UNIQUE(guid, revision)
             );
-            CREATE TABLE IF NOT EXISTS Files (
-                FileDigest TEXT PRIMARY KEY,
-                Name TEXT NOT NULL,
-                Size INTEGER NOT NULL,
-                ModifiedDate TEXT NOT NULL,
-                Digests BLOB NOT NULL,
-                Urls BLOB NOT NULL,
-                PatchingType TEXT NOT NULL
+            CREATE TABLE IF NOT EXISTS files (
+                file_digest TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                size INTEGER NOT NULL,
+                modified_date TEXT NOT NULL,
+                digests BLOB NOT NULL,
+                urls BLOB NOT NULL,
+                patching_type TEXT NOT NULL
             );
-            CREATE TABLE IF NOT EXISTS Metadatas (
-                RevisionId INTEGER PRIMARY KEY,
-                Metadata BLOB NOT NULL,
-                Categories BLOB,
-                Files BLOB,
-                Prerequisites BLOB,
-                FOREIGN KEY (RevisionId) REFERENCES Identities(Id)
+            CREATE TABLE IF NOT EXISTS metadatas (
+                revision_id INTEGER PRIMARY KEY,
+                metadata BLOB NOT NULL,
+                categories BLOB,
+                files BLOB,
+                prerequisites BLOB,
+                FOREIGN KEY (revision_id) REFERENCES identities(id)
             );
-            CREATE TABLE IF NOT EXISTS SoftwareInformations (
-                RevisionId INTEGER PRIMARY KEY,
-                KbArticleId TEXT,
-                Bundled BLOB,
-                FOREIGN KEY (RevisionId) REFERENCES Identities(Id)
+            CREATE TABLE IF NOT EXISTS software_informations (
+                revision_id INTEGER PRIMARY KEY,
+                kb_article_id TEXT,
+                bundled BLOB,
+                FOREIGN KEY (revision_id) REFERENCES identities(id)
             );
-            CREATE TABLE IF NOT EXISTS Bundled (
-                RevisionId INTEGER NOT NULL,
-                Guid TEXT NOT NULL COLLATE NOCASE,
-                Revision INTEGER NOT NULL,
-                PRIMARY KEY (RevisionId, Guid, Revision),
-                FOREIGN KEY (RevisionId) REFERENCES Identities(Id)
+            CREATE TABLE IF NOT EXISTS bundled (
+                revision_id INTEGER NOT NULL,
+                guid TEXT NOT NULL COLLATE NOCASE,
+                revision INTEGER NOT NULL,
+                PRIMARY KEY (revision_id, guid, revision),
+                FOREIGN KEY (revision_id) REFERENCES identities(id)
             ) WITHOUT ROWID;
-            CREATE TABLE IF NOT EXISTS Superseded (
-                RevisionId INTEGER NOT NULL,
-                SupersededGuid TEXT NOT NULL COLLATE NOCASE,
-                PRIMARY KEY (RevisionId, SupersededGuid),
-                FOREIGN KEY (RevisionId) REFERENCES Identities(Id)
+            CREATE TABLE IF NOT EXISTS superseded (
+                revision_id INTEGER NOT NULL,
+                superseded_guid TEXT NOT NULL COLLATE NOCASE,
+                PRIMARY KEY (revision_id, superseded_guid),
+                FOREIGN KEY (revision_id) REFERENCES identities(id)
             ) WITHOUT ROWID;
             """;
             createTableCommand.ExecuteNonQuery();
@@ -277,7 +277,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 using var connection = GetConnection();
                 using var command = connection.CreateCommand();
-                command.CommandText = "SELECT COUNT(*) FROM Identities";
+                command.CommandText = "SELECT COUNT(*) FROM identities";
                 return (int)(command.ExecuteScalar() as long? ?? 0);
             }
         }
@@ -295,68 +295,68 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var insertIdentityCommand = connection.CreateCommand();
             insertIdentityCommand.Transaction = transaction;
             insertIdentityCommand.CommandText = """
-                INSERT INTO Identities (Guid, Revision, Title)
-                    VALUES (@Guid, @Revision, @Title);
+                INSERT INTO identities (guid, revision, title)
+                    VALUES (@guid, @revision, @title);
                 SELECT last_insert_rowid();
                 """;
-            var guidIdentityParam = insertIdentityCommand.Parameters.Add("@Guid", SqliteType.Text);
-            var revisionIdentityParam = insertIdentityCommand.Parameters.Add("@Revision", SqliteType.Integer);
-            var titleIdentityParam = insertIdentityCommand.Parameters.Add("@Title", SqliteType.Text);
+            var guidIdentityParam = insertIdentityCommand.Parameters.Add("@guid", SqliteType.Text);
+            var revisionIdentityParam = insertIdentityCommand.Parameters.Add("@revision", SqliteType.Integer);
+            var titleIdentityParam = insertIdentityCommand.Parameters.Add("@title", SqliteType.Text);
 
             using var insertMetadataCommand = connection.CreateCommand();
             insertMetadataCommand.Transaction = transaction;
             insertMetadataCommand.CommandText = """
-                INSERT INTO Metadatas (RevisionId, Metadata, Categories, Files, Prerequisites)
-                    VALUES (@RevisionId, @Metadata, jsonb(@Categories), jsonb(@Files), jsonb(@Prerequisites))
+                INSERT INTO metadatas (revision_id, metadata, categories, files, prerequisites)
+                    VALUES (@revision_id, @metadata, jsonb(@categories), jsonb(@files), jsonb(@prerequisites))
                 """;
-            var revisionIdMetadataParam = insertMetadataCommand.Parameters.Add("@RevisionId", SqliteType.Integer);
-            var metadataMetadataParam = insertMetadataCommand.Parameters.Add("@Metadata", SqliteType.Blob);
-            var categoriesMetadataParam = insertMetadataCommand.Parameters.Add("@Categories", SqliteType.Blob);
-            var filesMetadataParam = insertMetadataCommand.Parameters.Add("@Files", SqliteType.Blob);
-            var prerequisitesMetadataParam = insertMetadataCommand.Parameters.Add("@Prerequisites", SqliteType.Blob);
+            var revisionIdMetadataParam = insertMetadataCommand.Parameters.Add("@revision_id", SqliteType.Integer);
+            var metadataMetadataParam = insertMetadataCommand.Parameters.Add("@metadata", SqliteType.Blob);
+            var categoriesMetadataParam = insertMetadataCommand.Parameters.Add("@categories", SqliteType.Blob);
+            var filesMetadataParam = insertMetadataCommand.Parameters.Add("@files", SqliteType.Blob);
+            var prerequisitesMetadataParam = insertMetadataCommand.Parameters.Add("@prerequisites", SqliteType.Blob);
 
             using var insertSoftwareCommand = connection.CreateCommand();
             insertSoftwareCommand.Transaction = transaction;
             insertSoftwareCommand.CommandText = """
-                    INSERT INTO SoftwareInformations (RevisionId, KbArticleId, Bundled)
-                        VALUES (@RevisionId, @KbArticleId, jsonb(@Bundled));
+                    INSERT INTO software_informations (revision_id, kb_article_id, bundled)
+                        VALUES (@revision_id, @kb_article_id, jsonb(@bundled));
                     """;
-            var revisionIdSoftwareParam = insertSoftwareCommand.Parameters.Add("@RevisionId", SqliteType.Integer);
-            var kbArticleIdSoftwareParam = insertSoftwareCommand.Parameters.Add("@KbArticleId", SqliteType.Text);
-            var bundledSoftwareParam = insertSoftwareCommand.Parameters.Add("@Bundled", SqliteType.Blob);
+            var revisionIdSoftwareParam = insertSoftwareCommand.Parameters.Add("@revision_id", SqliteType.Integer);
+            var kbArticleIdSoftwareParam = insertSoftwareCommand.Parameters.Add("@kb_article_id", SqliteType.Text);
+            var bundledSoftwareParam = insertSoftwareCommand.Parameters.Add("@bundled", SqliteType.Blob);
 
             using var insertBundledCommand = connection.CreateCommand();
             insertBundledCommand.Transaction = transaction;
             insertBundledCommand.CommandText = """
-                    INSERT INTO Bundled (RevisionId, Guid, Revision)
-                        VALUES (@RevisionId, @Guid, @Revision)
+                    INSERT INTO bundled (revision_id, guid, revision)
+                        VALUES (@revision_id, @guid, @revision)
                     """;
-            var revisionIdBundledParam = insertBundledCommand.Parameters.Add("@RevisionId", SqliteType.Integer);
-            var guidBundledParam = insertBundledCommand.Parameters.Add("@Guid", SqliteType.Text);
-            var revisionBundledParam = insertBundledCommand.Parameters.Add("@Revision", SqliteType.Integer);
+            var revisionIdBundledParam = insertBundledCommand.Parameters.Add("@revision_id", SqliteType.Integer);
+            var guidBundledParam = insertBundledCommand.Parameters.Add("@guid", SqliteType.Text);
+            var revisionBundledParam = insertBundledCommand.Parameters.Add("@revision", SqliteType.Integer);
 
             using var insertSupersededCommand = connection.CreateCommand();
             insertSupersededCommand.Transaction = transaction;
             insertSupersededCommand.CommandText = """
-                    INSERT INTO Superseded (RevisionId, SupersededGuid) VALUES (@RevisionId, @SupersededGuid)
+                    INSERT INTO superseded (revision_id, superseded_guid) VALUES (@revision_id, @superseded_guid)
                     """;
-            var revisionIdSupersededParam = insertSupersededCommand.Parameters.Add("@RevisionId", SqliteType.Integer);
-            var supersededGuidSupersededParam = insertSupersededCommand.Parameters.Add("@SupersededGuid", SqliteType.Text);
+            var revisionIdSupersededParam = insertSupersededCommand.Parameters.Add("@revision_id", SqliteType.Integer);
+            var supersededGuidSupersededParam = insertSupersededCommand.Parameters.Add("@superseded_guid", SqliteType.Text);
 
             using var addFileCommand = connection.CreateCommand();
             addFileCommand.Transaction = transaction;
             addFileCommand.CommandText = """
-                INSERT INTO Files (FileDigest, Name, Size, ModifiedDate, Digests, Urls, PatchingType)
-                    VALUES (@FileDigest, @Name, @Size, @ModifiedDate, jsonb(@Digests), jsonb(@Urls), @PatchingType)
-                    ON CONFLICT(FileDigest) DO NOTHING
+                INSERT INTO files (file_digest, name, size, modified_date, digests, urls, patching_type)
+                    VALUES (@file_digest, @name, @size, @modified_date, jsonb(@digests), jsonb(@urls), @patching_type)
+                    ON CONFLICT(file_digest) DO NOTHING
                 """;
-            var fileDigestFileParam = addFileCommand.Parameters.Add("@FileDigest", SqliteType.Text);
-            var nameFileParam = addFileCommand.Parameters.Add("@Name", SqliteType.Text);
-            var sizeFileParam = addFileCommand.Parameters.Add("@Size", SqliteType.Integer);
-            var modifiedDateFileParam = addFileCommand.Parameters.Add("@ModifiedDate", SqliteType.Text);
-            var digestsFileParam = addFileCommand.Parameters.Add("@Digests", SqliteType.Blob);
-            var urlsFileParam = addFileCommand.Parameters.Add("@Urls", SqliteType.Blob);
-            var patchingTypeFileParam = addFileCommand.Parameters.Add("@PatchingType", SqliteType.Text);
+            var fileDigestFileParam = addFileCommand.Parameters.Add("@file_digest", SqliteType.Text);
+            var nameFileParam = addFileCommand.Parameters.Add("@name", SqliteType.Text);
+            var sizeFileParam = addFileCommand.Parameters.Add("@size", SqliteType.Integer);
+            var modifiedDateFileParam = addFileCommand.Parameters.Add("@modified_date", SqliteType.Text);
+            var digestsFileParam = addFileCommand.Parameters.Add("@digests", SqliteType.Blob);
+            var urlsFileParam = addFileCommand.Parameters.Add("@urls", SqliteType.Blob);
+            var patchingTypeFileParam = addFileCommand.Parameters.Add("@patching_type", SqliteType.Text);
 
             foreach (var package in packages)
             {
@@ -397,13 +397,13 @@ namespace Microsoft.PackageGraph.Storage.Local
                 return -1;
             }
 
-            insertIdentityCommand.Parameters["@Guid"].Value = microsoftUpdatePackageIdentity.ID;
-            insertIdentityCommand.Parameters["@Revision"].Value = microsoftUpdatePackageIdentity.Revision;
-            insertIdentityCommand.Parameters["@Title"].Value = package.Title;
+            insertIdentityCommand.Parameters["@guid"].Value = microsoftUpdatePackageIdentity.ID;
+            insertIdentityCommand.Parameters["@revision"].Value = microsoftUpdatePackageIdentity.Revision;
+            insertIdentityCommand.Parameters["@title"].Value = package.Title;
 
             var identityId = (int)(long)insertIdentityCommand.ExecuteScalar();
 
-            insertMetadataCommand.Parameters["@RevisionId"].Value = identityId;
+            insertMetadataCommand.Parameters["@revision_id"].Value = identityId;
 
             using (var metadataStream = package.GetMetadataStream())
             {
@@ -415,7 +415,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     encodeStream.CopyTo(compressStream);
                 }
 
-                insertMetadataCommand.Parameters["@Metadata"].Value = valueStream.ToArray();
+                insertMetadataCommand.Parameters["@metadata"].Value = valueStream.ToArray();
             }
 
             List<Guid> categoryGuids = new();
@@ -426,12 +426,12 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             if (categoryGuids.Count > 0)
             {
-                insertMetadataCommand.Parameters["@Categories"].Value =
+                insertMetadataCommand.Parameters["@categories"].Value =
                     Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(categoryGuids));
             }
             else
             {
-                insertMetadataCommand.Parameters["@Categories"].Value = DBNull.Value;
+                insertMetadataCommand.Parameters["@categories"].Value = DBNull.Value;
             }
 
             if (PartitionRegistration.TryGetPartitionFromPackage(package, out var partitionDefinition) &&
@@ -439,23 +439,23 @@ namespace Microsoft.PackageGraph.Storage.Local
                 package.Files?.Any() == true)
             {
                 var digests = JsonConvert.SerializeObject(package.Files.Select(f => f.Digest.DigestBase64));
-                insertMetadataCommand.Parameters["@Files"].Value = Encoding.UTF8.GetBytes(digests);
+                insertMetadataCommand.Parameters["@files"].Value = Encoding.UTF8.GetBytes(digests);
 
                 AddFiles(package.Files, addFileCommand);
             }
             else
             {
-                insertMetadataCommand.Parameters["@Files"].Value = DBNull.Value;
+                insertMetadataCommand.Parameters["@files"].Value = DBNull.Value;
             }
 
             if (microsoftUpdate.Prerequisites.Count > 0)
             {
-                insertMetadataCommand.Parameters["@Prerequisites"].Value =
+                insertMetadataCommand.Parameters["@prerequisites"].Value =
                     Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(microsoftUpdate.Prerequisites));
             }
             else
             {
-                insertMetadataCommand.Parameters["@Prerequisites"].Value = DBNull.Value;
+                insertMetadataCommand.Parameters["@prerequisites"].Value = DBNull.Value;
             }
 
             insertMetadataCommand.ExecuteNonQuery();
@@ -463,17 +463,17 @@ namespace Microsoft.PackageGraph.Storage.Local
             if (package is SoftwareUpdate softwareUpdate)
             {
                 // Insert software update specific datas into database.
-                insertSoftwareCommand.Parameters["@RevisionId"].Value = identityId;
-                insertSoftwareCommand.Parameters["@KbArticleId"].Value =
+                insertSoftwareCommand.Parameters["@revision_id"].Value = identityId;
+                insertSoftwareCommand.Parameters["@kb_article_id"].Value =
                     (object)softwareUpdate.KBArticleId ?? DBNull.Value;
                 if (softwareUpdate.BundledUpdates.Count > 0)
                 {
-                    insertSoftwareCommand.Parameters["@Bundled"].Value =
+                    insertSoftwareCommand.Parameters["@bundled"].Value =
                         Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(softwareUpdate.BundledUpdates));
                 }
                 else
                 {
-                    insertSoftwareCommand.Parameters["@Bundled"].Value = DBNull.Value;
+                    insertSoftwareCommand.Parameters["@bundled"].Value = DBNull.Value;
                 }
 
                 insertSoftwareCommand.ExecuteNonQuery();
@@ -481,9 +481,9 @@ namespace Microsoft.PackageGraph.Storage.Local
                 // Insert bundled updates relationship into database.
                 foreach (var bundled in softwareUpdate.BundledUpdates)
                 {
-                    insertBundledCommand.Parameters["@RevisionId"].Value = identityId;
-                    insertBundledCommand.Parameters["@Guid"].Value = bundled.ID;
-                    insertBundledCommand.Parameters["@Revision"].Value = bundled.Revision;
+                    insertBundledCommand.Parameters["@revision_id"].Value = identityId;
+                    insertBundledCommand.Parameters["@guid"].Value = bundled.ID;
+                    insertBundledCommand.Parameters["@revision"].Value = bundled.Revision;
 
                     insertBundledCommand.ExecuteNonQuery();
                 }
@@ -491,8 +491,8 @@ namespace Microsoft.PackageGraph.Storage.Local
                 // Insert superseded updates relationship into database.
                 foreach (var superseded in softwareUpdate.SupersededUpdates)
                 {
-                    insertSupersededCommand.Parameters["@RevisionId"].Value = identityId;
-                    insertSupersededCommand.Parameters["@SupersededGuid"].Value = superseded;
+                    insertSupersededCommand.Parameters["@revision_id"].Value = identityId;
+                    insertSupersededCommand.Parameters["@superseded_guid"].Value = superseded;
 
                     insertSupersededCommand.ExecuteNonQuery();
                 }
@@ -507,9 +507,9 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = GetConnection();
             using var updateTypeCommand = connection.CreateCommand();
-            updateTypeCommand.CommandText = "UPDATE Identities SET PackageType = @PackageType WHERE Id = @Id";
-            updateTypeCommand.Parameters.Add("@PackageType", SqliteType.Integer).Value = packageType;
-            updateTypeCommand.Parameters.Add("@Id", SqliteType.Integer).Value = packageIndex;
+            updateTypeCommand.CommandText = "UPDATE identities SET package_type = @package_type WHERE id = @id";
+            updateTypeCommand.Parameters.Add("@package_type", SqliteType.Integer).Value = packageType;
+            updateTypeCommand.Parameters.Add("@id", SqliteType.Integer).Value = packageIndex;
 
             var affected = updateTypeCommand.ExecuteNonQuery();
             if (affected != 1)
@@ -523,25 +523,25 @@ namespace Microsoft.PackageGraph.Storage.Local
             // TODO encapsulate this for other types?
             foreach (var file in files)
             {
-                addFileCommand.Parameters["@FileDigest"].Value = file.Digest.DigestBase64;
-                addFileCommand.Parameters["@Name"].Value = file.FileName;
-                addFileCommand.Parameters["@Size"].Value = file.Size;
+                addFileCommand.Parameters["@file_digest"].Value = file.Digest.DigestBase64;
+                addFileCommand.Parameters["@name"].Value = file.FileName;
+                addFileCommand.Parameters["@size"].Value = file.Size;
                 if (file is UpdateFile updateFile)
                 {
-                    addFileCommand.Parameters["@ModifiedDate"].Value =
+                    addFileCommand.Parameters["@modified_date"].Value =
                         updateFile.ModifiedDate.ToUniversalTime().ToString("o", DateTimeFormatInfo.InvariantInfo);
-                    addFileCommand.Parameters["@Digests"].Value =
+                    addFileCommand.Parameters["@digests"].Value =
                         Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(updateFile.Digests));
-                    addFileCommand.Parameters["@Urls"].Value =
+                    addFileCommand.Parameters["@urls"].Value =
                         Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(updateFile.Urls));
-                    addFileCommand.Parameters["@PatchingType"].Value = updateFile.PatchingType;
+                    addFileCommand.Parameters["@patching_type"].Value = updateFile.PatchingType;
                 }
                 else
                 {
-                    addFileCommand.Parameters["@ModifiedDate"].Value = "";
-                    addFileCommand.Parameters["@Digests"].Value = (byte[])[];
-                    addFileCommand.Parameters["@Urls"].Value = (byte[])[];
-                    addFileCommand.Parameters["@PatchingType"].Value = "";
+                    addFileCommand.Parameters["@modified_date"].Value = "";
+                    addFileCommand.Parameters["@digests"].Value = (byte[])[];
+                    addFileCommand.Parameters["@urls"].Value = (byte[])[];
+                    addFileCommand.Parameters["@patching_type"].Value = "";
                 }
 
                 addFileCommand.ExecuteNonQuery();
@@ -581,12 +581,12 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
             command.CommandText = """
-            SELECT f.Name, f.Size, f.ModifiedDate, json(f.Digests), json(f.Urls), f.PatchingType
-            FROM Metadatas as m INNER JOIN json_each(m.Files) as d
-                INNER JOIN Files as f ON f.FileDigest = d.value
-            WHERE m.RevisionId = @RevisionId
+            SELECT f.name, f.size, f.modified_date, json(f.digests), json(f.urls), f.patching_type
+            FROM metadatas as m INNER JOIN json_each(m.files) as d
+                INNER JOIN files as f ON f.file_digest = d.value
+            WHERE m.revision_id = @revision_id
             """;
-            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = identityId;
+            command.Parameters.Add("@revision_id", SqliteType.Integer).Value = identityId;
 
             List<UpdateFile> files = new();
             using var reader = command.ExecuteReader();
@@ -616,8 +616,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             var connection = GetConnection();
             var command = connection.CreateCommand();
-            command.CommandText = "SELECT Metadata FROM Metadatas WHERE RevisionId = @RevisionId";
-            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = identityId;
+            command.CommandText = "SELECT metadata FROM metadatas WHERE revision_id = @revision_id";
+            command.Parameters.Add("@revision_id", SqliteType.Integer).Value = identityId;
 
             var reader = command.ExecuteReader();
             if (!reader.Read())
@@ -651,7 +651,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT Guid, Revision FROM Identities";
+            command.CommandText = "SELECT guid, revision FROM identities";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -673,9 +673,9 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT Id FROM Identities WHERE Guid = @Guid AND Revision = @Revision";
-            command.Parameters.Add("@Guid", SqliteType.Text).Value = microsoftUpdatePackageIdentity.ID;
-            command.Parameters.Add("@Revision", SqliteType.Integer).Value = microsoftUpdatePackageIdentity.Revision;
+            command.CommandText = "SELECT id FROM identities WHERE guid = @guid AND revision = @revision";
+            command.Parameters.Add("@guid", SqliteType.Text).Value = microsoftUpdatePackageIdentity.ID;
+            command.Parameters.Add("@revision", SqliteType.Integer).Value = microsoftUpdatePackageIdentity.Revision;
 
             return (int)(command.ExecuteScalar() as long? ?? -1);
         }
@@ -684,8 +684,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT Guid, Revision FROM Identities WHERE Id = @Id";
-            command.Parameters.Add("@Id", SqliteType.Integer).Value = packageIndex;
+            command.CommandText = "SELECT guid, revision FROM identities WHERE id = @id";
+            command.Parameters.Add("@id", SqliteType.Integer).Value = packageIndex;
 
             using var reader = command.ExecuteReader();
             if (reader.Read())
@@ -713,8 +713,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT PackageType FROM Identities WHERE Id = @Id";
-            command.Parameters.Add("@Id", SqliteType.Integer).Value = packageIndex;
+            command.CommandText = "SELECT package_type FROM identities WHERE id = @id";
+            command.Parameters.Add("@id", SqliteType.Integer).Value = packageIndex;
 
             return (int)(command.ExecuteScalar() as long? ?? -1);
         }
@@ -731,12 +731,12 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var connection = GetConnection();
 
             using var command = connection.CreateCommand();
-            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = packageIndex;
+            command.Parameters.Add("@revision_id", SqliteType.Integer).Value = packageIndex;
 
             switch (indexName)
             {
                 case Index.AvailableIndexes.TitlesIndexName:
-                    command.CommandText = "SELECT Title FROM Identities WHERE Id = @RevisionId";
+                    command.CommandText = "SELECT title FROM identities WHERE id = @revision_id";
                     var title = command.ExecuteScalar() as string;
                     if (!string.IsNullOrEmpty(title))
                     {
@@ -746,7 +746,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     break;
 
                 case AvailableIndexes.KbArticleIndexName:
-                    command.CommandText = "SELECT KbArticleId FROM SoftwareInformations WHERE RevisionId = @RevisionId";
+                    command.CommandText = "SELECT kb_article_id FROM software_informations WHERE revision_id = @revision_id";
                     var kbArticle = command.ExecuteScalar() as string;
                     if (!string.IsNullOrEmpty(kbArticle))
                     {
@@ -756,7 +756,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     break;
 
                 case AvailableIndexes.CategoriesIndexName:
-                    command.CommandText = "SELECT json(Categories) FROM Metadatas WHERE RevisionId = @RevisionId";
+                    command.CommandText = "SELECT json(categories) FROM metadatas WHERE revision_id = @revision_id";
                     var categories = command.ExecuteScalar() as string;
                     if (!string.IsNullOrEmpty(categories))
                     {
@@ -785,7 +785,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var connection = GetConnection();
 
             using var command = connection.CreateCommand();
-            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = packageIndex;
+            command.Parameters.Add("@revision_id", SqliteType.Integer).Value = packageIndex;
 
             switch (indexName)
             {
@@ -796,9 +796,9 @@ namespace Microsoft.PackageGraph.Storage.Local
                         WHEN json_type(p.value, '$.Simple') IS NULL
                             THEN 1
                         ELSE 0
-                    END AS IsSimple
-                    FROM Metadatas AS m INNER JOIN json_each(m.Prerequisites) AS p
-                    WHERE m.RevisionId = @RevisionId
+                    END AS is_simple
+                    FROM metadatas AS m INNER JOIN json_each(m.prerequisites) AS p
+                    WHERE m.revision_id = @revision_id
                     """;
 
                     List<IPrerequisite> prerequisites = [];
@@ -828,10 +828,10 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 case AvailableIndexes.FilesIndexName:
                     command.CommandText = """
-                    SELECT f.Name, f.Size, f.ModifiedDate, json(f.Digests), json(f.Urls), f.PatchingType
-                    FROM Metadatas as m INNER JOIN json_each(m.Files) as d
-                        INNER JOIN Files as f ON f.FileDigest = d.value
-                    WHERE m.RevisionId = @RevisionId
+                    SELECT f.name, f.size, f.modified_date, json(f.digests), json(f.urls), f.patching_type
+                    FROM metadatas as m INNER JOIN json_each(m.files) as d
+                        INNER JOIN files as f ON f.file_digest = d.value
+                    WHERE m.revision_id = @revision_id
                     """;
                     List<IContentFile> files = [];
                     using (var reader = command.ExecuteReader())
@@ -857,7 +857,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     break;
 
                 case AvailableIndexes.IsSupersedingIndexName:
-                    command.CommandText = "SELECT SupersededGuid FROM Superseded WHERE RevisionId = @RevisionId";
+                    command.CommandText = "SELECT superseded_guid FROM superseded WHERE revision_id = @revision_id";
                     List<Guid> guids = [];
                     using (var reader = command.ExecuteReader())
                     {
@@ -874,7 +874,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     break;
 
                 case AvailableIndexes.IsBundleIndexName:
-                    command.CommandText = "SELECT Guid, Revision FROM Bundled WHERE RevisionId = @RevisionId";
+                    command.CommandText = "SELECT guid, revision FROM bundled WHERE revision_id = @revision_id";
                     List<MicrosoftUpdatePackageIdentity> identities = [];
 
                     using (var reader = command.ExecuteReader())
@@ -922,13 +922,13 @@ namespace Microsoft.PackageGraph.Storage.Local
                     if (key is MicrosoftUpdatePackageIdentity packageIdentity)
                     {
                         command.CommandText = """
-                        SELECT i.Guid, i.Revision
-                            FROM Bundled as b INNER JOIN Identities as i
-                            ON i.Id = b.RevisionId
-                            WHERE b.Guid = @Guid AND b.Revision = @Revision
+                        SELECT i.guid, i.revision
+                            FROM bundled as b INNER JOIN identities as i
+                            ON i.id = b.revision_id
+                            WHERE b.guid = @guid AND b.revision = @revision
                         """;
-                        command.Parameters.Add("@Guid", SqliteType.Text).Value = packageIdentity.ID;
-                        command.Parameters.Add("@Revision", SqliteType.Integer).Value = packageIdentity.Revision;
+                        command.Parameters.Add("@guid", SqliteType.Text).Value = packageIdentity.ID;
+                        command.Parameters.Add("@revision", SqliteType.Integer).Value = packageIdentity.Revision;
 
                         value = [];
 
@@ -949,12 +949,12 @@ namespace Microsoft.PackageGraph.Storage.Local
                     if (key is Guid supersededGuid)
                     {
                         command.CommandText = """
-                        SELECT i.Guid, i.Revision
-                            FROM Superseded AS s INNER JOIN Identities AS i
-                            ON i.Id = s.RevisionId 
-                            WHERE s.SupersededGuid = @SupersededGuid
+                        SELECT i.guid, i.revision
+                            FROM superseded AS s INNER JOIN identities AS i
+                            ON i.id = s.revision_id
+                            WHERE s.superseded_guid = @superseded_guid
                         """;
-                        command.Parameters.Add("@SupersededGuid", SqliteType.Text).Value = supersededGuid;
+                        command.Parameters.Add("@superseded_guid", SqliteType.Text).Value = supersededGuid;
 
                         value = [];
 
@@ -1124,8 +1124,8 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
 
-            StringBuilder queryBuilder = new("SELECT DISTINCT i.Guid, i.Revision");
-            StringBuilder tableBuilder = new("Identities AS i");
+            StringBuilder queryBuilder = new("SELECT DISTINCT i.guid, i.revision");
+            StringBuilder tableBuilder = new("identities AS i");
             StringBuilder whereBuilder = new("1=1");
             StringBuilder groupByBuilder = new();
 
@@ -1142,10 +1142,10 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 tableBuilder.Append("""
 
-                INNER JOIN Metadatas AS m ON i.Id = m.RevisionId
-                INNER JOIN json_each(m.Categories) AS c
+                INNER JOIN metadatas AS m ON i.id = m.revision_id
+                INNER JOIN json_each(m.categories) AS c
                 """);
-                groupByBuilder.Append("i.Guid, i.Revision\nHAVING 1=1");
+                groupByBuilder.Append("i.guid, i.revision\nHAVING 1=1");
 
                 List<string> idParamList = [];
 
@@ -1175,13 +1175,13 @@ namespace Microsoft.PackageGraph.Storage.Local
                     idParamList.AddRange(classificationParams);
                 }
 
-                whereBuilder.Append($"\nAND c.VALUE COLLATE NOCASE IN ({string.Join(",", idParamList)})");
+                whereBuilder.Append($"\nAND c.value COLLATE NOCASE IN ({string.Join(",", idParamList)})");
             }
 
             if (!string.IsNullOrEmpty(metadataFilter.TitleFilter))
             {
-                whereBuilder.Append("\nAND i.Title LIKE @Title");
-                command.Parameters.Add("@Title", SqliteType.Text).Value = $"%{filter.TitleFilter}%";
+                whereBuilder.Append("\nAND i.title LIKE @title");
+                command.Parameters.Add("@title", SqliteType.Text).Value = $"%{filter.TitleFilter}%";
             }
 
             if (filter.IdFilter?.Any() == true)
@@ -1196,12 +1196,12 @@ namespace Microsoft.PackageGraph.Storage.Local
                     index++;
                 }
 
-                whereBuilder.Append($"\nAND i.Guid IN ({string.Join(",", idParams)})");
+                whereBuilder.Append($"\nAND i.guid IN ({string.Join(",", idParams)})");
             }
 
             if (metadataFilter is { KbArticleFilter.Count: > 0 })
             {
-                tableBuilder.Append("\nINNER JOIN SoftwareInformations AS si ON si.RevisionId = i.Id");
+                tableBuilder.Append("\nINNER JOIN software_informations AS si ON si.revision_id = i.id");
 
                 var index = 0;
                 List<string> kbParams = [];
@@ -1213,12 +1213,12 @@ namespace Microsoft.PackageGraph.Storage.Local
                     index++;
                 }
 
-                whereBuilder.Append($"\nAND si.KbArticleId IN ({string.Join(",", kbParams)})");
+                whereBuilder.Append($"\nAND si.kb_article_id IN ({string.Join(",", kbParams)})");
             }
 
             if (metadataFilter is { SkipSuperseded: true })
             {
-                whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM Superseded AS sup WHERE sup.SupersededGuid = i.Guid)");
+                whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM superseded AS sup WHERE sup.superseded_guid = i.guid)");
             }
 
             queryBuilder.Append($" FROM {tableBuilder}\nWHERE {whereBuilder}");

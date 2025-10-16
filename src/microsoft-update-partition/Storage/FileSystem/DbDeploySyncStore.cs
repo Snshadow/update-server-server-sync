@@ -43,14 +43,14 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var createTableCommand = connection.CreateCommand();
             createTableCommand.CommandText = """
             CREATE TABLE IF NOT EXISTS Deployments (
-                RevisionId INTEGER PRIMARY KEY,
-                Action INTEGER NOT NULL,
-                Deadline TEXT,
-                LastChangeTime TEXT NOT NULL
+                revision_id INTEGER PRIMARY KEY,
+                action INTEGER NOT NULL,
+                deadline TEXT,
+                last_change_time TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS ComputerSyncStatus (
-                ComputerId TEXT PRIMARY KEY,
-                LastSyncTime TEXT NOT NULL
+                computer_id TEXT PRIMARY KEY,
+                last_sync_time TEXT NOT NULL
             );
             """;
             createTableCommand.ExecuteNonQuery();
@@ -103,16 +103,16 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             command.Transaction = transaction;
             command.CommandText = """
-            INSERT INTO Deployments (RevisionId, Action, Deadline, LastChangeTime)
-                VALUES (@RevisionId, @Action, @Deadline, @LastChangeTime)
-                ON CONFLICT(RevisionId) DO UPDATE SET
-                    Action = @Action, Deadline = @Deadline, LastChangeTime = @LastChangeTime
-                WHERE LastChangeTime < @LastChangeTime
+            INSERT INTO Deployments (revision_id, action, deadline, last_change_time)
+                VALUES (@revision_id, @action, @deadline, @last_change_time)
+                ON CONFLICT(revision_id) DO UPDATE SET
+                    action = @action, deadline = @deadline, last_change_time = @last_change_time
+                WHERE last_change_time < @last_change_time
             """;
-            var revisionIdParam = command.Parameters.Add("@RevisionId", SqliteType.Integer);
-            var actionParam = command.Parameters.Add("@Action", SqliteType.Integer);
-            var deadlineParam = command.Parameters.Add("@Deadline", SqliteType.Text);
-            var lastChangeTimeParam = command.Parameters.Add("@LastChangeTime", SqliteType.Text);
+            var revisionIdParam = command.Parameters.Add("@revision_id", SqliteType.Integer);
+            var actionParam = command.Parameters.Add("@action", SqliteType.Integer);
+            var deadlineParam = command.Parameters.Add("@deadline", SqliteType.Text);
+            var lastChangeTimeParam = command.Parameters.Add("@last_change_time", SqliteType.Text);
 
             foreach (var deployment in deployments)
             {
@@ -134,8 +134,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "DELETE FROM Deployments WHERE RevisionId = @RevisionId";
-            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = revisionId;
+            command.CommandText = "DELETE FROM Deployments WHERE revision_id = @revision_id";
+            command.Parameters.Add("@revision_id", SqliteType.Integer).Value = revisionId;
             command.ExecuteNonQuery();
         }
 
@@ -148,8 +148,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT Action, Deadline, LastChangeTime FROM Deployments WHERE RevisionId = @RevisionId";
-            command.Parameters.Add("@RevisionId", SqliteType.Integer).Value = revisionId;
+            command.CommandText = "SELECT action, deadline, last_change_time FROM Deployments WHERE revision_id = @revision_id";
+            command.Parameters.Add("@revision_id", SqliteType.Integer).Value = revisionId;
 
             using var reader = command.ExecuteReader();
             if (reader.Read())
@@ -205,12 +205,12 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             command.Transaction = transaction;
             command.CommandText = """
-            INSERT INTO ComputerSyncStatus (ComputerId, LastSyncTime) VALUES (@ComputerId, @LastSyncTime)
-                ON CONFLICT(ComputerId) DO UPDATE SET LastSyncTime = @LastSyncTime
-                WHERE LastSyncTime < @LastSyncTime
+            INSERT INTO ComputerSyncStatus (computer_id, last_sync_time) VALUES (@computer_id, @last_sync_time)
+                ON CONFLICT(computer_id) DO UPDATE SET last_sync_time = @last_sync_time
+                WHERE last_sync_time < @last_sync_time
             """;
-            var computerIdParam = command.Parameters.Add("@ComputerId", SqliteType.Text);
-            var lastSyncTimeParam = command.Parameters.Add("@LastSyncTime", SqliteType.Text);
+            var computerIdParam = command.Parameters.Add("@computer_id", SqliteType.Text);
+            var lastSyncTimeParam = command.Parameters.Add("@last_sync_time", SqliteType.Text);
 
             foreach (var sync in computerSyncs)
             {
@@ -230,8 +230,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "DELETE FROM ComputerSyncStatus WHERE ComputerId = @ComputerId";
-            command.Parameters.Add("@ComputerId", SqliteType.Text).Value = computerId;
+            command.CommandText = "DELETE FROM ComputerSyncStatus WHERE computer_id = @computer_id";
+            command.Parameters.Add("@computer_id", SqliteType.Text).Value = computerId;
             command.ExecuteNonQuery();
         }
 
@@ -244,8 +244,8 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT LastSyncTime FROM ComputerSyncStatus WHERE ComputerId = @ComputerId";
-            command.Parameters.Add("@ComputerId", SqliteType.Text).Value = computerId;
+            command.CommandText = "SELECT last_sync_time FROM ComputerSyncStatus WHERE computer_id = @computer_id";
+            command.Parameters.Add("@computer_id", SqliteType.Text).Value = computerId;
 
             var result = command.ExecuteScalar() as string;
             if (!string.IsNullOrEmpty(result))
