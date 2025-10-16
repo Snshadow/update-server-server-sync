@@ -642,7 +642,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 return null;
             }
 
-            return MicrosoftUpdatePackage.FromStoredMetadataXml(metadataStream, this);
+            return MicrosoftUpdatePackage.FromStoredMetadataXml(metadataStream, this, this);
         }
 
         public IEnumerable<IPackageIdentity> GetPackageIdentities()
@@ -1127,6 +1127,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             StringBuilder queryBuilder = new("SELECT DISTINCT i.Guid, i.Revision");
             StringBuilder tableBuilder = new("Identities AS i");
             StringBuilder whereBuilder = new("1=1");
+            StringBuilder groupByBuilder = new();
 
             var requiresDriverFiltering = metadataFilter switch
             {
@@ -1144,6 +1145,9 @@ namespace Microsoft.PackageGraph.Storage.Local
                 INNER JOIN Metadatas AS m ON i.Id = m.RevisionId
                 INNER JOIN json_each(m.Categories) AS c
                 """);
+                groupByBuilder.Append("i.Guid, i.Revision\nHAVING 1=1");
+
+                List<string> idParamList = [];
 
                 if (hasProductFilter)
                 {
@@ -1151,9 +1155,11 @@ namespace Microsoft.PackageGraph.Storage.Local
                     {
                         var paramName = $"@Product{index}";
                         command.Parameters.Add(paramName, SqliteType.Text).Value = id;
+
                         return paramName;
                     }).ToList();
-                    whereBuilder.Append($"\nAND c.value IN ({string.Join(",", productParams)})");
+                    groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", productParams)}) THEN 1 END) > 0");
+                    idParamList.AddRange(productParams);
                 }
 
                 if (hasClassificationFilter)
@@ -1162,10 +1168,14 @@ namespace Microsoft.PackageGraph.Storage.Local
                     {
                         var paramName = $"@Classification{index}";
                         command.Parameters.Add(paramName, SqliteType.Text).Value = id;
+
                         return paramName;
                     }).ToList();
-                    whereBuilder.Append($"\nAND c.value IN ({string.Join(",", classificationParams)})");
+                    groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", classificationParams)}) THEN 1 END) > 0");
+                    idParamList.AddRange(classificationParams);
                 }
+
+                whereBuilder.Append($"\nAND c.VALUE COLLATE NOCASE IN ({string.Join(",", idParamList)})");
             }
 
             if (!string.IsNullOrEmpty(metadataFilter.TitleFilter))
@@ -1211,11 +1221,11 @@ namespace Microsoft.PackageGraph.Storage.Local
                 whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM Superseded AS sup WHERE sup.SupersededGuid = i.Guid)");
             }
 
-            queryBuilder.Append($" FROM {tableBuilder}");
+            queryBuilder.Append($" FROM {tableBuilder}\nWHERE {whereBuilder}");
 
-            if (whereBuilder.Length > 0)
+            if (groupByBuilder.Length > 0)
             {
-                queryBuilder.Append($"\nWHERE {whereBuilder}");
+                queryBuilder.Append($"\nGROUP BY {groupByBuilder}");
             }
 
             if (metadataFilter is { FirstX: > 0 } && !requiresDriverFiltering)

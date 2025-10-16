@@ -30,7 +30,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// </summary>
         /// <value>List of product identities.</value>
         [JsonProperty]
-        public List<Guid> ProductsFilter { get; internal set; }
+        public List<Guid> ProductFilter { get; internal set; }
+        IEnumerable<Guid> IMetadataFilter.ProductFilter => ProductFilter;
 
         /// <summary>
         /// Gets the list of classifications allowed by the filter.
@@ -38,7 +39,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// </summary>
         /// <value>List of classification identities.</value>
         [JsonProperty]
-        public List<Guid> ClassificationsFilter { get; internal set; }
+        public List<Guid> ClassificationFilter { get; internal set; }
+        IEnumerable<Guid> IMetadataFilter.ClassificationFilter => ClassificationFilter;
 
         /// <inheritdoc/>
         public string TitleFilter => null;
@@ -46,17 +48,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <inheritdoc/>
         public IEnumerable<Guid> IdFilter => null;
 
-        /// <inheritdoc/>
-        public IEnumerable<Guid> CategoryFilter => null;
-
         /// <summary>
         /// Creates an empty filter.
         /// </summary>
         [JsonConstructor]
         public UpstreamSourceFilter()
         {
-            ProductsFilter = new List<Guid>();
-            ClassificationsFilter = new List<Guid>();
+            ProductFilter = new List<Guid>();
+            ClassificationFilter = new List<Guid>();
         }
 
         /// <summary>
@@ -66,8 +65,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <param name="classifications">The classifications to match</param>
         public UpstreamSourceFilter(IEnumerable<Guid> products, IEnumerable<Guid> classifications)
         {
-            ProductsFilter = new List<Guid>(products);
-            ClassificationsFilter = new List<Guid>(classifications);
+            ProductFilter = new List<Guid>(products);
+            ClassificationFilter = new List<Guid>(classifications);
         }
 
         /// <summary>
@@ -78,30 +77,30 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         {
             ServerSyncFilter filter = new();
 
-            if (ProductsFilter.Count > 0)
+            if (ProductFilter.Count > 0)
             {
-                filter.Categories = new IdAndDelta[ProductsFilter.Count];
-                for (int i = 0; i < ProductsFilter.Count; i++)
+                filter.Categories = new IdAndDelta[ProductFilter.Count];
+                for (int i = 0; i < ProductFilter.Count; i++)
                 {
                     filter.Categories[i] = new IdAndDelta
                     {
                         // Request deltas if we have an anchor from a previous query
                         Delta = !string.IsNullOrEmpty(anchor),
-                        Id = ProductsFilter[i]
+                        Id = ProductFilter[i]
                     };
                 }
             }
 
-            if (ClassificationsFilter.Count > 0)
+            if (ClassificationFilter.Count > 0)
             {
-                filter.Classifications = new IdAndDelta[ClassificationsFilter.Count];
-                for (int i = 0; i < ClassificationsFilter.Count; i++)
+                filter.Classifications = new IdAndDelta[ClassificationFilter.Count];
+                for (int i = 0; i < ClassificationFilter.Count; i++)
                 {
                     filter.Classifications[i] = new IdAndDelta
                     {
                         // Request deltas if we have an anchor from a previous query
                         Delta = !string.IsNullOrEmpty(anchor),
-                        Id = ClassificationsFilter[i]
+                        Id = ClassificationFilter[i]
                     };
                 }
             }
@@ -127,14 +126,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             }
 
             var other = obj as UpstreamSourceFilter;
-            if (this.ProductsFilter.Count != other.ProductsFilter.Count ||
-                this.ClassificationsFilter.Count != other.ClassificationsFilter.Count)
+            if (this.ProductFilter.Count != other.ProductFilter.Count ||
+                this.ClassificationFilter.Count != other.ClassificationFilter.Count)
             {
                 return false;
             }
 
-            return this.ProductsFilter.All(cat => other.ProductsFilter.Contains(cat))
-                && this.ClassificationsFilter.All(cat => other.ClassificationsFilter.Contains(cat));
+            return this.ProductFilter.All(cat => other.ProductFilter.Contains(cat))
+                && this.ClassificationFilter.All(cat => other.ClassificationFilter.Contains(cat));
         }
 
         /// <summary>
@@ -179,8 +178,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         public override int GetHashCode()
         {
             int hash = 0;
-            this.ProductsFilter.ForEach(cat => hash |= cat.GetHashCode());
-            this.ClassificationsFilter.ForEach(cat => hash |= cat.GetHashCode());
+            this.ProductFilter.ForEach(cat => hash |= cat.GetHashCode());
+            this.ClassificationFilter.ForEach(cat => hash |= cat.GetHashCode());
 
             return hash;
         }
@@ -203,8 +202,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                 else
                 {
                     var prereqs = u.Prerequisites.OfType<AtLeastOne>().SelectMany(p => p.Simple).Select(s => s.UpdateId).ToList();
-                    var classificationsMatch = ClassificationsFilter.Count == 0 || prereqs.Intersect(ClassificationsFilter).Any();
-                    var productsMatch = ProductsFilter.Count == 0 || prereqs.Intersect(ProductsFilter).Any();
+                    var classificationsMatch = ClassificationFilter.Count == 0 || prereqs.Intersect(ClassificationFilter).Any();
+                    var productsMatch = ProductFilter.Count == 0 || prereqs.Intersect(ProductFilter).Any();
                     return classificationsMatch && productsMatch;
                 }
             });

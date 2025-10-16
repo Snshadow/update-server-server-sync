@@ -115,10 +115,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             var allProducts = metadataSource.OfType<ProductCategory>();
 
             bool allClassificationsIncluded = false;
-            if (allClassifications.Count() == filter.ClassificationsFilter.Count)
+            if (allClassifications.Count() == filter.ClassificationFilter.Count)
             {
                 allClassificationsIncluded = true;
-                foreach (var classificationId in filter.ClassificationsFilter)
+                foreach (var classificationId in filter.ClassificationFilter)
                 {
                     if (!allClassifications.Any(c => c.Id.ID == classificationId))
                     {
@@ -135,7 +135,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
             else
             {
-                foreach (var classificationId in filter.ClassificationsFilter)
+                foreach (var classificationId in filter.ClassificationFilter)
                 {
                     ConsoleOutput.WriteGreen($"        {classificationId}");
                     ConsoleOutput.WriteGreen($"            {allClassifications.FirstOrDefault(c => c.Id.ID == classificationId).Title}");
@@ -144,10 +144,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             ConsoleOutput.WriteCyan("    Products:");
             bool allProductsIncluded = false;
-            if (allProducts.Count() == filter.ProductsFilter.Count)
+            if (allProducts.Count() == filter.ProductFilter.Count)
             {
                 allProductsIncluded = true;
-                foreach (var productId in filter.ProductsFilter)
+                foreach (var productId in filter.ProductFilter)
                 {
                     if (!allProducts.Any(c => c.Id.ID == productId))
                     {
@@ -163,7 +163,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
             else
             {
-                foreach (var productId in filter.ProductsFilter)
+                foreach (var productId in filter.ProductFilter)
                 {
                     ConsoleOutput.WriteCyan($"        {productId}");
                     ConsoleOutput.WriteCyan($"            {allProducts.FirstOrDefault(c => c.Id.ID == productId).Title}");

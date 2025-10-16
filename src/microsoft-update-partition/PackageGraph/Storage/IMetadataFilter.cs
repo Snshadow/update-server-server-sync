@@ -12,6 +12,17 @@ namespace Microsoft.PackageGraph.Storage
     /// </summary>
     public interface IMetadataFilter
     {
+        /// <summary>
+        /// Gets or sets the product filter.
+        /// </summary>
+        /// <value>List of product IDs</value>
+        IEnumerable<Guid> ProductFilter { get; }
+
+        /// <summary>
+        /// Gets or sets the classification filter.
+        /// </summary>
+        /// <value>List of classification IDs</value>
+        IEnumerable<Guid> ClassificationFilter { get; }
 
         /// <summary>
         /// Gets the query for update IDs in the filter.

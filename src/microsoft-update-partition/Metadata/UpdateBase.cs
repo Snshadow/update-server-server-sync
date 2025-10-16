@@ -317,7 +317,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             return createdUpdate;
         }
 
-        internal static MicrosoftUpdatePackage FromStoredMetadataXml(Stream metadataStream, IMetadataSource metadataStore, string locale = null)
+        internal static MicrosoftUpdatePackage FromStoredMetadataXml(Stream metadataStream, IMetadataSource metadataStore, IMetadataLookup metadataLookup, string locale = null)
         {
             XPathDocument document = new(metadataStream);
             XPathNavigator navigator = document.CreateNavigator();
@@ -373,6 +373,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             }
 
             createdUpdate._MetadataSource = metadataStore;
+            createdUpdate._FastLookupSource = metadataLookup;
 
             if (metadataStore is not null)
             {

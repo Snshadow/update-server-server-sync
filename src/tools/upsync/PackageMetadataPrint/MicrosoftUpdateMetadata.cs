@@ -415,7 +415,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             Console.WriteLine("        Support URL    : {0}", softwareUpdate.SupportUrl);
             Console.WriteLine("        KB Article     : {0}", softwareUpdate.KBArticleId);
 
-            if (softwareUpdate.IsSupersededBy is not null)
+            if (softwareUpdate.IsSupersededBy is { Count: > 0 })
             {
                 Console.WriteLine("        Superseded by");
                 foreach (var supersedingUpdate in softwareUpdate.IsSupersededBy.OfType<MicrosoftUpdatePackageIdentity>())
@@ -426,7 +426,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 }
             }
 
-            if (softwareUpdate.SupersededUpdates is not null)
+            if (softwareUpdate.SupersededUpdates is { Count: > 0 })
             {
                 Console.WriteLine("        Superseds");
                 foreach (var supersededGuid in softwareUpdate.SupersededUpdates)
@@ -491,7 +491,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         static void PrintBundledUpdates(SoftwareUpdate softwareUpdate, IMetadataStore source)
         {
-            if (softwareUpdate.BundledUpdates is not null)
+            if (softwareUpdate.BundledUpdates is { Count: > 0 })
             {
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
                 Console.WriteLine("    Bundled updates:");
@@ -512,7 +512,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         static void PrintPrerequisites(MicrosoftUpdatePackage update, ILookup<Guid, MicrosoftUpdatePackage> updatesLookup)
         {
-            if (update.Prerequisites is not null && update.Prerequisites.Count > 0)
+            if (update.Prerequisites is { Count: > 0 })
             {
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
                 Console.WriteLine("    Prerequisites:");

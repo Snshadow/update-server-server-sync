@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Generic;
 using System.Xml;
 using System.Xml.XPath;
-using System;
 using Microsoft.PackageGraph.MicrosoftUpdate.Index;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
@@ -92,12 +92,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 {
                     return _IsSupersededBy;
                 }
-                else
+                else if (_FastLookupSource is not null)
                 {
                     _FastLookupSource.TryPackageListLookupByCustomKey<Guid>(Id.ID, AvailableIndexes.IsSupersededIndexName, out _IsSupersededBy);
+                    _IsSupersededByLoaded = true;
                 }
 
-                _IsSupersededByLoaded = true;
                 return _IsSupersededBy;
             }
         }
@@ -177,7 +177,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         }
         private List<IPackageIdentity> _BundledWithUpdates;
         private bool _BundledWithUpdatesLoaded;
-
 
         internal SoftwareUpdate(
             MicrosoftUpdatePackageIdentity id,

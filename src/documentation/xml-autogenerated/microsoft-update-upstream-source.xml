@@ -506,14 +506,14 @@
             </para>
             </summary>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.ProductsFilter">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.ProductFilter">
             <summary>
             Gets the list of products allowed by the filter.
             If this list if empty, no updates will match the filter. Add product IDs to this list to have them match the filter.
             </summary>
             <value>List of product identities.</value>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.ClassificationsFilter">
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.ClassificationFilter">
             <summary>
             Gets the list of classifications allowed by the filter.
             If this list if empty, no updates will match the filter. Add classification IDs to this list to have them match the filter.
@@ -524,9 +524,6 @@
             <inheritdoc/>
         </member>
         <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.IdFilter">
-            <inheritdoc/>
-        </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.CategoryFilter">
             <inheritdoc/>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.#ctor">

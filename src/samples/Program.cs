@@ -50,11 +50,11 @@ namespace Microsoft.PackageGraph.Samples
                 .OfType<ProductCategory>()
                 .First(category => category.Categories.Contains(windowsProduct.Id.ID) &&
                 category.Title.Equals("Windows 11"));
-            updatesFilter.ProductsFilter.Add(windows11Product.Id.ID);
+            updatesFilter.ProductFilter.Add(windows11Product.Id.ID);
 
             // Allow all available update classifications for the product selected
             updatesFilter
-                .ClassificationsFilter
+                .ClassificationFilter
                 .AddRange(packageStore.OfType<ClassificationCategory>().Select(classification => classification.Id.ID));
             Console.WriteLine($"Filtering to product \"{windows11Product.Title}\", all  classifications.");
 
