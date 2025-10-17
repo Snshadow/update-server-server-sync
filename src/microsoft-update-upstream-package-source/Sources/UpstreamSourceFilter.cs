@@ -31,7 +31,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <value>List of product identities.</value>
         [JsonProperty]
         public List<Guid> ProductFilter { get; internal set; }
-        IEnumerable<Guid> IMetadataFilter.ProductFilter => ProductFilter;
 
         /// <summary>
         /// Gets the list of classifications allowed by the filter.
@@ -40,13 +39,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <value>List of classification identities.</value>
         [JsonProperty]
         public List<Guid> ClassificationFilter { get; internal set; }
-        IEnumerable<Guid> IMetadataFilter.ClassificationFilter => ClassificationFilter;
-
-        /// <inheritdoc/>
-        public string TitleFilter => null;
-
-        /// <inheritdoc/>
-        public IEnumerable<Guid> IdFilter => null;
 
         /// <summary>
         /// Creates an empty filter.

@@ -1092,12 +1092,11 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private List<IPackageIdentity> GetPackageIdentities(IMetadataFilter filter)
         {
-            if (filter is null)
+            if (filter is not MetadataFilter metadataFilter)
             {
                 return GetPackageIdentities().ToList();
             }
 
-            var metadataFilter = filter as MetadataFilter;
             List<IPackageIdentity> identities = [];
             Dictionary<MicrosoftUpdatePackageIdentity, MicrosoftUpdatePackage> packageCache = null;
 
@@ -1135,8 +1134,8 @@ namespace Microsoft.PackageGraph.Storage.Local
                 { ComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
                 _ => false
             };
-            var hasProductFilter = metadataFilter is { ProductFilter.Count: > 0 };
-            var hasClassificationFilter = metadataFilter is { ClassificationFilter.Count: > 0 };
+            var hasProductFilter = metadataFilter.ProductFilter is { Count: > 0 };
+            var hasClassificationFilter = metadataFilter.ClassificationFilter is { Count: > 0 };
 
             if (hasProductFilter || hasClassificationFilter)
             {
@@ -1181,14 +1180,14 @@ namespace Microsoft.PackageGraph.Storage.Local
             if (!string.IsNullOrEmpty(metadataFilter.TitleFilter))
             {
                 whereBuilder.Append("\nAND i.title LIKE @title");
-                command.Parameters.Add("@title", SqliteType.Text).Value = $"%{filter.TitleFilter}%";
+                command.Parameters.Add("@title", SqliteType.Text).Value = $"%{metadataFilter.TitleFilter}%";
             }
 
-            if (filter.IdFilter?.Any() == true)
+            if (metadataFilter.IdFilter is { Count: > 0 })
             {
                 var index = 0;
                 List<string> idParams = [];
-                foreach (var id in filter.IdFilter)
+                foreach (var id in metadataFilter.IdFilter)
                 {
                     var paramName = $"@Id{index}";
                     idParams.Add(paramName);
@@ -1199,7 +1198,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 whereBuilder.Append($"\nAND i.guid IN ({string.Join(",", idParams)})");
             }
 
-            if (metadataFilter is { KbArticleFilter.Count: > 0 })
+            if (metadataFilter.KbArticleFilter is { Count: > 0 })
             {
                 tableBuilder.Append("\nINNER JOIN software_informations AS si ON si.revision_id = i.id");
 
@@ -1216,7 +1215,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 whereBuilder.Append($"\nAND si.kb_article_id IN ({string.Join(",", kbParams)})");
             }
 
-            if (metadataFilter is { SkipSuperseded: true })
+            if (metadataFilter.SkipSuperseded)
             {
                 whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM superseded AS sup WHERE sup.superseded_guid = i.guid)");
             }
@@ -1228,7 +1227,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 queryBuilder.Append($"\nGROUP BY {groupByBuilder}");
             }
 
-            if (metadataFilter is { FirstX: > 0 } && !requiresDriverFiltering)
+            if (metadataFilter.FirstX > 0 && !requiresDriverFiltering)
             {
                 queryBuilder.Append("\nLIMIT @Limit");
                 command.Parameters.Add("@Limit", SqliteType.Integer).Value = metadataFilter.FirstX;
@@ -1246,7 +1245,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
 
             // TODO push the post-filter limit into SQL by materializing driver metadata indexes.
-            if (metadataFilter is not null && requiresDriverFiltering)
+            if (requiresDriverFiltering)
             {
                 List<IPackageIdentity> driverMatches = [];
                 foreach (var identity in identities)

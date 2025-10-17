@@ -26,21 +26,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// </summary>
         /// <value>List of product IDs</value>
         public List<Guid> ProductFilter { get; set; }
-        IEnumerable<Guid> IMetadataFilter.ProductFilter => ProductFilter;
 
         /// <summary>
         /// Gets or sets the classification filter.
         /// </summary>
         /// <value>List of classification IDs</value>
         public List<Guid> ClassificationFilter { get; set; }
-        IEnumerable<Guid> IMetadataFilter.ClassificationFilter => ClassificationFilter;
 
         /// <summary>
         /// Get or set the ID filter.
         /// </summary>
         /// <value>List of update IDs (ID only, no revision)</value>
         public List<Guid> IdFilter { get; set; }
-        IEnumerable<Guid> IMetadataFilter.IdFilter => IdFilter;
 
         /// <summary>
         /// Get or set the title filter.

@@ -520,12 +520,6 @@
             </summary>
             <value>List of classification identities.</value>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.TitleFilter">
-            <inheritdoc/>
-        </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.IdFilter">
-            <inheritdoc/>
-        </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.#ctor">
             <summary>
             Creates an empty filter.

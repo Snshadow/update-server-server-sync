@@ -2511,28 +2511,6 @@
             Interface for filtering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> or for selectively quering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/>
             </summary>
         </member>
-        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.ProductFilter">
-            <summary>
-            Gets or sets the product filter.
-            </summary>
-            <value>List of product IDs</value>
-        </member>
-        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.ClassificationFilter">
-            <summary>
-            Gets or sets the classification filter.
-            </summary>
-            <value>List of classification IDs</value>
-        </member>
-        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.IdFilter">
-            <summary>
-            Gets the query for update IDs in the filter.
-            </summary>
-        </member>
-        <member name="P:Microsoft.PackageGraph.Storage.IMetadataFilter.TitleFilter">
-            <summary>
-            Gets the query for titles in the filter.
-            </summary>
-        </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
             Apply the filter to a collection of packages
