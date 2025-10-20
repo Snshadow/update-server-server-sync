@@ -36,7 +36,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("--content-store-type")]
             [DefaultValue("local")]
-            [Description("Content store type; default is local")]
+            [Description("Content store type")]
             public string ContentStoreType { get; set; }
 
             [CommandOption("--content-connection-string")]
@@ -82,6 +82,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [CommandOption("--first")]
             [Description("Content sync only the first x packages")]
             public int FirstX { get; set; }
+
+            [CommandOption("--after")]
+            [Description("Skip the first x packages(applies before --first)")]
+            public int AfterX { get; set; }
 
             public override ValidationResult Validate()
             {

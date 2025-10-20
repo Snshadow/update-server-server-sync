@@ -23,7 +23,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("--source-type")]
             [DefaultValue("local")]
-            [Description("Source store type; local (default), azure-blob, azure-table etc.")]
+            [Description("Source store type; local, azure-blob, azure-table etc.")]
             public string SourceType { get; set; }
 
             [CommandOption("--source-connection-string")]
@@ -40,7 +40,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("--destination-type")]
             [DefaultValue("local")]
-            [Description("Destination store type; local (default), azure-blob, azure-table etc.")]
+            [Description("Destination store type; local, azure-blob, azure-table etc.")]
             public string DestinationType { get; set; }
 
             [CommandOption("--destination-connection-string")]
@@ -86,6 +86,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [CommandOption("--first")]
             [Description("Copy only the first x updates")]
             public int FirstX { get; set; }
+
+            [CommandOption("--after")]
+            [Description("Skip the first x updates(applies before --first)")]
+            public int AfterX { get; set; }
 
             public override ValidationResult Validate()
             {

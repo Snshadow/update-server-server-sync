@@ -43,28 +43,28 @@
             </para>
             </summary>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ProductFilter">
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ProductFilter">
             <summary>
-            Gets or sets the product filter.
+            Gets or sets the product filter
             </summary>
             <value>List of product IDs</value>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ClassificationFilter">
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ClassificationFilter">
             <summary>
-            Gets or sets the classification filter.
+            Gets or sets the classification filter
             </summary>
             <value>List of classification IDs</value>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IdFilter">
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IdFilter">
             <summary>
-            Get or set the ID filter.
+            Get or set the ID filter
             </summary>
             <value>List of update IDs (ID only, no revision)</value>
         </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.TitleFilter">
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.TitleFilter">
             <summary>
-            Get or set the title filter.
-            </summary>
+            Get or set the title filter
+            </summary> 
             <value>Title filter string</value>
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.SkipSuperseded">
@@ -75,13 +75,19 @@
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.FirstX">
             <summary>
-            Returns the first X results only
+            Returns up to Xth results
             </summary>
             <value>0 to include all updates, greater than 0 value to limit output.</value>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.AfterX">
+            <summary>
+            Skips the first X results
+            </summary>
+            <value>The number of skipped updates</value>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.HardwareIdFilter">
             <summary>
-            Returns only driver updates that match this hardware ID.
+            Returns only driver updates that match this hardware ID
             </summary>
             <value>Hardware id string</value>
         </member>

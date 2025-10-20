@@ -22,28 +22,27 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
     public class MetadataFilter : IMetadataFilter
     {
         /// <summary>
-        /// Gets or sets the product filter.
+        /// Gets or sets the product filter
         /// </summary>
         /// <value>List of product IDs</value>
-        public List<Guid> ProductFilter { get; set; }
+        public List<Guid> ProductFilter;
 
         /// <summary>
-        /// Gets or sets the classification filter.
+        /// Gets or sets the classification filter
         /// </summary>
         /// <value>List of classification IDs</value>
-        public List<Guid> ClassificationFilter { get; set; }
-
+        public List<Guid> ClassificationFilter;
         /// <summary>
-        /// Get or set the ID filter.
+        /// Get or set the ID filter
         /// </summary>
         /// <value>List of update IDs (ID only, no revision)</value>
-        public List<Guid> IdFilter { get; set; }
+        public List<Guid> IdFilter;
 
         /// <summary>
-        /// Get or set the title filter.
-        /// </summary>
+        /// Get or set the title filter
+        /// </summary> 
         /// <value>Title filter string</value>
-        public string TitleFilter { get; set; }
+        public string TitleFilter;
 
         /// <summary>
         /// Get or set whether to filter out superseded updates
@@ -52,13 +51,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public bool SkipSuperseded;
 
         /// <summary>
-        /// Returns the first X results only
+        /// Returns up to Xth results
         /// </summary>
         /// <value>0 to include all updates, greater than 0 value to limit output.</value>
         public int FirstX;
 
         /// <summary>
-        /// Returns only driver updates that match this hardware ID.
+        /// Skips the first X results
+        /// </summary>
+        /// <value>The number of skipped updates</value>
+        public int AfterX;
+
+        /// <summary>
+        /// Returns only driver updates that match this hardware ID
         /// </summary>
         /// <value>Hardware id string</value>
         public string HardwareIdFilter;
@@ -186,6 +191,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 filteredUpdates = filteredUpdates
                     .Where(u => u is not SoftwareUpdate softwareUpdate ||
                     (softwareUpdate.IsSupersededBy?.Count ?? 0) == 0);
+            }
+
+            // Skip X matches, if requested
+            if (AfterX > 0)
+            {
+                filteredUpdates = filteredUpdates.Skip(AfterX);
             }
 
             // Return first X matches, if requested

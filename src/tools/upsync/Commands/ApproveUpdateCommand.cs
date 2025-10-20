@@ -23,7 +23,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("--store-type")]
             [DefaultValue("local")]
-            [Description("Store type; local (default) or azure")]
+            [Description("Store type; local or azure")]
             public string Type { get; set; }
 
             [CommandOption("--connection-string")]
@@ -73,6 +73,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [CommandOption("--first")]
             [Description("Handle first x updates only")]
             public int FirstX { get; set; }
+
+            [CommandOption("--after")]
+            [Description("Skip first x updates(applies before --first)")]
+            public int AfterX { get; set; }
 
             public override ValidationResult Validate()
             {

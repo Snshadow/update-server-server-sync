@@ -16,6 +16,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading;
 
@@ -26,7 +27,7 @@ namespace Microsoft.PackageGraph.Storage.Local
     /// </summary>
     class SqliteMetadataBackingStore : DbContext, IMetadataBackingStore, IMetadataSink, IMetadataSource
     {
-        private const string DbName = "metadata.db";
+        private const string dbName = "metadata.db";
         private static ReadOnlySpan<byte> SqliteHeader => "SQLite format 3\0"u8;
 
         private readonly string _dbPath;
@@ -46,7 +47,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public SqliteMetadataBackingStore(string path, FileMode mode)
         {
-            var dbPath = Path.Combine(path, DbName);
+            var dbPath = Path.Combine(path, dbName);
             switch (mode)
             {
                 case FileMode.CreateNew:
@@ -181,7 +182,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public static bool IsValid(string path)
         {
-            var dbPath = Path.Combine(path, DbName);
+            var dbPath = Path.Combine(path, dbName);
 
             try
             {
@@ -295,10 +296,10 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var insertIdentityCommand = connection.CreateCommand();
             insertIdentityCommand.Transaction = transaction;
             insertIdentityCommand.CommandText = """
-                INSERT INTO identities (guid, revision, title)
-                    VALUES (@guid, @revision, @title);
-                SELECT last_insert_rowid();
-                """;
+            INSERT INTO identities (guid, revision, title)
+                VALUES (@guid, @revision, @title);
+            SELECT last_insert_rowid();
+            """;
             var guidIdentityParam = insertIdentityCommand.Parameters.Add("@guid", SqliteType.Text);
             var revisionIdentityParam = insertIdentityCommand.Parameters.Add("@revision", SqliteType.Integer);
             var titleIdentityParam = insertIdentityCommand.Parameters.Add("@title", SqliteType.Text);
@@ -306,9 +307,9 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var insertMetadataCommand = connection.CreateCommand();
             insertMetadataCommand.Transaction = transaction;
             insertMetadataCommand.CommandText = """
-                INSERT INTO metadatas (revision_id, metadata, categories, files, prerequisites)
-                    VALUES (@revision_id, @metadata, jsonb(@categories), jsonb(@files), jsonb(@prerequisites))
-                """;
+            INSERT INTO metadatas (revision_id, metadata, categories, files, prerequisites)
+                VALUES (@revision_id, @metadata, jsonb(@categories), jsonb(@files), jsonb(@prerequisites))
+            """;
             var revisionIdMetadataParam = insertMetadataCommand.Parameters.Add("@revision_id", SqliteType.Integer);
             var metadataMetadataParam = insertMetadataCommand.Parameters.Add("@metadata", SqliteType.Blob);
             var categoriesMetadataParam = insertMetadataCommand.Parameters.Add("@categories", SqliteType.Blob);
@@ -318,9 +319,9 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var insertSoftwareCommand = connection.CreateCommand();
             insertSoftwareCommand.Transaction = transaction;
             insertSoftwareCommand.CommandText = """
-                    INSERT INTO software_informations (revision_id, kb_article_id, bundled)
-                        VALUES (@revision_id, @kb_article_id, jsonb(@bundled));
-                    """;
+            INSERT INTO software_informations (revision_id, kb_article_id, bundled)
+                VALUES (@revision_id, @kb_article_id, jsonb(@bundled));
+            """;
             var revisionIdSoftwareParam = insertSoftwareCommand.Parameters.Add("@revision_id", SqliteType.Integer);
             var kbArticleIdSoftwareParam = insertSoftwareCommand.Parameters.Add("@kb_article_id", SqliteType.Text);
             var bundledSoftwareParam = insertSoftwareCommand.Parameters.Add("@bundled", SqliteType.Blob);
@@ -328,28 +329,26 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var insertBundledCommand = connection.CreateCommand();
             insertBundledCommand.Transaction = transaction;
             insertBundledCommand.CommandText = """
-                    INSERT INTO bundled (revision_id, guid, revision)
-                        VALUES (@revision_id, @guid, @revision)
-                    """;
+            INSERT INTO bundled (revision_id, guid, revision)
+                VALUES (@revision_id, @guid, @revision)
+            """;
             var revisionIdBundledParam = insertBundledCommand.Parameters.Add("@revision_id", SqliteType.Integer);
             var guidBundledParam = insertBundledCommand.Parameters.Add("@guid", SqliteType.Text);
             var revisionBundledParam = insertBundledCommand.Parameters.Add("@revision", SqliteType.Integer);
 
             using var insertSupersededCommand = connection.CreateCommand();
             insertSupersededCommand.Transaction = transaction;
-            insertSupersededCommand.CommandText = """
-                    INSERT INTO superseded (revision_id, superseded_guid) VALUES (@revision_id, @superseded_guid)
-                    """;
+            insertSupersededCommand.CommandText = "INSERT INTO superseded (revision_id, superseded_guid) VALUES (@revision_id, @superseded_guid)";
             var revisionIdSupersededParam = insertSupersededCommand.Parameters.Add("@revision_id", SqliteType.Integer);
             var supersededGuidSupersededParam = insertSupersededCommand.Parameters.Add("@superseded_guid", SqliteType.Text);
 
             using var addFileCommand = connection.CreateCommand();
             addFileCommand.Transaction = transaction;
             addFileCommand.CommandText = """
-                INSERT INTO files (file_digest, name, size, modified_date, digests, urls, patching_type)
-                    VALUES (@file_digest, @name, @size, @modified_date, jsonb(@digests), jsonb(@urls), @patching_type)
-                    ON CONFLICT(file_digest) DO NOTHING
-                """;
+            INSERT INTO files (file_digest, name, size, modified_date, digests, urls, patching_type)
+                VALUES (@file_digest, @name, @size, @modified_date, jsonb(@digests), jsonb(@urls), @patching_type)
+                ON CONFLICT(file_digest) DO NOTHING
+            """;
             var fileDigestFileParam = addFileCommand.Parameters.Add("@file_digest", SqliteType.Text);
             var nameFileParam = addFileCommand.Parameters.Add("@name", SqliteType.Text);
             var sizeFileParam = addFileCommand.Parameters.Add("@size", SqliteType.Integer);
@@ -1123,7 +1122,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
 
-            StringBuilder queryBuilder = new("SELECT DISTINCT i.guid, i.revision");
+            StringBuilder queryBuilder = new("SELECT i.guid, i.revision");
             StringBuilder tableBuilder = new("identities AS i");
             StringBuilder whereBuilder = new("1=1");
             StringBuilder groupByBuilder = new();
@@ -1227,10 +1226,30 @@ namespace Microsoft.PackageGraph.Storage.Local
                 queryBuilder.Append($"\nGROUP BY {groupByBuilder}");
             }
 
-            if (metadataFilter.FirstX > 0 && !requiresDriverFiltering)
+            if (!requiresDriverFiltering)
             {
-                queryBuilder.Append("\nLIMIT @Limit");
-                command.Parameters.Add("@Limit", SqliteType.Integer).Value = metadataFilter.FirstX;
+                if (metadataFilter.FirstX > 0 || metadataFilter.AfterX > 0)
+                {
+                    // order by id to get consistant result
+                    queryBuilder.Append("\nORDER BY i.id ASC");
+
+                    if (metadataFilter.FirstX > 0)
+                    {
+                        queryBuilder.Append("\nLIMIT @Limit");
+                        command.Parameters.Add("@Limit", SqliteType.Integer).Value = metadataFilter.FirstX;
+
+                        if (metadataFilter.AfterX > 0)
+                        {
+                            queryBuilder.Append(" OFFSET @offset");
+                            command.Parameters.Add("@offset", SqliteType.Integer).Value = metadataFilter.AfterX;
+                        }
+                    }
+                    else if (metadataFilter.AfterX > 0)
+                    {
+                        queryBuilder.Append("\nLIMIT -1 OFFSET @offset");
+                        command.Parameters.Add("@offset", SqliteType.Integer).Value = metadataFilter.AfterX;
+                    }
+                }
             }
 
             command.CommandText = queryBuilder.ToString();

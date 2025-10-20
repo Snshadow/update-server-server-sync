@@ -40,6 +40,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         IEnumerable<string> KbArticleFilter { get; }
 
         int FirstX { get; }
+
+        int AfterX { get; }
     }
 
     class MetadataStoreCreator

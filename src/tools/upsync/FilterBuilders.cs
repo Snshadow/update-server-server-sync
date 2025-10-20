@@ -74,6 +74,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             filter.SkipSuperseded = filterOptions.SkipSuperseded;
             filter.FirstX = filterOptions.FirstX;
+            filter.AfterX = filterOptions.AfterX;
 
             return filter;
         }

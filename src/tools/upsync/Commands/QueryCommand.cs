@@ -23,7 +23,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             [CommandOption("--store-type")]
             [DefaultValue("local")]
-            [Description("Store type; local (default) or azure")]
+            [Description("Store type; local or azure")]
             public string Type { get; set; }
 
             [CommandOption("--connection-string")]
@@ -81,6 +81,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [CommandOption("--first")]
             [Description("Display first x updates only")]
             public int FirstX { get; set; }
+
+            [CommandOption("--after")]
+            [Description("Exclude first x updates(applies before --first)")]
+            public int AfterX { get; set; }
 
             [CommandOption("--json-out-path")]
             [Description("Save results as JSON to the specified path")]
