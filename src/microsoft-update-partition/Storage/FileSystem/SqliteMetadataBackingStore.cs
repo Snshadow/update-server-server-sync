@@ -16,7 +16,6 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.ServiceModel;
 using System.Text;
 using System.Threading;
 
@@ -106,11 +105,15 @@ namespace Microsoft.PackageGraph.Storage.Local
              *  id -> server specific update id(revision id)
              *  guid -> global update GUID
              *  revision -> global update revision number
+             *  creation_date -> the date when the update is created
              *  package_type -> the type of the package
              * Files: Contains file information used for updates
              *  file_digest -> primary file digest as hex string
+             *  size -> the size of the file
+             *  modified_date -> the date when the file was modified
              *  digests -> jsonb object containing array of content file digest
              *  urls -> jsonb object containing array of original download url
+             *  patching_type -> the patching type of the file
              * Metadatas: Contains full metadata xml and file digests
              *  revision_id -> server specific update id
              *  metadata -> update metadata xml
@@ -133,6 +136,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 guid TEXT NOT NULL COLLATE NOCASE,
                 revision INTEGER NOT NULL,
                 title TEXT NOT NULL,
+                creation_date TEXT NOT NULL,
                 package_type INTEGER NOT NULL DEFAULT(-1),
                 UNIQUE(guid, revision)
             );
@@ -296,13 +300,14 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var insertIdentityCommand = connection.CreateCommand();
             insertIdentityCommand.Transaction = transaction;
             insertIdentityCommand.CommandText = """
-            INSERT INTO identities (guid, revision, title)
-                VALUES (@guid, @revision, @title);
+            INSERT INTO identities (guid, revision, title, creation_date)
+                VALUES (@guid, @revision, @title, @creation_date);
             SELECT last_insert_rowid();
             """;
-            var guidIdentityParam = insertIdentityCommand.Parameters.Add("@guid", SqliteType.Text);
-            var revisionIdentityParam = insertIdentityCommand.Parameters.Add("@revision", SqliteType.Integer);
-            var titleIdentityParam = insertIdentityCommand.Parameters.Add("@title", SqliteType.Text);
+            insertIdentityCommand.Parameters.Add("@guid", SqliteType.Text);
+            insertIdentityCommand.Parameters.Add("@revision", SqliteType.Integer);
+            insertIdentityCommand.Parameters.Add("@title", SqliteType.Text);
+            insertIdentityCommand.Parameters.Add("@creation_date", SqliteType.Text);
 
             using var insertMetadataCommand = connection.CreateCommand();
             insertMetadataCommand.Transaction = transaction;
@@ -310,11 +315,11 @@ namespace Microsoft.PackageGraph.Storage.Local
             INSERT INTO metadatas (revision_id, metadata, categories, files, prerequisites)
                 VALUES (@revision_id, @metadata, jsonb(@categories), jsonb(@files), jsonb(@prerequisites))
             """;
-            var revisionIdMetadataParam = insertMetadataCommand.Parameters.Add("@revision_id", SqliteType.Integer);
-            var metadataMetadataParam = insertMetadataCommand.Parameters.Add("@metadata", SqliteType.Blob);
-            var categoriesMetadataParam = insertMetadataCommand.Parameters.Add("@categories", SqliteType.Blob);
-            var filesMetadataParam = insertMetadataCommand.Parameters.Add("@files", SqliteType.Blob);
-            var prerequisitesMetadataParam = insertMetadataCommand.Parameters.Add("@prerequisites", SqliteType.Blob);
+            insertMetadataCommand.Parameters.Add("@revision_id", SqliteType.Integer);
+            insertMetadataCommand.Parameters.Add("@metadata", SqliteType.Blob);
+            insertMetadataCommand.Parameters.Add("@categories", SqliteType.Blob);
+            insertMetadataCommand.Parameters.Add("@files", SqliteType.Blob);
+            insertMetadataCommand.Parameters.Add("@prerequisites", SqliteType.Blob);
 
             using var insertSoftwareCommand = connection.CreateCommand();
             insertSoftwareCommand.Transaction = transaction;
@@ -322,9 +327,9 @@ namespace Microsoft.PackageGraph.Storage.Local
             INSERT INTO software_informations (revision_id, kb_article_id, bundled)
                 VALUES (@revision_id, @kb_article_id, jsonb(@bundled));
             """;
-            var revisionIdSoftwareParam = insertSoftwareCommand.Parameters.Add("@revision_id", SqliteType.Integer);
-            var kbArticleIdSoftwareParam = insertSoftwareCommand.Parameters.Add("@kb_article_id", SqliteType.Text);
-            var bundledSoftwareParam = insertSoftwareCommand.Parameters.Add("@bundled", SqliteType.Blob);
+            insertSoftwareCommand.Parameters.Add("@revision_id", SqliteType.Integer);
+            insertSoftwareCommand.Parameters.Add("@kb_article_id", SqliteType.Text);
+            insertSoftwareCommand.Parameters.Add("@bundled", SqliteType.Blob);
 
             using var insertBundledCommand = connection.CreateCommand();
             insertBundledCommand.Transaction = transaction;
@@ -339,8 +344,8 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var insertSupersededCommand = connection.CreateCommand();
             insertSupersededCommand.Transaction = transaction;
             insertSupersededCommand.CommandText = "INSERT INTO superseded (revision_id, superseded_guid) VALUES (@revision_id, @superseded_guid)";
-            var revisionIdSupersededParam = insertSupersededCommand.Parameters.Add("@revision_id", SqliteType.Integer);
-            var supersededGuidSupersededParam = insertSupersededCommand.Parameters.Add("@superseded_guid", SqliteType.Text);
+            insertSupersededCommand.Parameters.Add("@revision_id", SqliteType.Integer);
+            insertSupersededCommand.Parameters.Add("@superseded_guid", SqliteType.Text);
 
             using var addFileCommand = connection.CreateCommand();
             addFileCommand.Transaction = transaction;
@@ -349,13 +354,13 @@ namespace Microsoft.PackageGraph.Storage.Local
                 VALUES (@file_digest, @name, @size, @modified_date, jsonb(@digests), jsonb(@urls), @patching_type)
                 ON CONFLICT(file_digest) DO NOTHING
             """;
-            var fileDigestFileParam = addFileCommand.Parameters.Add("@file_digest", SqliteType.Text);
-            var nameFileParam = addFileCommand.Parameters.Add("@name", SqliteType.Text);
-            var sizeFileParam = addFileCommand.Parameters.Add("@size", SqliteType.Integer);
-            var modifiedDateFileParam = addFileCommand.Parameters.Add("@modified_date", SqliteType.Text);
-            var digestsFileParam = addFileCommand.Parameters.Add("@digests", SqliteType.Blob);
-            var urlsFileParam = addFileCommand.Parameters.Add("@urls", SqliteType.Blob);
-            var patchingTypeFileParam = addFileCommand.Parameters.Add("@patching_type", SqliteType.Text);
+            addFileCommand.Parameters.Add("@file_digest", SqliteType.Text);
+            addFileCommand.Parameters.Add("@name", SqliteType.Text);
+            addFileCommand.Parameters.Add("@size", SqliteType.Integer);
+            addFileCommand.Parameters.Add("@modified_date", SqliteType.Text);
+            addFileCommand.Parameters.Add("@digests", SqliteType.Blob);
+            addFileCommand.Parameters.Add("@urls", SqliteType.Blob);
+            addFileCommand.Parameters.Add("@patching_type", SqliteType.Text);
 
             foreach (var package in packages)
             {
@@ -399,6 +404,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             insertIdentityCommand.Parameters["@guid"].Value = microsoftUpdatePackageIdentity.ID;
             insertIdentityCommand.Parameters["@revision"].Value = microsoftUpdatePackageIdentity.Revision;
             insertIdentityCommand.Parameters["@title"].Value = package.Title;
+            insertIdentityCommand.Parameters["@creation_date"].Value = microsoftUpdate.CreationDate.ToString("o", DateTimeFormatInfo.InvariantInfo);
 
             var identityId = (int)(long)insertIdentityCommand.ExecuteScalar();
 
@@ -417,7 +423,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 insertMetadataCommand.Parameters["@metadata"].Value = valueStream.ToArray();
             }
 
-            List<Guid> categoryGuids = new();
+            List<Guid> categoryGuids = [];
             foreach (var prereq in microsoftUpdate.Prerequisites.OfType<AtLeastOne>().Where(p => p.IsCategory))
             {
                 categoryGuids.AddRange(prereq.Simple.Select(s => s.UpdateId));
@@ -587,7 +593,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             """;
             command.Parameters.Add("@revision_id", SqliteType.Integer).Value = identityId;
 
-            List<UpdateFile> files = new();
+            List<UpdateFile> files = [];
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
@@ -1299,13 +1305,14 @@ namespace Microsoft.PackageGraph.Storage.Local
                     driverMatches.Add(identity);
                 }
 
+                if (metadataFilter.AfterX > 0)
+                {
+                    identities = driverMatches.Skip(metadataFilter.AfterX).ToList();
+                }
+
                 if (metadataFilter.FirstX > 0 && identities.Count > metadataFilter.FirstX)
                 {
                     identities = driverMatches.Take(metadataFilter.FirstX).ToList();
-                }
-                else
-                {
-                    identities = driverMatches;
                 }
             }
 

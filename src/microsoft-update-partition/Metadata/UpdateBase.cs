@@ -44,6 +44,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// </summary>
         IPackageIdentity IPackage.Id => _Id;
 
+        internal bool _MetadataLoaded = false;
+
         /// <summary>
         /// Get the category or update title
         /// </summary>
@@ -51,7 +53,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         {
             get
             {
-                if (_TitleLoaded)
+                if (_MetadataLoaded)
                 {
                     return _Title;
                 }
@@ -63,7 +65,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 else if (_MetadataSource is not null)
                 {
                     LoadNonIndexedMetadataBase();
-                    _TitleLoaded = true;
+                    _MetadataLoaded = true;
                     return _Title;
                 }
                 else
@@ -72,7 +74,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 }
             }
         }
-        private bool _TitleLoaded;
         private string _Title;
 
         /// <summary>
@@ -156,6 +157,27 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         {
             return PrerequisitesAnalyzer.IsApplicable(this, installedPrerequisites);
         }
+
+        /// <summary>
+        /// Get the creation date of the update
+        /// </summary>
+        public DateTime CreationDate
+        {
+            get
+            {
+                if (_MetadataLoaded)
+                {
+                    return _CreationDate;
+                }
+                else
+                {
+                    LoadNonIndexedMetadataBase();
+                    return _CreationDate;
+                }
+            }
+        }
+
+        private DateTime _CreationDate;
 
         /// <summary>
         /// Get the category or update description
@@ -254,8 +276,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
         private List<ApplicabilityRule> _ApplicabilityRules;
         private bool _ApplicabilityRulesLoaded = false;
-
-        internal bool _MetadataLoaded = false;
 
         private readonly string _locale;
 
@@ -462,9 +482,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
             _Id = id;
             _Title = UpdateParser.GetTitle(metadataNavigator, namespaceManager, _locale);
-            _TitleLoaded = true;
-
             _Description = UpdateParser.GetDescription(metadataNavigator, namespaceManager, _locale);
+            _CreationDate = UpdateParser.GetCreationDate(metadataNavigator, namespaceManager);
             _MetadataLoaded = true;
 
             _Prerequisites = PrerequisiteParser.FromXml(metadataNavigator, namespaceManager);
@@ -589,6 +608,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
                     _Description = UpdateParser.GetDescription(navigator, manager, _locale);
                     _Title = UpdateParser.GetTitle(navigator, manager, _locale);
+                    _CreationDate = UpdateParser.GetCreationDate(navigator, manager);
 
                     LoadNonIndexedMetadata(navigator, manager);
                 }

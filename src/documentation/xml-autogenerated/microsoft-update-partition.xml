@@ -1730,6 +1730,11 @@
             <param name="installedPrerequisites">List of installed updates on a computer</param>
             <returns>True if all prerequisites are met, false otherwise</returns>
         </member>
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.CreationDate">
+            <summary>
+            Get the creation date of the update
+            </summary>
+        </member>
         <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.Description">
             <summary>
             Get the category or update description

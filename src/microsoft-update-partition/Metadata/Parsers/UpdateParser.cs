@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Globalization;
 using System.Xml;
 using System.Xml.XPath;
 
@@ -34,6 +35,23 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             }
 
             return null;
+        }
+
+        public static DateTime GetCreationDate(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager)
+        {
+            XPathExpression creationDateQuery = metadataNavigator.Compile("upd:Update/upd:Properties/@CreationDate");
+            creationDateQuery.SetContext(namespaceManager);
+
+            var result = metadataNavigator.Evaluate(creationDateQuery) as XPathNodeIterator;
+
+            if (result.Count == 0)
+            {
+                throw new Exception("Invalid XML");
+            }
+
+            result.MoveNext();
+
+            return DateTime.Parse(result.Current.Value, DateTimeFormatInfo.InvariantInfo, DateTimeStyles.RoundtripKind);
         }
 
         public static string GetDescription(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager, string locale)
