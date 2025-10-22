@@ -1157,7 +1157,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 {
                     var productParams = metadataFilter.ProductFilter.Select((id, index) =>
                     {
-                        var paramName = $"@Product{index}";
+                        var paramName = $"@product{index}";
                         command.Parameters.Add(paramName, SqliteType.Text).Value = id;
 
                         return paramName;
@@ -1170,7 +1170,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 {
                     var classificationParams = metadataFilter.ClassificationFilter.Select((id, index) =>
                     {
-                        var paramName = $"@Classification{index}";
+                        var paramName = $"@classification{index}";
                         command.Parameters.Add(paramName, SqliteType.Text).Value = id;
 
                         return paramName;
@@ -1194,7 +1194,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 List<string> idParams = [];
                 foreach (var id in metadataFilter.IdFilter)
                 {
-                    var paramName = $"@Id{index}";
+                    var paramName = $"@id{index}";
                     idParams.Add(paramName);
                     command.Parameters.Add(paramName, SqliteType.Text).Value = id;
                     index++;
@@ -1211,7 +1211,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 List<string> kbParams = [];
                 foreach (var kb in metadataFilter.KbArticleFilter)
                 {
-                    var paramName = $"@Kb{index}";
+                    var paramName = $"@kb{index}";
                     kbParams.Add(paramName);
                     command.Parameters.Add(paramName, SqliteType.Text).Value = kb;
                     index++;
@@ -1241,8 +1241,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                     if (metadataFilter.FirstX > 0)
                     {
-                        queryBuilder.Append("\nLIMIT @Limit");
-                        command.Parameters.Add("@Limit", SqliteType.Integer).Value = metadataFilter.FirstX;
+                        queryBuilder.Append("\nLIMIT @limit");
+                        command.Parameters.Add("@limit", SqliteType.Integer).Value = metadataFilter.FirstX;
 
                         if (metadataFilter.AfterX > 0)
                         {

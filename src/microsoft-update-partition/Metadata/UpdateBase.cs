@@ -65,7 +65,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 else if (_MetadataSource is not null)
                 {
                     LoadNonIndexedMetadataBase();
-                    _MetadataLoaded = true;
                     return _Title;
                 }
                 else

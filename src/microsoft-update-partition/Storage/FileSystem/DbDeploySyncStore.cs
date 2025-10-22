@@ -42,13 +42,13 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             using var createTableCommand = connection.CreateCommand();
             createTableCommand.CommandText = """
-            CREATE TABLE IF NOT EXISTS Deployments (
+            CREATE TABLE IF NOT EXISTS deployments (
                 revision_id INTEGER PRIMARY KEY,
                 action INTEGER NOT NULL,
                 deadline TEXT,
                 last_change_time TEXT NOT NULL
             );
-            CREATE TABLE IF NOT EXISTS ComputerSyncStatus (
+            CREATE TABLE IF NOT EXISTS computer_sync_status (
                 computer_id TEXT PRIMARY KEY,
                 last_sync_time TEXT NOT NULL
             );
@@ -103,7 +103,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             command.Transaction = transaction;
             command.CommandText = """
-            INSERT INTO Deployments (revision_id, action, deadline, last_change_time)
+            INSERT INTO deployments (revision_id, action, deadline, last_change_time)
                 VALUES (@revision_id, @action, @deadline, @last_change_time)
                 ON CONFLICT(revision_id) DO UPDATE SET
                     action = @action, deadline = @deadline, last_change_time = @last_change_time
@@ -134,7 +134,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "DELETE FROM Deployments WHERE revision_id = @revision_id";
+            command.CommandText = "DELETE FROM deployments WHERE revision_id = @revision_id";
             command.Parameters.Add("@revision_id", SqliteType.Integer).Value = revisionId;
             command.ExecuteNonQuery();
         }
@@ -148,7 +148,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT action, deadline, last_change_time FROM Deployments WHERE revision_id = @revision_id";
+            command.CommandText = "SELECT action, deadline, last_change_time FROM deployments WHERE revision_id = @revision_id";
             command.Parameters.Add("@revision_id", SqliteType.Integer).Value = revisionId;
 
             using var reader = command.ExecuteReader();
@@ -205,7 +205,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             command.Transaction = transaction;
             command.CommandText = """
-            INSERT INTO ComputerSyncStatus (computer_id, last_sync_time) VALUES (@computer_id, @last_sync_time)
+            INSERT INTO computer_sync_status (computer_id, last_sync_time) VALUES (@computer_id, @last_sync_time)
                 ON CONFLICT(computer_id) DO UPDATE SET last_sync_time = @last_sync_time
                 WHERE last_sync_time < @last_sync_time
             """;
@@ -230,7 +230,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "DELETE FROM ComputerSyncStatus WHERE computer_id = @computer_id";
+            command.CommandText = "DELETE FROM computer_sync_status WHERE computer_id = @computer_id";
             command.Parameters.Add("@computer_id", SqliteType.Text).Value = computerId;
             command.ExecuteNonQuery();
         }
@@ -244,7 +244,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = _context.GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT last_sync_time FROM ComputerSyncStatus WHERE computer_id = @computer_id";
+            command.CommandText = "SELECT last_sync_time FROM computer_sync_status WHERE computer_id = @computer_id";
             command.Parameters.Add("@computer_id", SqliteType.Text).Value = computerId;
 
             var result = command.ExecuteScalar() as string;
