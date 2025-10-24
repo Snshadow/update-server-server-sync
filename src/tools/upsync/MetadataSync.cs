@@ -53,7 +53,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             Endpoint upstreamEndpoint;
             if (!string.IsNullOrEmpty(options.UpstreamEndpoint))
             {
-                upstreamEndpoint = new Endpoint(options.UpstreamEndpoint);
+                upstreamEndpoint = new(options.UpstreamEndpoint);
             }
             else
             {
@@ -106,7 +106,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         private static void FetchMicrosoftUpdatePackages(FetchCommand.Settings options, IMetadataStore store)
         {
-            var upstreamEndpoint = string.IsNullOrEmpty(options.UpstreamEndpoint) ? Endpoint.Default : new Endpoint(options.UpstreamEndpoint);
+            Endpoint upstreamEndpoint = string.IsNullOrEmpty(options.UpstreamEndpoint) ? Endpoint.Default : new(options.UpstreamEndpoint);
 
             if (!string.IsNullOrEmpty(options.AccountName) &&
                 !string.IsNullOrEmpty(options.AccountGuid))
@@ -116,7 +116,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             using (store)
             {
-                var microsoftUpdateCategoriesSource = new UpstreamCategoriesSource(upstreamEndpoint);
+                UpstreamCategoriesSource microsoftUpdateCategoriesSource = new(upstreamEndpoint);
 
                 Console.WriteLine($"Getting list of categories. This might take up to 1 minute ...");
 
@@ -125,8 +125,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
                 if (!string.IsNullOrEmpty(options.Ids))
                 {
-                    var server = new UpstreamServerClient(upstreamEndpoint);
-                    var packagesToAdd = new List<MicrosoftUpdatePackage>();
+                    UpstreamServerClient server = new(upstreamEndpoint);
+                    List<MicrosoftUpdatePackage> packagesToAdd = [];
 
                     foreach (var updateId in options.Ids.Split('+'))
                     {

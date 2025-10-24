@@ -1236,8 +1236,8 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 if (metadataFilter.FirstX > 0 || metadataFilter.AfterX > 0)
                 {
-                    // order by id to get consistant result
-                    queryBuilder.Append("\nORDER BY i.id ASC");
+                    // order by creation date and id to get consistent result
+                    queryBuilder.Append("\nORDER BY i.creation_date DESC, i.id DESC");
 
                     if (metadataFilter.FirstX > 0)
                     {

@@ -16,9 +16,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             propertyQuery.SetContext(namespaceManager);
 
             var result = metadataNavigator.Evaluate(propertyQuery) as XPathNodeIterator;
-            if (result.Count > 0)
+            if (result.MoveNext())
             {
-                result.MoveNext();
                 return result.Current.Value;
             }
             else if (locale != "en")
@@ -27,9 +26,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
                 propertyQuery = metadataNavigator.Compile($"upd:Update/upd:LocalizedPropertiesCollection/upd:LocalizedProperties[upd:Language='en']/{property}");
                 propertyQuery.SetContext(namespaceManager);
                 result = metadataNavigator.Evaluate(propertyQuery) as XPathNodeIterator;
-                if (result.Count > 0)
+                if (result.MoveNext())
                 {
-                    result.MoveNext();
                     return result.Current.Value;
                 }
             }
@@ -44,12 +42,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
 
             var result = metadataNavigator.Evaluate(creationDateQuery) as XPathNodeIterator;
 
-            if (result.Count == 0)
+            if (!result.MoveNext())
             {
                 throw new Exception("Invalid XML");
             }
-
-            result.MoveNext();
 
             return DateTime.Parse(result.Current.Value, DateTimeFormatInfo.InvariantInfo, DateTimeStyles.RoundtripKind);
         }
@@ -65,19 +61,33 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             return title;
         }
 
-        public static string GetUpdateType(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager)
+        public static string GetPublicationState(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager)
         {
-            XPathExpression updateTypeQuery = metadataNavigator.Compile("upd:Update/upd:Properties/@UpdateType");
-            updateTypeQuery.SetContext(namespaceManager);
+            var publicationStateQuery = metadataNavigator.Compile("upd:Update/upd:Properties/@PublicationState");
+            publicationStateQuery.SetContext(namespaceManager);
 
-            var result = metadataNavigator.Evaluate(updateTypeQuery) as XPathNodeIterator;
+            var result = metadataNavigator.Evaluate(publicationStateQuery) as XPathNodeIterator;
 
-            if (result.Count == 0)
+            if (!result.MoveNext())
             {
                 throw new Exception("Invalid XML");
             }
 
-            result.MoveNext();
+            return result.Current.Value;
+        }
+
+        public static string GetUpdateType(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager)
+        {
+            var updateTypeQuery = metadataNavigator.Compile("upd:Update/upd:Properties/@UpdateType");
+            updateTypeQuery.SetContext(namespaceManager);
+
+            var result = metadataNavigator.Evaluate(updateTypeQuery) as XPathNodeIterator;
+
+            if (!result.MoveNext())
+            {
+                throw new Exception("Invalid XML");
+            }
+
             return result.Current.Value;
         }
 
@@ -91,15 +101,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             var idResult = metadataNavigator.Evaluate(updateIdQuery) as XPathNodeIterator;
             var revisionResult = metadataNavigator.Evaluate(revisionQuery) as XPathNodeIterator;
 
-            if (idResult.Count == 0 || revisionResult.Count == 0)
+            if (!revisionResult.MoveNext() || !idResult.MoveNext())
             {
                 throw new Exception("Invalid XML");
             }
 
-            revisionResult.MoveNext();
-            idResult.MoveNext();
-
-            return new MicrosoftUpdatePackageIdentity(Guid.Parse(idResult.Current.Value), Int32.Parse(revisionResult.Current.Value));
+            return new MicrosoftUpdatePackageIdentity(Guid.Parse(idResult.Current.Value), int.Parse(revisionResult.Current.Value));
         }
 
         public static string GetCategory(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager)
@@ -109,12 +116,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
 
             var result = metadataNavigator.Evaluate(categoryQuery) as XPathNodeIterator;
 
-            if (result.Count == 0)
+            if (!result.MoveNext())
             {
                 throw new Exception("Invalid XML");
             }
 
-            result.MoveNext();
             return result.Current.Value;
         }
     }
