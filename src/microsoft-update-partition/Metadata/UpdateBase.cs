@@ -59,8 +59,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 }
                 else if (_FastLookupSource is not null)
                 {
-                    _FastLookupSource.TrySimpleKeyLookup<string>(_Id, AvailableIndexes.TitlesIndexName, out string title);
-                    return title;
+                    _FastLookupSource.TrySimpleKeyLookup(_Id, AvailableIndexes.TitlesIndexName, out _Title);
+                    return _Title;
                 }
                 else if (_MetadataSource is not null)
                 {
@@ -76,6 +76,74 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         private string _Title;
 
         /// <summary>
+        /// Get the creation date of the update
+        /// </summary>
+        public DateTime CreationDate
+        {
+            get
+            {
+                if (_MetadataLoaded)
+                {
+                    return _CreationDate;
+                }
+                else
+                {
+                    LoadNonIndexedMetadataBase();
+                    return _CreationDate;
+                }
+            }
+        }
+
+        private DateTime _CreationDate;
+
+        /// <summary>
+        /// Get the category or update description
+        /// </summary>
+        [JsonProperty]
+        public string Description
+        {
+            get
+            {
+                if (_MetadataLoaded)
+                {
+                    return _Description;
+                }
+                else
+                {
+                    LoadNonIndexedMetadataBase();
+                    return _Description;
+                }
+            }
+        }
+        private string _Description = null;
+
+        /// <summary>
+        /// Get the expiration state of the update
+        /// </summary>
+        public bool IsExpired
+        {
+            get
+            {
+                if (_MetadataLoaded)
+                {
+                    return _IsExpired;
+                }
+                else if (_FastLookupSource is not null)
+                {
+                    _FastLookupSource.TrySimpleKeyLookup(_Id, Index.AvailableIndexes.IsExpiredIndexName, out _IsExpired);
+                    return _IsExpired;
+                }
+                else
+                {
+                    LoadNonIndexedMetadataBase();
+                    return _IsExpired;
+                }
+            }
+        }
+
+        private bool _IsExpired;
+
+        /// <summary>
         /// The list of category IDs associated to this update
         /// </summary>
         public IReadOnlyList<Guid> Categories
@@ -88,7 +156,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 }
                 else if (_FastLookupSource is not null)
                 {
-                    _FastLookupSource.TrySimpleKeyLookup<List<Guid>>(this._Id, Index.AvailableIndexes.CategoriesIndexName, out _Categories);
+                    _FastLookupSource.TrySimpleKeyLookup(_Id, Index.AvailableIndexes.CategoriesIndexName, out _Categories);
                     _CategoriesLoaded = true;
                 }
 
@@ -136,7 +204,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 }
                 else if (_FastLookupSource is not null)
                 {
-                    _FastLookupSource.TryListKeyLookup<IPrerequisite>(this._Id, Index.AvailableIndexes.PrerequisitesIndexName, out _Prerequisites);
+                    _FastLookupSource.TryListKeyLookup(_Id, Index.AvailableIndexes.PrerequisitesIndexName, out _Prerequisites);
                     _PrerequisitesLoaded = true;
                 }
 
@@ -158,48 +226,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         }
 
         /// <summary>
-        /// Get the creation date of the update
-        /// </summary>
-        public DateTime CreationDate
-        {
-            get
-            {
-                if (_MetadataLoaded)
-                {
-                    return _CreationDate;
-                }
-                else
-                {
-                    LoadNonIndexedMetadataBase();
-                    return _CreationDate;
-                }
-            }
-        }
-
-        private DateTime _CreationDate;
-
-        /// <summary>
-        /// Get the category or update description
-        /// </summary>
-        [JsonProperty]
-        public string Description
-        {
-            get
-            {
-                if (_MetadataLoaded)
-                {
-                    return _Description;
-                }
-                else
-                {
-                    LoadNonIndexedMetadataBase();
-                    return _Description;
-                }
-            }
-        }
-        private string _Description = null;
-
-        /// <summary>
         /// Gets the list of files (content) for update
         /// </summary>
         /// <value>
@@ -215,12 +241,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 }
                 else if (_FastLookupSource is not null)
                 {
-                    _FastLookupSource.TryListKeyLookup<UpdateFile>(this._Id, Index.AvailableIndexes.FilesIndexName, out _Files);
+                    _FastLookupSource.TryListKeyLookup<UpdateFile>(_Id, Index.AvailableIndexes.FilesIndexName, out _Files);
                     _FilesLoaded = true;
                 }
                 else if (_MetadataSource is not null)
                 {
-                    _Files = _MetadataSource.GetFiles<UpdateFile>(this._Id);
+                    _Files = _MetadataSource.GetFiles<UpdateFile>(_Id);
                     _FilesLoaded = true;
                 }
 
@@ -483,6 +509,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             _Title = UpdateParser.GetTitle(metadataNavigator, namespaceManager, _locale);
             _Description = UpdateParser.GetDescription(metadataNavigator, namespaceManager, _locale);
             _CreationDate = UpdateParser.GetCreationDate(metadataNavigator, namespaceManager);
+            _IsExpired = GetIsExpired(UpdateParser.GetPublicationState(metadataNavigator, namespaceManager));
             _MetadataLoaded = true;
 
             _Prerequisites = PrerequisiteParser.FromXml(metadataNavigator, namespaceManager);
@@ -504,6 +531,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             _Id = id;
             _FastLookupSource = metadataLookup;
             _MetadataSource = metadataSource;
+        }
+
+        private static bool GetIsExpired(string publicationState)
+        {
+            return string.Equals(publicationState, "Expired", StringComparison.OrdinalIgnoreCase);
         }
 
         private void MergeFileInformation(XPathNavigator metadataNavigator, XmlNamespaceManager namespaceManager, Dictionary<string, UpdateFileUrl> filesCollection)
@@ -555,7 +587,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     return;
                 }
 
-                using (var metadataStream = _MetadataSource.GetMetadata(this._Id))
+                using (var metadataStream = _MetadataSource.GetMetadata(_Id))
                 {
                     XPathDocument document = new(metadataStream);
                     XPathNavigator navigator = document.CreateNavigator();
@@ -589,7 +621,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     return;
                 }
 
-                using (var metadataStream = _MetadataSource.GetMetadata(this._Id))
+                using (var metadataStream = _MetadataSource.GetMetadata(_Id))
                 {
                     XPathDocument document = new(metadataStream);
                     XPathNavigator navigator = document.CreateNavigator();
@@ -608,6 +640,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     _Description = UpdateParser.GetDescription(navigator, manager, _locale);
                     _Title = UpdateParser.GetTitle(navigator, manager, _locale);
                     _CreationDate = UpdateParser.GetCreationDate(navigator, manager);
+                    _IsExpired = GetIsExpired(UpdateParser.GetPublicationState(navigator, manager));
 
                     LoadNonIndexedMetadata(navigator, manager);
                 }

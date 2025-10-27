@@ -77,7 +77,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
                     using (var targetJsonFile = File.Create(options.JsonOutPath))
                     {
-                        var serializer = JsonSerializer.Create(new JsonSerializerSettings() { Formatting = Formatting.Indented });
+                        var serializer = JsonSerializer.Create(new JsonSerializerSettings()
+                        {
+                            Formatting = Formatting.Indented
+                        });
                         using var jsonWriter = new StreamWriter(targetJsonFile);
                         serializer.Serialize(jsonWriter, packagesList);
                     }
@@ -146,7 +149,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 {
                     var filter = new MetadataFilter()
                     {
-                        IdFilter = new List<Guid> { id }
+                        IdFilter = new List<Guid> { id },
+                        IncludeExpired = true,
                     };
 
                     return EnumerateFilteredPackages(_filterableSet, filter)

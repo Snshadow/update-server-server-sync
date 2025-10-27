@@ -80,8 +80,12 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             IEnumerable<string> IMetadataFilterOptions.ClassificationsFilter => ClassificationsFilter?.Split('+');
 
             [CommandOption("--skip-superseded")]
-            [Description("Do not serve superseded updates")]
+            [Description("Do not copy superseded updates")]
             public bool SkipSuperseded { get; set; }
+
+            [CommandOption("--include-expired")]
+            [Description("Include expired updates")]
+            public bool IncludeExpired { get; set; }
 
             [CommandOption("--first")]
             [Description("Copy only the first x updates")]

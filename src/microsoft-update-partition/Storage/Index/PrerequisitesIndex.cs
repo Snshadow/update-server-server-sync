@@ -26,7 +26,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
         {
             if (package is MicrosoftUpdatePackage { Prerequisites.Count: > 0 } microsoftUpdate)
             {
-                var prerequisiteGuids = new List<List<Guid>>();
+                List<List<Guid>> prerequisiteGuids = new();
                 foreach (var prereq in microsoftUpdate.Prerequisites)
                 {
                     if (prereq is Simple simple)

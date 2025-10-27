@@ -7,6 +7,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
     {
         public const string DriverMetadataIndexName = "mu_driver_metadata";
         public const string KbArticleIndexName = "mu_kbarticle";
+        public const string IsExpiredIndexName = "mu_is_expired";
         public const string IsSupersededIndexName = "mu_is_superseded";
         public const string IsSupersedingIndexName = "mu_is_superseding";
         public const string IsBundleIndexName = "mu_is_bundled";

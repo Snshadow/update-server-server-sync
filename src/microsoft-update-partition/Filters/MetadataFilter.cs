@@ -51,6 +51,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public bool SkipSuperseded;
 
         /// <summary>
+        /// Get or set whether to include expired updates
+        /// </summary>
+        /// <value>True to include expired updates, false otherwise</value>
+        public bool IncludeExpired;
+
+        /// <summary>
         /// Returns up to Xth results
         /// </summary>
         /// <value>0 to include all updates, greater than 0 value to limit output.</value>
@@ -191,6 +197,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 filteredUpdates = filteredUpdates
                     .Where(u => u is not SoftwareUpdate softwareUpdate ||
                     (softwareUpdate.IsSupersededBy?.Count ?? 0) == 0);
+            }
+
+            if (!IncludeExpired)
+            {
+                filteredUpdates = filteredUpdates.Where(u => !u.IsExpired);
             }
 
             // Skip X matches, if requested

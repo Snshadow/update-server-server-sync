@@ -79,6 +79,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [Description("Do not consider superseded updates for download")]
             public bool SkipSuperseded { get; set; }
 
+            [CommandOption("--include-expired")]
+            [Description("Download files for expired updates")]
+            public bool IncludeExpired { get; set; }
+
             [CommandOption("--first")]
             [Description("Content sync only the first x packages")]
             public int FirstX { get; set; }

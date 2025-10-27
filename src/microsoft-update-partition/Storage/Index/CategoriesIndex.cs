@@ -12,7 +12,7 @@ using System;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Index
 {
-    class CategoriesIndex : SimpleIndex<int, List<Guid>>, ISimpleMetadataIndex<int , List<Guid>>
+    class CategoriesIndex : SimpleIndex<int, List<Guid>>, ISimpleMetadataIndex<int, List<Guid>>
     {
         public const string Name = AvailableIndexes.CategoriesIndexName;
 

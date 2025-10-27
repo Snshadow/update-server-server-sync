@@ -97,6 +97,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate
             {
                 DriverMetadataIndex.Name => new DriverMetadataIndex(container),
                 KbArticleIndex.Name => new KbArticleIndex(container),
+                IsExpiredIndex.Name => new IsExpiredIndex(container),
                 IsSupersededIndex.Name => new IsSupersededIndex(container),
                 IsSupersedingIndex.Name => new IsSupersedingIndex(container),
                 BundledWithIndex.Name => new BundledWithIndex(container),

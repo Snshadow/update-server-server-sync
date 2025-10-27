@@ -74,6 +74,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [Description("Do not export superseded updates")]
             public bool SkipSuperseded { get; set; }
 
+            [CommandOption("--include-expired")]
+            [Description("Export expired updates")]
+            public bool IncludeExpired { get; set; }
+
             [CommandOption("--first")]
             [Description("Export only the first x updates")]
             public int FirstX { get; set; }

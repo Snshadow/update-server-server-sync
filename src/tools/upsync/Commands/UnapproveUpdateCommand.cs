@@ -70,6 +70,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [Description("Ignore superseded updates")]
             public bool SkipSuperseded { get; set; }
 
+            [CommandOption("--include-expired")]
+            [Description("Include expired updates")]
+            public bool IncludeExpired { get; set; }
+
             [CommandOption("--first")]
             [Description("Handle first x updates only")]
             public int FirstX { get; set; }

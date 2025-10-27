@@ -73,6 +73,12 @@
             </summary>
             <value>True to skip superseded updates, false otherwise</value>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IncludeExpired">
+            <summary>
+            Get or set whether to include expired updates
+            </summary>
+            <value>True to include expired updates, false otherwise</value>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.FirstX">
             <summary>
             Returns up to Xth results
@@ -1703,6 +1709,21 @@
             Get the category or update title
             </summary>
         </member>
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.CreationDate">
+            <summary>
+            Get the creation date of the update
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.Description">
+            <summary>
+            Get the category or update description
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.IsExpired">
+            <summary>
+            Get the expiration state of the update
+            </summary>
+        </member>
         <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.Categories">
             <summary>
             The list of category IDs associated to this update
@@ -1729,16 +1750,6 @@
             </summary>
             <param name="installedPrerequisites">List of installed updates on a computer</param>
             <returns>True if all prerequisites are met, false otherwise</returns>
-        </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.CreationDate">
-            <summary>
-            Get the creation date of the update
-            </summary>
-        </member>
-        <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.Description">
-            <summary>
-            Get the category or update description
-            </summary>
         </member>
         <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage.Files">
             <summary>

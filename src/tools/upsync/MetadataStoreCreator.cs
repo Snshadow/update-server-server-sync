@@ -37,6 +37,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         bool SkipSuperseded { get; }
 
+        bool IncludeExpired { get; }
+
         IEnumerable<string> KbArticleFilter { get; }
 
         int FirstX { get; }

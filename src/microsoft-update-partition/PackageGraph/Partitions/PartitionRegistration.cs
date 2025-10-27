@@ -33,7 +33,8 @@ namespace Microsoft.PackageGraph.Partitions
                         HasExternalContentFileMetadata = true,
                         Indexes = new List<IndexDefinition>()
                         {
-                            MicrosoftUpdatePartitionRegistration.KbArticle ,
+                            MicrosoftUpdatePartitionRegistration.KbArticle,
+                            MicrosoftUpdatePartitionRegistration.IsExpired,
                             MicrosoftUpdatePartitionRegistration.DriverMetadata,
                             MicrosoftUpdatePartitionRegistration.IsSuperseded,
                             MicrosoftUpdatePartitionRegistration.IsSuperseding,

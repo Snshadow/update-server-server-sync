@@ -13,7 +13,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate
     {
         internal const string MicrosoftUpdatePartitionName = "MicrosoftUpdate";
 
-        internal static readonly MicrosoftUpdatePartition PartitionSingleton = new(); 
+        internal static readonly MicrosoftUpdatePartition PartitionSingleton = new();
 
         internal static readonly IndexDefinition DriverMetadata = new()
         {
@@ -29,6 +29,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate
             Name = KbArticleIndex.Name,
             PartitionName = MicrosoftUpdatePartitionName,
             Version = KbArticleIndex.CurrentVersion,
+            Tag = "stream",
+            Factory = PartitionSingleton
+        };
+
+        internal static readonly IndexDefinition IsExpired = new()
+        {
+            Name = IsExpiredIndex.Name,
+            PartitionName = MicrosoftUpdatePartitionName,
+            Version = IsExpiredIndex.CurrentVersion,
             Tag = "stream",
             Factory = PartitionSingleton
         };

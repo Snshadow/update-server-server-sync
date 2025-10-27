@@ -106,6 +106,7 @@ namespace Microsoft.PackageGraph.Storage.Local
              *  guid -> global update GUID
              *  revision -> global update revision number
              *  creation_date -> the date when the update is created
+             *  is_expired -> true if the update is expired
              *  package_type -> the type of the package
              * Files: Contains file information used for updates
              *  file_digest -> primary file digest as hex string
@@ -137,6 +138,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 revision INTEGER NOT NULL,
                 title TEXT NOT NULL,
                 creation_date TEXT NOT NULL,
+                is_expired INTEGER NOT NULL,
                 package_type INTEGER NOT NULL DEFAULT(-1),
                 UNIQUE(guid, revision)
             );
@@ -300,14 +302,15 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var insertIdentityCommand = connection.CreateCommand();
             insertIdentityCommand.Transaction = transaction;
             insertIdentityCommand.CommandText = """
-            INSERT INTO identities (guid, revision, title, creation_date)
-                VALUES (@guid, @revision, @title, @creation_date);
+            INSERT INTO identities (guid, revision, title, creation_date, is_expired)
+                VALUES (@guid, @revision, @title, @creation_date, @is_expired);
             SELECT last_insert_rowid();
             """;
             insertIdentityCommand.Parameters.Add("@guid", SqliteType.Text);
             insertIdentityCommand.Parameters.Add("@revision", SqliteType.Integer);
             insertIdentityCommand.Parameters.Add("@title", SqliteType.Text);
             insertIdentityCommand.Parameters.Add("@creation_date", SqliteType.Text);
+            insertIdentityCommand.Parameters.Add("@is_expired", SqliteType.Integer);
 
             using var insertMetadataCommand = connection.CreateCommand();
             insertMetadataCommand.Transaction = transaction;
@@ -405,6 +408,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             insertIdentityCommand.Parameters["@revision"].Value = microsoftUpdatePackageIdentity.Revision;
             insertIdentityCommand.Parameters["@title"].Value = package.Title;
             insertIdentityCommand.Parameters["@creation_date"].Value = microsoftUpdate.CreationDate.ToString("o", DateTimeFormatInfo.InvariantInfo);
+            insertIdentityCommand.Parameters["@is_expired"].Value = microsoftUpdate.IsExpired;
 
             var identityId = (int)(long)insertIdentityCommand.ExecuteScalar();
 
@@ -708,7 +712,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             return GetPackageIndex(packageIdentity) != -1;
         }
 
-
         public bool ContainsMetadata(IPackageIdentity packageIdentity)
         {
             return ContainsPackage(packageIdentity);
@@ -758,6 +761,17 @@ namespace Microsoft.PackageGraph.Storage.Local
                         value = (T)Convert.ChangeType(kbArticle, typeof(T));
                         return true;
                     }
+                    break;
+
+                case AvailableIndexes.IsExpiredIndexName:
+                    command.CommandText = "SELECT is_expired FROM identities WHERE id = @revision_id";
+                    var isExpired = command.ExecuteScalar() as long?;
+                    if (isExpired.HasValue)
+                    {
+                        value = (T)Convert.ChangeType(isExpired.Value != 0, typeof(T));
+                        return true;
+                    }
+
                     break;
 
                 case AvailableIndexes.CategoriesIndexName:
@@ -1186,6 +1200,11 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 whereBuilder.Append("\nAND i.title LIKE @title");
                 command.Parameters.Add("@title", SqliteType.Text).Value = $"%{metadataFilter.TitleFilter}%";
+            }
+
+            if (!metadataFilter.IncludeExpired)
+            {
+                whereBuilder.Append("\nAND i.is_expired = 0");
             }
 
             if (metadataFilter.IdFilter is { Count: > 0 })

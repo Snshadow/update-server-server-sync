@@ -73,6 +73,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
 
             filter.SkipSuperseded = filterOptions.SkipSuperseded;
+            filter.IncludeExpired = filterOptions.IncludeExpired;
             filter.FirstX = filterOptions.FirstX;
             filter.AfterX = filterOptions.AfterX;
 
