@@ -102,7 +102,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 var packageCount = source.Cast<IPackage>().Count();
                 Console.WriteLine($"Package count            : {packageCount}");
-                Console.WriteLine($"Package ID indexed       : {source is IMetadataStore}");
+                Console.WriteLine($"Package ID indexed       : {source is not null}");
                 Console.WriteLine($"    Reindexing required  : {source.IsReindexingRequired}");
             }
         }
@@ -218,7 +218,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             else
             {
                 ConsoleOutput.WriteRed("Unsupported package type. Supported package types are:");
-                SupportedPackages.Keys.ToList().ForEach(packageTypeName => Console.WriteLine(packageTypeName));
+                SupportedPackages.Keys.ToList().ForEach(Console.WriteLine);
             }
         }
     }

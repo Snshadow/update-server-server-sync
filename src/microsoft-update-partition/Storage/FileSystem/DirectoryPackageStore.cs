@@ -30,10 +30,8 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public int PackageCount => _metadataBackingStore.PackageCount;
 
-        /// <inheritdoc cref="IMetadataStore.IsReindexingRequired"/>
         public bool IsReindexingRequired => _metadataBackingStore.IsReindexingRequired;
 
-        /// <inheritdoc cref="IMetadataStore.IsMetadataIndexingSupported"/>
         public bool IsMetadataIndexingSupported { get; private set; } = true;
 
 #pragma warning disable 0067
@@ -211,6 +209,12 @@ namespace Microsoft.PackageGraph.Storage.Local
         public IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
         {
             return _metadataBackingStore.GetEnumerator(filter);
+        }
+
+        public bool TryGetStoreBackedFilter(out IStoreBackedFilter storeBackedFilter)
+        {
+            storeBackedFilter = _metadataBackingStore as IStoreBackedFilter;
+            return storeBackedFilter is not null;
         }
 
         /// <inheritdoc/>

@@ -10,7 +10,7 @@ namespace Microsoft.PackageGraph.Storage
     /// <summary>
     /// Interface for a backing store for metadata for updates.
     /// </summary>
-    interface IMetadataBackingStore : IDisposable, IEnumerable<IPackage>, IFilterablePackageSet, IMetadataLookup, IMetadataMapping, IMetadataStoreOperations
+    interface IMetadataBackingStore : IDisposable, IEnumerable<IPackage>, IMetadataLookup, IMetadataMapping, IMetadataStoreOperations
     {
         /// <summary>
         /// Gets a value indicating whether the store supports parallel processing.
@@ -39,5 +39,12 @@ namespace Microsoft.PackageGraph.Storage
         /// A list of packages that were added recently to the store.
         /// </summary>
         List<IPackage> PendingPackages { get; }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection using the provided filter.
+        /// </summary>
+        /// <param name="filter">Filter to apply while enumerating packages.</param>
+        /// <returns>An enumerator that yields matching packages.</returns>
+        IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter);
     }
 }

@@ -32,30 +32,15 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
 
             // Apply filters specified on the command line
-            IEnumerable<MicrosoftUpdatePackage> filteredPackages;
-
-            if (metadataStore is IFilterablePackageSet filterableSet && UseFilterableEnumeration(packageType))
+            var filteredPackages = packageType switch
             {
-                var filteredSource = EnumerateFilteredPackages(filterableSet, filter);
-                filteredPackages = packageType switch
-                {
-                    "MicrosoftUpdateUpdate" => filteredSource.OfType<SoftwareUpdate>().Cast<MicrosoftUpdatePackage>(),
-                    "MicrosoftUpdateDriver" => filteredSource.OfType<DriverUpdate>().Cast<MicrosoftUpdatePackage>(),
-                    _ => filteredSource.OfType<MicrosoftUpdatePackage>()
-                };
-            }
-            else
-            {
-                filteredPackages = packageType switch
-                {
-                    "MicrosoftUpdateClassification" => filter.Apply<ClassificationCategory>(metadataStore),
-                    "MicrosoftUpdateProduct" => filter.Apply<ProductCategory>(metadataStore),
-                    "MicrosoftUpdateDetectoid" => filter.Apply<DetectoidCategory>(metadataStore),
-                    "MicrosoftUpdateUpdate" => filter.Apply<SoftwareUpdate>(metadataStore),
-                    "MicrosoftUpdateDriver" => filter.Apply<DriverUpdate>(metadataStore),
-                    _ => filter.Apply<MicrosoftUpdatePackage>(metadataStore)
-                };
-            }
+                "MicrosoftUpdateClassification" => filter.Apply<ClassificationCategory>(metadataStore).Cast<MicrosoftUpdatePackage>(),
+                "MicrosoftUpdateProduct" => filter.Apply<ProductCategory>(metadataStore).Cast<MicrosoftUpdatePackage>(),
+                "MicrosoftUpdateDetectoid" => filter.Apply<DetectoidCategory>(metadataStore).Cast<MicrosoftUpdatePackage>(),
+                "MicrosoftUpdateUpdate" => filter.Apply<SoftwareUpdate>(metadataStore).Cast<MicrosoftUpdatePackage>(),
+                "MicrosoftUpdateDriver" => filter.Apply<DriverUpdate>(metadataStore).Cast<MicrosoftUpdatePackage>(),
+                _ => filter.Apply<MicrosoftUpdatePackage>(metadataStore)
+            };
 
             if (!string.IsNullOrEmpty(options.JsonOutPath))
             {
@@ -114,48 +99,28 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        static bool UseFilterableEnumeration(string targetPackageType) => targetPackageType switch
-        {
-            "MicrosoftUpdateClassification" => false,
-            "MicrosoftUpdateProduct" => false,
-            "MicrosoftUpdateDetectoid" => false,
-            _ => true
-        };
-
-        static IEnumerable<IPackage> EnumerateFilteredPackages(IFilterablePackageSet filterableSet, IMetadataFilter filter)
-        {
-            using var enumerator = filterableSet.GetEnumerator(filter);
-            while (enumerator.MoveNext())
-            {
-                yield return enumerator.Current;
-            }
-        }
-
         private sealed class PackageResolver
         {
             private readonly IMetadataStore _store;
-            private readonly IFilterablePackageSet _filterableSet;
             private Dictionary<Guid, List<MicrosoftUpdatePackageIdentity>> _identityLookup;
 
             public PackageResolver(IMetadataStore store)
             {
                 _store = store;
-                _filterableSet = store;
             }
 
             public IReadOnlyList<MicrosoftUpdatePackage> Fetch(Guid id)
             {
-                if (_filterableSet is not null)
+                var filter = new MetadataFilter()
                 {
-                    var filter = new MetadataFilter()
-                    {
-                        IdFilter = new List<Guid> { id },
-                        IncludeExpired = true,
-                    };
+                    IdFilter = new List<Guid> { id },
+                    IncludeExpired = true,
+                };
 
-                    return EnumerateFilteredPackages(_filterableSet, filter)
-                        .OfType<MicrosoftUpdatePackage>()
-                        .ToList();
+                var directMatches = filter.Apply<MicrosoftUpdatePackage>(_store).ToList();
+                if (directMatches.Count > 0)
+                {
+                    return directMatches;
                 }
 
                 _identityLookup ??= _store.GetPackageIdentities()
@@ -165,15 +130,15 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
                 if (_identityLookup is not null && _identityLookup.TryGetValue(id, out var identities))
                 {
-                    List<MicrosoftUpdatePackage> packages = [];
+                    List<MicrosoftUpdatePackage> resolvedPackages = [];
                     foreach (var identity in identities)
                     {
                         if (_store.GetPackage(identity) is MicrosoftUpdatePackage package)
                         {
-                            packages.Add(package);
+                            resolvedPackages.Add(package);
                         }
                     }
-                    return packages;
+                    return resolvedPackages;
                 }
 
                 return [];

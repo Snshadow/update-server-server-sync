@@ -49,11 +49,15 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
         readonly List<IPackage> PendingPackages = new();
 
-        /// <inheritdoc cref="IMetadataStore.IsReindexingRequired"/>
         public bool IsReindexingRequired { get; private set; } = false;
 
-        /// <inheritdoc cref="IMetadataStore.IsMetadataIndexingSupported"/>
         public bool IsMetadataIndexingSupported { get; private set; } = true;
+
+        public bool TryGetStoreBackedFilter(out IStoreBackedFilter filter)
+        {
+            filter = null;
+            return false;
+        }
 
         private ContainerPackageStore(BlobContainerClient container, AzurePackageStoreInitializeMode mode)
         {

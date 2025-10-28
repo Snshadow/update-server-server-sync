@@ -75,6 +75,13 @@ namespace Microsoft.PackageGraph.Storage
         void ReIndex();
 
         /// <summary>
+        /// Try to get a store-backed filter implementation.
+        /// </summary>
+        /// <param name="storeBackedFilter">The store-backed filter instance, if available.</param>
+        /// <returns>true if a filter is available; otherwise false.</returns>
+        bool TryGetStoreBackedFilter(out IStoreBackedFilter storeBackedFilter);
+
+        /// <summary>
         /// Progress reporting for a long-running reindexing operation.
         /// </summary>
         event EventHandler<PackageStoreEventArgs> PackageIndexingProgress;

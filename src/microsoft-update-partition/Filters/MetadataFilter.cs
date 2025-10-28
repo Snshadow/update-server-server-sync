@@ -21,6 +21,75 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
     /// </summary>
     public class MetadataFilter : IMetadataFilter
     {
+        private static int GetStoredPackageType(Type packageType)
+        {
+            if (packageType == typeof(DetectoidCategory))
+            {
+                return (int)StoredPackageType.MicrosoftUpdateDetectoid;
+            }
+            else if (packageType == typeof(ClassificationCategory))
+            {
+                return (int)StoredPackageType.MicrosoftUpdateClassification;
+            }
+            else if (packageType == typeof(ProductCategory))
+            {
+                return (int)StoredPackageType.MicrosoftUpdateProduct;
+            }
+            else if (packageType == typeof(SoftwareUpdate))
+            {
+                return (int)StoredPackageType.MicrosoftUpdateSoftware;
+            }
+            else if (packageType == typeof(DriverUpdate))
+            {
+                return (int)StoredPackageType.MicrosoftUpdateDriver;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+
+        private MetadataFilter CloneWithPackageType(int packageType)
+        {
+            return new MetadataFilter
+            {
+                PackageType = packageType,
+                ProductFilter = ProductFilter,
+                ClassificationFilter = ClassificationFilter,
+                IdFilter = IdFilter,
+                TitleFilter = TitleFilter,
+                SkipSuperseded = SkipSuperseded,
+                IncludeExpired = IncludeExpired,
+                FirstX = FirstX,
+                AfterX = AfterX,
+                HardwareIdFilter = HardwareIdFilter,
+                ComputerHardwareIdFilter = ComputerHardwareIdFilter,
+                KbArticleFilter = KbArticleFilter
+            };
+        }
+
+        private static bool TryGetStoreBackedFilter(IEnumerable<IPackage> packages, out IStoreBackedFilter storeBackedFilter)
+        {
+            switch (packages)
+            {
+                case IStoreBackedFilter filter:
+                    storeBackedFilter = filter;
+                    return true;
+                case IMetadataStore metadataStore when metadataStore.TryGetStoreBackedFilter(out var providedFilter):
+                    storeBackedFilter = providedFilter;
+                    return storeBackedFilter is not null;
+                default:
+                    storeBackedFilter = null;
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the package type filter
+        /// </summary>
+        /// <value>Enum value of package type</value>
+        public int PackageType = -1;
+
         /// <summary>
         /// Gets or sets the product filter
         /// </summary>
@@ -91,7 +160,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// </summary>
         public MetadataFilter()
         {
-
         }
 
         /// <summary>
@@ -122,8 +190,17 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <returns>Matching packages</returns>
         public IEnumerable<T> Apply<T>(IEnumerable<IPackage> packages) where T : MicrosoftUpdatePackage
         {
-            IEnumerable<T> filteredUpdates;
+            if (TryGetStoreBackedFilter(packages, out var storeBacked))
+            {
+                var packageType = GetStoredPackageType(typeof(T));
+                return storeBacked
+                    .FilterFromStore(CloneWithPackageType(packageType))
+                    .Cast<T>();
+            }
+
             var updates = packages.OfType<T>();
+
+            IEnumerable<T> filteredUpdates;
 
             if (!string.IsNullOrEmpty(HardwareIdFilter) || (Guid.Empty != ComputerHardwareIdFilter))
             {

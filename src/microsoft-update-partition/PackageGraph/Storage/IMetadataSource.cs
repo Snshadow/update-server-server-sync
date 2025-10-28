@@ -39,8 +39,15 @@ namespace Microsoft.PackageGraph.Storage
     /// stored locally and queries.
     /// </para>
     /// </summary>
-    public interface IMetadataSource : IFilterablePackageSet
+    public interface IMetadataSource
     {
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection using the provided filter.
+        /// </summary>
+        /// <param name="filter">Filter to apply while enumerating packages.</param>
+        /// <returns>An enumerator that yields the matching packages.</returns>
+        IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter);
+
         /// <summary>
         /// Get raw metadata for a package identity
         /// </summary>

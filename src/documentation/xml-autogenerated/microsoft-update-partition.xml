@@ -43,6 +43,12 @@
             </para>
             </summary>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.PackageType">
+            <summary>
+            Gets or sets the package type filter
+            </summary>
+            <value>Enum value of package type</value>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ProductFilter">
             <summary>
             Gets or sets the product filter
@@ -2483,18 +2489,6 @@
             <param name="computerId"></param>
             <returns></returns>
         </member>
-        <member name="T:Microsoft.PackageGraph.Storage.IFilterablePackageSet">
-            <summary>
-            Represents a set of packages that can be filtered.
-            </summary>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IFilterablePackageSet.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
-            <summary>
-            Returns an enumerator that iterates through the collection.
-            </summary>
-            <param name="filter">The filter to apply.</param>
-            <returns>An enumerator that can be used to iterate through the collection.</returns>
-        </member>
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataBackingStore">
             <summary>
             Interface for a backing store for metadata for updates.
@@ -2527,6 +2521,13 @@
             <summary>
             A list of packages that were added recently to the store.
             </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataBackingStore.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
+            <summary>
+            Returns an enumerator that iterates through the collection using the provided filter.
+            </summary>
+            <param name="filter">Filter to apply while enumerating packages.</param>
+            <returns>An enumerator that yields matching packages.</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataFilter">
             <summary>
@@ -2694,6 +2695,13 @@
             </para>
             </summary>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataSource.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
+            <summary>
+            Returns an enumerator that iterates through the collection using the provided filter.
+            </summary>
+            <param name="filter">Filter to apply while enumerating packages.</param>
+            <returns>An enumerator that yields the matching packages.</returns>
+        </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataSource.GetMetadata(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
             <summary>
             Get raw metadata for a package identity
@@ -2808,6 +2816,13 @@
             Re-indexes the metadata store, if supported.
             </summary>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataStore.TryGetStoreBackedFilter(Microsoft.PackageGraph.Storage.IStoreBackedFilter@)">
+            <summary>
+            Try to get a store-backed filter implementation.
+            </summary>
+            <param name="storeBackedFilter">The store-backed filter instance, if available.</param>
+            <returns>true if a filter is available; otherwise false.</returns>
+        </member>
         <member name="E:Microsoft.PackageGraph.Storage.IMetadataStore.PackageIndexingProgress">
             <summary>
             Progress reporting for a long-running reindexing operation.
@@ -2866,6 +2881,18 @@
             <param name="packageIndex">Index of a package.</param>
             <param name="packageType">A type enum of a package.</param>
         </member>
+        <member name="T:Microsoft.PackageGraph.Storage.IStoreBackedFilter">
+            <summary>
+            Represents a store-backed filter which uses <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IStoreBackedFilter.FilterFromStore(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter)">
+            <summary>
+            Applies the provided metadata filter and returns the matching packages.
+            </summary>
+            <param name="filter">The metadata filter containing the package type.</param>
+            <returns>Matching packages.</returns>
+        </member>
         <member name="T:Microsoft.PackageGraph.Storage.Azure.BlobContentStore">
             <summary>
             Implementation of <see cref="T:Microsoft.PackageGraph.Storage.IContentStore"/> that downloads and stores update content in Azure Blob Storage
@@ -2919,12 +2946,6 @@
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.GetUri(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.GetUri(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)"/>
-        </member>
-        <member name="P:Microsoft.PackageGraph.Storage.Azure.ContainerPackageStore.IsReindexingRequired">
-            <inheritdoc cref="P:Microsoft.PackageGraph.Storage.IMetadataStore.IsReindexingRequired"/>
-        </member>
-        <member name="P:Microsoft.PackageGraph.Storage.Azure.ContainerPackageStore.IsMetadataIndexingSupported">
-            <inheritdoc cref="P:Microsoft.PackageGraph.Storage.IMetadataStore.IsMetadataIndexingSupported"/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Azure.ContainerPackageStore.ReIndex">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IMetadataStore.ReIndex"/>
@@ -3137,12 +3158,6 @@
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DirectoryMetadataStore.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
             <inheritdoc/>
-        </member>
-        <member name="P:Microsoft.PackageGraph.Storage.Local.DirectoryPackageStore.IsReindexingRequired">
-            <inheritdoc cref="P:Microsoft.PackageGraph.Storage.IMetadataStore.IsReindexingRequired"/>
-        </member>
-        <member name="P:Microsoft.PackageGraph.Storage.Local.DirectoryPackageStore.IsMetadataIndexingSupported">
-            <inheritdoc cref="P:Microsoft.PackageGraph.Storage.IMetadataStore.IsMetadataIndexingSupported"/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DirectoryPackageStore.ReIndex">
             <inheritdoc/>

@@ -24,7 +24,7 @@ namespace Microsoft.PackageGraph.Storage.Local
     /// <summary>
     /// Stores metadata in a SQLite database.
     /// </summary>
-    class SqliteMetadataBackingStore : DbContext, IMetadataBackingStore, IMetadataSink, IMetadataSource
+    class SqliteMetadataBackingStore : DbContext, IMetadataBackingStore, IMetadataSink, IMetadataSource, IStoreBackedFilter
     {
         private const string dbName = "metadata.db";
         private static ReadOnlySpan<byte> SqliteHeader => "SQLite format 3\0"u8;
@@ -577,6 +577,15 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             var identities = GetPackageIdentities(filter);
             return identities.Select(GetPackage).GetEnumerator();
+        }
+
+        public IEnumerable<IPackage> FilterFromStore(MetadataFilter filter)
+        {
+            using var enumerator = GetEnumerator(filter);
+            while (enumerator.MoveNext())
+            {
+                yield return enumerator.Current;
+            }
         }
 
         public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
@@ -1194,6 +1203,12 @@ namespace Microsoft.PackageGraph.Storage.Local
                 }
 
                 whereBuilder.Append($"\nAND c.value COLLATE NOCASE IN ({string.Join(",", idParamList)})");
+            }
+
+            if (metadataFilter.PackageType != -1)
+            {
+                whereBuilder.Append("\nAND i.package_type = @package_type");
+                command.Parameters.Add("@package_type", SqliteType.Integer).Value = metadataFilter.PackageType;
             }
 
             if (!string.IsNullOrEmpty(metadataFilter.TitleFilter))
