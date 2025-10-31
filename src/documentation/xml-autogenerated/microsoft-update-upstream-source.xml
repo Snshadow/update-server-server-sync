@@ -576,6 +576,13 @@
             </summary>
             <returns>Hash code</returns>
         </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Get the number of packages that match the criteria
+            </summary>
+            <param name="packages">The packages to filter</param>
+            <returns>The number of matching packages</returns>
+        </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
             Applies the filter to a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> and returns the matched packages

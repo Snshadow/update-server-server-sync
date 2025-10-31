@@ -118,14 +118,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             }
 
             var other = obj as UpstreamSourceFilter;
-            if (this.ProductFilter.Count != other.ProductFilter.Count ||
-                this.ClassificationFilter.Count != other.ClassificationFilter.Count)
+            if (ProductFilter.Count != other.ProductFilter.Count ||
+                ClassificationFilter.Count != other.ClassificationFilter.Count)
             {
                 return false;
             }
 
-            return this.ProductFilter.All(cat => other.ProductFilter.Contains(cat))
-                && this.ClassificationFilter.All(cat => other.ClassificationFilter.Contains(cat));
+            return ProductFilter.All(cat => other.ProductFilter.Contains(cat))
+                && ClassificationFilter.All(cat => other.ClassificationFilter.Contains(cat));
         }
 
         /// <summary>
@@ -170,10 +170,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         public override int GetHashCode()
         {
             int hash = 0;
-            this.ProductFilter.ForEach(cat => hash |= cat.GetHashCode());
-            this.ClassificationFilter.ForEach(cat => hash |= cat.GetHashCode());
+            ProductFilter.ForEach(cat => hash |= cat.GetHashCode());
+            ClassificationFilter.ForEach(cat => hash |= cat.GetHashCode());
 
             return hash;
+        }
+
+        /// <summary>
+        /// Get the number of packages that match the criteria
+        /// </summary>
+        /// <param name="packages">The packages to filter</param>
+        /// <returns>The number of matching packages</returns>
+        public int GetCount(IEnumerable<IPackage> packages)
+        {
+            return Apply(packages).Count();
         }
 
         /// <summary>

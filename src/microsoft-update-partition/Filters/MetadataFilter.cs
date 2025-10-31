@@ -307,5 +307,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         {
             return Apply<MicrosoftUpdatePackage>(packages);
         }
+        /// <summary>
+        /// Get the number of packages that match the criteria
+        /// </summary>
+        /// <param name="packages">The packages to filter</param>
+        /// <returns>The number of matching packages</returns>
+        public int GetCount(IEnumerable<IPackage> packages)
+        {
+            if (TryGetStoreBackedFilter(packages, out var storeBacked))
+            {
+                var packageType = GetStoredPackageType(typeof(MicrosoftUpdatePackage));
+                return storeBacked.CountFromStore(CloneWithPackageType(packageType));
+            }
+
+            return Apply(packages).Count();
+        }
     }
 }

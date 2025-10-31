@@ -5,7 +5,6 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Handlers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
-using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using Newtonsoft.Json;
@@ -32,6 +31,15 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
 
             // Apply filters specified on the command line
+            if (options.CountOnly)
+            {
+                var count = filter.GetCount(metadataStore);
+
+                Console.WriteLine("-----------------------------");
+                Console.WriteLine($"Query returned {count} entries.");
+                return;
+            }
+
             var filteredPackages = packageType switch
             {
                 "MicrosoftUpdateClassification" => filter.Apply<ClassificationCategory>(metadataStore).Cast<MicrosoftUpdatePackage>(),
@@ -87,11 +95,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 foreach (var update in filteredPackages)
                 {
                     counter++;
-
-                    if (!options.CountOnly)
-                    {
-                        PrintMicrosoftUpdateMetadata(update, metadataStore, categoriesLookup, updatesLookup);
-                    }
+                    PrintMicrosoftUpdateMetadata(update, metadataStore, categoriesLookup, updatesLookup);
                 }
 
                 Console.WriteLine("-----------------------------");

@@ -13,6 +13,13 @@ namespace Microsoft.PackageGraph.Storage
     public interface IMetadataFilter
     {
         /// <summary>
+        /// Get the number of packages that match the criteria
+        /// </summary>
+        /// <param name="packages">The packages to filter</param>
+        /// <returns>The number of matching packages</returns>
+        int GetCount(IEnumerable<IPackage> packages);
+
+        /// <summary>
         /// Apply the filter to a collection of packages
         /// </summary>
         /// <param name="packages">The packages to filter</param>

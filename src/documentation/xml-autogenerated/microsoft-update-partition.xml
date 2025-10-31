@@ -148,6 +148,13 @@
             <param name="packages">The packages to filter</param>
             <returns>Matching packages</returns>
         </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Get the number of packages that match the criteria
+            </summary>
+            <param name="packages">The packages to filter</param>
+            <returns>The number of matching packages</returns>
+        </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability.ApplicabilityRule">
             <summary>
             Describes an applicability expression that gets evaluate by a Microsoft Update agent on a device during an update operation
@@ -2534,6 +2541,13 @@
             Interface for filtering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> or for selectively quering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/>
             </summary>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Get the number of packages that match the criteria
+            </summary>
+            <param name="packages">The packages to filter</param>
+            <returns>The number of matching packages</returns>
+        </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
             Apply the filter to a collection of packages
@@ -2886,12 +2900,19 @@
             Represents a store-backed filter which uses <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter"/>.
             </summary>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IStoreBackedFilter.CountFromStore(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter)">
+            <summary>
+            Counts the packages that match the specified filter.
+            </summary>
+            <param name="filter">The metadata filter to apply</param>
+            <returns>The number of matching packages</returns>
+        </member>
         <member name="M:Microsoft.PackageGraph.Storage.IStoreBackedFilter.FilterFromStore(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter)">
             <summary>
             Applies the provided metadata filter and returns the matching packages.
             </summary>
-            <param name="filter">The metadata filter containing the package type.</param>
-            <returns>Matching packages.</returns>
+            <param name="filter">The metadata filter containing the package type</param>
+            <returns>Matching packages</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Azure.BlobContentStore">
             <summary>

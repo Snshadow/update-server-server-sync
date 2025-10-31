@@ -588,6 +588,19 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
+        public int CountFromStore(MetadataFilter filter)
+        {
+            if (filter is not MetadataFilter metadataFilter)
+            {
+                return 0;
+            }
+
+            using var connection = GetConnection();
+            using var command = connection.CreateCommand();
+            BuildFilterQuery(metadataFilter, command, true);
+            return (int)(command.ExecuteScalar() as long? ?? 0);
+        }
+
         public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
         {
             var identityId = GetPackageIndex(packageIdentity);
@@ -1118,50 +1131,13 @@ namespace Microsoft.PackageGraph.Storage.Local
             });
         }
 
-        private List<IPackageIdentity> GetPackageIdentities(IMetadataFilter filter)
+        private static void BuildFilterQuery(MetadataFilter metadataFilter, SqliteCommand command, bool countOnly)
         {
-            if (filter is not MetadataFilter metadataFilter)
-            {
-                return GetPackageIdentities().ToList();
-            }
+            var queryBuilder = new StringBuilder();
+            var tableBuilder = new StringBuilder("identities AS i");
+            var whereBuilder = new StringBuilder("1=1");
+            var groupByBuilder = new StringBuilder();
 
-            List<IPackageIdentity> identities = [];
-            Dictionary<MicrosoftUpdatePackageIdentity, MicrosoftUpdatePackage> packageCache = null;
-
-            MicrosoftUpdatePackage GetCachedPackage(IPackageIdentity identity)
-            {
-                if (identity is not MicrosoftUpdatePackageIdentity microsoftIdentity)
-                {
-                    return GetPackage(identity) as MicrosoftUpdatePackage;
-                }
-
-                packageCache ??= [];
-                if (!packageCache.TryGetValue(microsoftIdentity, out var package))
-                {
-                    package = GetPackage(microsoftIdentity) as MicrosoftUpdatePackage;
-                    if (package is not null)
-                    {
-                        packageCache[microsoftIdentity] = package;
-                    }
-                }
-
-                return package;
-            }
-
-            using var connection = GetConnection();
-            using var command = connection.CreateCommand();
-
-            StringBuilder queryBuilder = new("SELECT i.guid, i.revision");
-            StringBuilder tableBuilder = new("identities AS i");
-            StringBuilder whereBuilder = new("1=1");
-            StringBuilder groupByBuilder = new();
-
-            var requiresDriverFiltering = metadataFilter switch
-            {
-                { HardwareIdFilter: not null and { Length: > 0 } } => true,
-                { ComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
-                _ => false
-            };
             var hasProductFilter = metadataFilter.ProductFilter is { Count: > 0 };
             var hasClassificationFilter = metadataFilter.ClassificationFilter is { Count: > 0 };
 
@@ -1172,7 +1148,17 @@ namespace Microsoft.PackageGraph.Storage.Local
                 INNER JOIN metadatas AS m ON i.id = m.revision_id
                 INNER JOIN json_each(m.categories) AS c
                 """);
-                groupByBuilder.Append("i.guid, i.revision\nHAVING 1=1");
+
+                if (countOnly)
+                {
+                    groupByBuilder.Append("i.id");
+                }
+                else
+                {
+                    groupByBuilder.Append("i.guid, i.revision");
+                }
+
+                groupByBuilder.Append("\nHAVING 1=1");
 
                 List<string> idParamList = [];
 
@@ -1182,7 +1168,6 @@ namespace Microsoft.PackageGraph.Storage.Local
                     {
                         var paramName = $"@product{index}";
                         command.Parameters.Add(paramName, SqliteType.Text).Value = id;
-
                         return paramName;
                     }).ToList();
                     groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", productParams)}) THEN 1 END) > 0");
@@ -1195,7 +1180,6 @@ namespace Microsoft.PackageGraph.Storage.Local
                     {
                         var paramName = $"@classification{index}";
                         command.Parameters.Add(paramName, SqliteType.Text).Value = id;
-
                         return paramName;
                     }).ToList();
                     groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", classificationParams)}) THEN 1 END) > 0");
@@ -1259,6 +1243,20 @@ namespace Microsoft.PackageGraph.Storage.Local
                 whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM superseded AS sup WHERE sup.superseded_guid = i.guid)");
             }
 
+            if (countOnly)
+            {
+                queryBuilder.Append("SELECT COUNT(*)");
+                if (hasProductFilter || hasClassificationFilter)
+                {
+                    queryBuilder.Append(" FROM (SELECT 1");
+                }
+            }
+            else
+            {
+                queryBuilder.Append("SELECT i.guid, i.revision");
+            }
+
+
             queryBuilder.Append($" FROM {tableBuilder}\nWHERE {whereBuilder}");
 
             if (groupByBuilder.Length > 0)
@@ -1266,33 +1264,83 @@ namespace Microsoft.PackageGraph.Storage.Local
                 queryBuilder.Append($"\nGROUP BY {groupByBuilder}");
             }
 
-            if (!requiresDriverFiltering)
+            if (countOnly && (hasProductFilter || hasClassificationFilter))
             {
-                if (metadataFilter.FirstX > 0 || metadataFilter.AfterX > 0)
+                queryBuilder.Append(')');
+            }
+
+            if (!countOnly)
+            {
+                var requiresDriverFiltering = metadataFilter switch
                 {
-                    // order by creation date and id to get consistent result
-                    queryBuilder.Append("\nORDER BY i.creation_date DESC, i.id DESC");
+                    { HardwareIdFilter: not null and { Length: > 0 } } => true,
+                    { ComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
+                    _ => false
+                };
 
-                    if (metadataFilter.FirstX > 0)
+                if (!requiresDriverFiltering)
+                {
+                    if (metadataFilter.FirstX > 0 || metadataFilter.AfterX > 0)
                     {
-                        queryBuilder.Append("\nLIMIT @limit");
-                        command.Parameters.Add("@limit", SqliteType.Integer).Value = metadataFilter.FirstX;
+                        queryBuilder.Append("\nORDER BY i.creation_date DESC, i.id DESC");
 
-                        if (metadataFilter.AfterX > 0)
+                        if (metadataFilter.FirstX > 0)
                         {
-                            queryBuilder.Append(" OFFSET @offset");
+                            queryBuilder.Append("\nLIMIT @limit");
+                            command.Parameters.Add("@limit", SqliteType.Integer).Value = metadataFilter.FirstX;
+
+                            if (metadataFilter.AfterX > 0)
+                            {
+                                queryBuilder.Append(" OFFSET @offset");
+                                command.Parameters.Add("@offset", SqliteType.Integer).Value = metadataFilter.AfterX;
+                            }
+                        }
+                        else if (metadataFilter.AfterX > 0)
+                        {
+                            queryBuilder.Append("\nLIMIT -1 OFFSET @offset");
                             command.Parameters.Add("@offset", SqliteType.Integer).Value = metadataFilter.AfterX;
                         }
-                    }
-                    else if (metadataFilter.AfterX > 0)
-                    {
-                        queryBuilder.Append("\nLIMIT -1 OFFSET @offset");
-                        command.Parameters.Add("@offset", SqliteType.Integer).Value = metadataFilter.AfterX;
                     }
                 }
             }
 
             command.CommandText = queryBuilder.ToString();
+        }
+
+        private List<IPackageIdentity> GetPackageIdentities(IMetadataFilter filter)
+        {
+            if (filter is not MetadataFilter metadataFilter)
+            {
+                return GetPackageIdentities().ToList();
+            }
+
+            List<IPackageIdentity> identities = [];
+            Dictionary<MicrosoftUpdatePackageIdentity, MicrosoftUpdatePackage> packageCache = null;
+
+            MicrosoftUpdatePackage GetCachedPackage(IPackageIdentity identity)
+            {
+                if (identity is not MicrosoftUpdatePackageIdentity microsoftIdentity)
+                {
+                    return GetPackage(identity) as MicrosoftUpdatePackage;
+                }
+
+                packageCache ??= [];
+                if (!packageCache.TryGetValue(microsoftIdentity, out var package))
+                {
+                    package = GetPackage(microsoftIdentity) as MicrosoftUpdatePackage;
+                    if (package is not null)
+                    {
+                        packageCache[microsoftIdentity] = package;
+                    }
+                }
+
+                return package;
+            }
+
+            using var connection = GetConnection();
+            using var command = connection.CreateCommand();
+
+            BuildFilterQuery(metadataFilter, command, false);
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -1302,6 +1350,13 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 identities.Add(new MicrosoftUpdatePackageIdentity(guid, revision));
             }
+
+            var requiresDriverFiltering = metadataFilter switch
+            {
+                { HardwareIdFilter: not null and { Length: > 0 } } => true,
+                { ComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
+                _ => false
+            };
 
             // TODO push the post-filter limit into SQL by materializing driver metadata indexes.
             if (requiresDriverFiltering)
