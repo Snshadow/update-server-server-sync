@@ -33,6 +33,60 @@
             <param name="outFile">Ouput file to set in the directive file</param>
             <returns></returns>
         </member>
+        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SortOrder">
+            <summary>
+            Specifies the order of sorting with specific criteria
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SortOrder.None">
+            <summary>
+            Not sorted
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SortOrder.Ascending">
+            <summary>
+            Sort by ascending order
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SortOrder.Descending">
+            <summary>
+            Sort by descending order
+            </summary>
+        </member>
+        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataSortOrder">
+            <summary>
+            Sorting orders of the filtered Microsoft updates based on the metadata
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataSortOrder.CreationDate">
+            <summary>
+            Sort order by creation date
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataSortOrder.Id">
+            <summary>
+            Sort order by update ID
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataSortOrder.KbArticle">
+            <summary>
+            Sort order by KB article
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataSortOrder.Title">
+            <summary>
+            Sort order by title
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataSortOrder.#ctor(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SortOrder,Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SortOrder,Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SortOrder,Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SortOrder)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataSortOrder"/> struct.
+            </summary>
+            <param name="creationDate">Sort order for creation date</param>
+            <param name="id">Sort order for ID</param>
+            <param name="kbArticle">Sort order for KB article</param>
+            <param name="title">Sort order for title</param>
+        </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter">
             <summary>
             <para>
@@ -114,6 +168,11 @@
             Get or set the KB article filter
             </summary>
             <value>List of KB article ids - numbers only</value>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.SortOrder">
+            <summary>
+            Get the sorting order of this filter
+            </summary>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.#ctor">
             <summary>

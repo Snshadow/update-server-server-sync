@@ -1131,6 +1131,22 @@ namespace Microsoft.PackageGraph.Storage.Local
             });
         }
 
+        private static string BuildSortOrder(MetadataSortOrder sortOrder)
+        {
+            (SortOrder Direction, string ColumnName)[] sortClauses = [
+                (Direction: sortOrder.CreationDate, ColumnName: "i.creation_date"),
+                (Direction: sortOrder.Id, ColumnName: "i.guid"),
+                (Direction: sortOrder.KbArticle, ColumnName: "si.kb_article_id"),
+                (Direction: sortOrder.Title, ColumnName: "i.title")
+            ];
+
+            var orders = sortClauses
+                .Where(clause => clause.Direction != SortOrder.None)
+                .Select(clause => $"{clause.ColumnName} {(clause.Direction == SortOrder.Ascending ? "ASC" : "DESC")}");
+
+            return string.Join(", ", orders);
+        }
+
         private static void BuildFilterQuery(MetadataFilter metadataFilter, SqliteCommand command, bool countOnly)
         {
             var queryBuilder = new StringBuilder();
@@ -1221,21 +1237,24 @@ namespace Microsoft.PackageGraph.Storage.Local
                 whereBuilder.Append($"\nAND i.guid IN ({string.Join(",", idParams)})");
             }
 
-            if (metadataFilter.KbArticleFilter is { Count: > 0 })
+            if (metadataFilter.KbArticleFilter is { Count: > 0 } || metadataFilter.SortOrder.KbArticle != SortOrder.None)
             {
                 tableBuilder.Append("\nINNER JOIN software_informations AS si ON si.revision_id = i.id");
 
-                var index = 0;
-                List<string> kbParams = [];
-                foreach (var kb in metadataFilter.KbArticleFilter)
+                if (metadataFilter.KbArticleFilter is { Count: > 0 })
                 {
-                    var paramName = $"@kb{index}";
-                    kbParams.Add(paramName);
-                    command.Parameters.Add(paramName, SqliteType.Text).Value = kb;
-                    index++;
-                }
+                    var index = 0;
+                    List<string> kbParams = [];
+                    foreach (var kb in metadataFilter.KbArticleFilter)
+                    {
+                        var paramName = $"@kb{index}";
+                        kbParams.Add(paramName);
+                        command.Parameters.Add(paramName, SqliteType.Text).Value = kb;
+                        index++;
+                    }
 
-                whereBuilder.Append($"\nAND si.kb_article_id IN ({string.Join(",", kbParams)})");
+                    whereBuilder.Append($"\nAND si.kb_article_id IN ({string.Join(",", kbParams)})");
+                }
             }
 
             if (metadataFilter.SkipSuperseded)
@@ -1255,7 +1274,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 queryBuilder.Append("SELECT i.guid, i.revision");
             }
-
 
             queryBuilder.Append($" FROM {tableBuilder}\nWHERE {whereBuilder}");
 
@@ -1280,10 +1298,18 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 if (!requiresDriverFiltering)
                 {
+                    if (metadataFilter.SortOrder.NeedSort())
+                    {
+                        queryBuilder.Append($"\nORDER BY {BuildSortOrder(metadataFilter.SortOrder)}");
+                    }
+                    else
+                    {
+                        // sort by creation date and id with descending order by default 
+                        queryBuilder.Append("\nORDER BY i.creation_date DESC, i.id DESC");
+                    }
+
                     if (metadataFilter.FirstX > 0 || metadataFilter.AfterX > 0)
                     {
-                        queryBuilder.Append("\nORDER BY i.creation_date DESC, i.id DESC");
-
                         if (metadataFilter.FirstX > 0)
                         {
                             queryBuilder.Append("\nLIMIT @limit");

@@ -21,31 +21,6 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         string StoreConnectionString { get; }
     }
 
-    public interface IMetadataFilterOptions
-    {
-        IEnumerable<string> ProductsFilter { get; }
-
-        IEnumerable<string> ClassificationsFilter { get; }
-
-        IEnumerable<string> IdFilter { get; }
-
-        string HardwareIdFilter { get; }
-
-        string ComputerHardwareIdFilter { get; set; }
-
-        string TitleFilter { get; }
-
-        bool SkipSuperseded { get; }
-
-        bool IncludeExpired { get; }
-
-        IEnumerable<string> KbArticleFilter { get; }
-
-        int FirstX { get; }
-
-        int AfterX { get; }
-    }
-
     class MetadataStoreCreator
     {
         private const string StoreAliasesConfigFile = "store-aliases.json";

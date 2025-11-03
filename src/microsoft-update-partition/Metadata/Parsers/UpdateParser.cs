@@ -25,7 +25,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
                 // Fallback to 'en'
                 propertyQuery = metadataNavigator.Compile($"upd:Update/upd:LocalizedPropertiesCollection/upd:LocalizedProperties[upd:Language='en']/{property}");
                 propertyQuery.SetContext(namespaceManager);
-                result = metadataNavigator.Evaluate(propertyQuery) as XPathNodeIterator;
+                result = (XPathNodeIterator)metadataNavigator.Evaluate(propertyQuery);
                 if (result.MoveNext())
                 {
                     return result.Current.Value;
@@ -40,7 +40,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             XPathExpression creationDateQuery = metadataNavigator.Compile("upd:Update/upd:Properties/@CreationDate");
             creationDateQuery.SetContext(namespaceManager);
 
-            var result = metadataNavigator.Evaluate(creationDateQuery) as XPathNodeIterator;
+            var result = (XPathNodeIterator)metadataNavigator.Evaluate(creationDateQuery);
 
             if (!result.MoveNext())
             {
@@ -66,7 +66,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             var publicationStateQuery = metadataNavigator.Compile("upd:Update/upd:Properties/@PublicationState");
             publicationStateQuery.SetContext(namespaceManager);
 
-            var result = metadataNavigator.Evaluate(publicationStateQuery) as XPathNodeIterator;
+            var result = (XPathNodeIterator)metadataNavigator.Evaluate(publicationStateQuery);
 
             if (!result.MoveNext())
             {
@@ -81,7 +81,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             var updateTypeQuery = metadataNavigator.Compile("upd:Update/upd:Properties/@UpdateType");
             updateTypeQuery.SetContext(namespaceManager);
 
-            var result = metadataNavigator.Evaluate(updateTypeQuery) as XPathNodeIterator;
+            var result = (XPathNodeIterator)metadataNavigator.Evaluate(updateTypeQuery);
 
             if (!result.MoveNext())
             {
@@ -98,8 +98,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             updateIdQuery.SetContext(namespaceManager);
             revisionQuery.SetContext(namespaceManager);
 
-            var idResult = metadataNavigator.Evaluate(updateIdQuery) as XPathNodeIterator;
-            var revisionResult = metadataNavigator.Evaluate(revisionQuery) as XPathNodeIterator;
+            var idResult = (XPathNodeIterator)metadataNavigator.Evaluate(updateIdQuery);
+            var revisionResult = (XPathNodeIterator)metadataNavigator.Evaluate(revisionQuery);
 
             if (!revisionResult.MoveNext() || !idResult.MoveNext())
             {
@@ -114,7 +114,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Parsers
             XPathExpression categoryQuery = metadataNavigator.Compile("upd:Update/upd:HandlerSpecificData/cat:CategoryInformation/@CategoryType");
             categoryQuery.SetContext(namespaceManager);
 
-            var result = metadataNavigator.Evaluate(categoryQuery) as XPathNodeIterator;
+            var result = (XPathNodeIterator)metadataNavigator.Evaluate(categoryQuery);
 
             if (!result.MoveNext())
             {

@@ -91,6 +91,11 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [Description("Skip the first x packages(applies before --first)")]
             public int AfterX { get; set; }
 
+            [CommandOption("--sort-by")]
+            [Description("Sort order, e.g., 'title:asc' or 'creationDate:desc'. Can be specified multiple times.")]
+            public string[] SortOrder { get; set; }
+            IEnumerable<string> IMetadataFilterOptions.SortOrder => SortOrder;
+
             public override ValidationResult Validate()
             {
                 if (string.IsNullOrEmpty(Alias) == string.IsNullOrEmpty(Path))

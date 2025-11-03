@@ -8,6 +8,33 @@ using System.Linq;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
+    public interface IMetadataFilterOptions
+    {
+        IEnumerable<string> ProductsFilter { get; }
+
+        IEnumerable<string> ClassificationsFilter { get; }
+
+        IEnumerable<string> IdFilter { get; }
+
+        string HardwareIdFilter { get; }
+
+        string ComputerHardwareIdFilter { get; set; }
+
+        string TitleFilter { get; }
+
+        bool SkipSuperseded { get; }
+
+        bool IncludeExpired { get; }
+
+        IEnumerable<string> KbArticleFilter { get; }
+
+        int FirstX { get; }
+
+        int AfterX { get; }
+
+        IEnumerable<string> SortOrder { get; }
+    }
+
     /// <summary>
     /// Class for building metadata filters from command line options
     /// </summary>
@@ -37,6 +64,63 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 HardwareIdFilter = filterOptions.HardwareIdFilter,
                 KbArticleFilter = filterOptions.KbArticleFilter?.ToList()
             };
+
+            if (filterOptions.SortOrder != null)
+            {
+                var creationDateSort = SortOrder.None;
+                var idSort = SortOrder.None;
+                var kbArticleSort = SortOrder.None;
+                var titleSort = SortOrder.None;
+
+                foreach (var sortOption in filterOptions.SortOrder)
+                {
+                    var parts = sortOption.Split(':');
+                    if (parts.Length != 2)
+                    {
+                        ConsoleOutput.WriteRed($"Invalid sort option format: {sortOption}. Expected format is 'field:direction'.");
+                        return null;
+                    }
+
+                    var field = parts[0].ToLowerInvariant();
+                    var directionStr = parts[1].ToLowerInvariant();
+                    SortOrder direction;
+
+                    switch (directionStr)
+                    {
+                        case "asc":
+                            direction = SortOrder.Ascending;
+                            break;
+                        case "desc":
+                            direction = SortOrder.Descending;
+                            break;
+                        default:
+                            ConsoleOutput.WriteRed($"Invalid sort direction: {directionStr}. Use 'asc' or 'desc'.");
+                            return null;
+                    }
+
+                    switch (field)
+                    {
+                        case "creationdate":
+                            creationDateSort = direction;
+                            break;
+                        case "id":
+                            idSort = direction;
+                            break;
+
+                        case "kbarticle":
+                            kbArticleSort = direction;
+                            break;
+                        case "title":
+                            titleSort = direction;
+                            break;
+                        default:
+                            ConsoleOutput.WriteRed($"Invalid sort field: {field}. Available fields are 'creationDate', 'id', 'kbArticle', 'title'.");
+                            return null;
+                    }
+                }
+
+                filter.SortOrder = new MetadataSortOrder(creationDateSort, idSort, kbArticleSort, titleSort);
+            }
 
             if (!string.IsNullOrEmpty(filterOptions.ComputerHardwareIdFilter))
             {

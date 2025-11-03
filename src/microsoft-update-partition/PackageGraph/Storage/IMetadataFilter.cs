@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.ObjectModel;
-using System;
 using System.Collections.Generic;
 
 namespace Microsoft.PackageGraph.Storage

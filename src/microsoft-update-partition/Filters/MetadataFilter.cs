@@ -12,6 +12,71 @@ using System.Linq;
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 {
     /// <summary>
+    /// Specifies the order of sorting with specific criteria
+    /// </summary>
+    public enum SortOrder : byte
+    {
+        /// <summary>
+        /// Not sorted
+        /// </summary>
+        None,
+        /// <summary>
+        /// Sort by ascending order
+        /// </summary>
+        Ascending,
+        /// <summary>
+        /// Sort by descending order
+        /// </summary>
+        Descending
+    }
+
+    /// <summary>
+    /// Sorting orders of the filtered Microsoft updates based on the metadata
+    /// </summary>
+    public readonly struct MetadataSortOrder
+    {
+        /// <summary>
+        /// Sort order by creation date
+        /// </summary>
+        public readonly SortOrder CreationDate;
+        /// <summary>
+        /// Sort order by update ID
+        /// </summary>
+        public readonly SortOrder Id;
+        /// <summary>
+        /// Sort order by KB article
+        /// </summary>
+        public readonly SortOrder KbArticle;
+        /// <summary>
+        /// Sort order by title
+        /// </summary>
+        public readonly SortOrder Title;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MetadataSortOrder"/> struct.
+        /// </summary>
+        /// <param name="creationDate">Sort order for creation date</param>
+        /// <param name="id">Sort order for ID</param>
+        /// <param name="kbArticle">Sort order for KB article</param>
+        /// <param name="title">Sort order for title</param>
+        public MetadataSortOrder(SortOrder creationDate, SortOrder id, SortOrder kbArticle, SortOrder title)
+        {
+            CreationDate = creationDate;
+            Id = id;
+            KbArticle = kbArticle;
+            Title = title;
+        }
+
+        internal bool NeedSort()
+        {
+            return CreationDate != SortOrder.None ||
+                Id != SortOrder.None ||
+                KbArticle != SortOrder.None ||
+                Title != SortOrder.None;
+        }
+    }
+
+    /// <summary>
     /// <para>
     /// A filter that can be applied to Microsoft updates based on their metadata: title, hardware id, KB article, etc.
     /// </para>
@@ -64,7 +129,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 AfterX = AfterX,
                 HardwareIdFilter = HardwareIdFilter,
                 ComputerHardwareIdFilter = ComputerHardwareIdFilter,
-                KbArticleFilter = KbArticleFilter
+                KbArticleFilter = KbArticleFilter,
+                SortOrder = SortOrder
             };
         }
 
@@ -77,7 +143,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     return true;
                 case IMetadataStore metadataStore when metadataStore.TryGetStoreBackedFilter(out var providedFilter):
                     storeBackedFilter = providedFilter;
-                    return storeBackedFilter is not null;
+                    return true;
                 default:
                     storeBackedFilter = null;
                     return false;
@@ -156,6 +222,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public List<string> KbArticleFilter;
 
         /// <summary>
+        /// Get the sorting order of this filter
+        /// </summary>
+        public MetadataSortOrder SortOrder;
+
+        /// <summary>
         /// Initialize a new filter. An empty filter matches all updates or categories.
         /// </summary>
         public MetadataFilter()
@@ -180,6 +251,57 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public string ToJson()
         {
             return JsonConvert.SerializeObject(this);
+        }
+
+        private IEnumerable<T> Sort<T>(IEnumerable<T> updates) where T : MicrosoftUpdatePackage
+        {
+            if (!SortOrder.NeedSort())
+            {
+                return updates;
+            }
+
+            IOrderedEnumerable<T> orderedUpdates = null;
+
+            void ApplySort<TKey>(SortOrder direction, Func<T, TKey> keySelector)
+            {
+                switch (direction)
+                {
+                    case Metadata.SortOrder.None:
+                        return;
+
+                    case Metadata.SortOrder.Ascending:
+                        if (orderedUpdates == null)
+                        {
+                            orderedUpdates = updates.OrderBy(keySelector);
+                        }
+                        else
+                        {
+                            orderedUpdates = orderedUpdates.ThenBy(keySelector);
+                        }
+                        break;
+
+                    case Metadata.SortOrder.Descending:
+                        if (orderedUpdates == null)
+                        {
+                            orderedUpdates = updates.OrderByDescending(keySelector);
+                        }
+                        else
+                        {
+                            orderedUpdates = orderedUpdates.ThenByDescending(keySelector);
+                        }
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Invalid sorting order");
+                }
+            }
+
+            ApplySort(SortOrder.KbArticle, u => u is SoftwareUpdate su ? su.KBArticleId : null);
+            ApplySort(SortOrder.CreationDate, u => u.CreationDate);
+            ApplySort(SortOrder.Id, u => u.Id.ID);
+            ApplySort(SortOrder.Title, u => u.Title);
+
+            return orderedUpdates ?? updates;
         }
 
         /// <summary>
@@ -252,7 +374,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             if (KbArticleFilter is { Count: > 0 })
             {
                 var kbLookup = KbArticleFilter.ToHashSet();
-                filteredUpdates = filteredUpdates.Where(u => kbLookup.Contains((u as SoftwareUpdate).KBArticleId));
+                filteredUpdates = filteredUpdates.OfType<SoftwareUpdate>().Where(u => kbLookup.Contains(u.KBArticleId)).Cast<T>();
             }
 
             // Apply the title filter
@@ -290,12 +412,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             // Return first X matches, if requested
             if (FirstX > 0)
             {
-                return filteredUpdates.Take(FirstX);
+                filteredUpdates = filteredUpdates.Take(FirstX);
             }
-            else
-            {
-                return filteredUpdates;
-            }
+
+            filteredUpdates = Sort(filteredUpdates);
+
+            return filteredUpdates;
         }
 
         /// <summary>

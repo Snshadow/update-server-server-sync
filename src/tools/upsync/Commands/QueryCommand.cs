@@ -90,6 +90,11 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [Description("Exclude first x updates(applies before --first)")]
             public int AfterX { get; set; }
 
+            [CommandOption("--sort-by")]
+            [Description("Sort order, e.g., 'title:asc' or 'creationDate:desc'. Can be specified multiple times.")]
+            public string[] SortOrder { get; set; }
+            IEnumerable<string> IMetadataFilterOptions.SortOrder => SortOrder;
+
             [CommandOption("--json-out-path")]
             [Description("Save results as JSON to the specified path")]
             public string JsonOutPath { get; set; }
