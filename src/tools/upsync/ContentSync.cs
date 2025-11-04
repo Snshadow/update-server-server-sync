@@ -11,14 +11,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
     class ContentSync
     {
-        public static void SyncContent(ContentSyncCommand.Settings options)
+        public static async Task SyncContentAsync(ContentSyncCommand.Settings options)
         {
-            var metadataSource = MetadataStoreCreator.OpenFromOptions(options as IMetadataStoreOptions);
+            var metadataSource = MetadataStoreCreator.OpenFromOptions(options);
             if (metadataSource is null)
             {
                 return;
@@ -30,7 +31,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 return;
             }
 
-            var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options as IMetadataFilterOptions);
+            var filter = FilterBuilder.MicrosoftUpdateFilterFromCommandLine(options);
             if (filter is null)
             {
                 return;
@@ -55,7 +56,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             CancellationTokenSource cancelTokenSource = new();
             contentStore.Progress += ContentStore_Progress;
-            contentStore.Download(filesToDownload, cancelTokenSource.Token);
+            await contentStore.DownloadAsync(filesToDownload, cancelTokenSource.Token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -99,7 +100,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        private static void ContentStore_Progress(object sender, ObjectModel.ContentOperationProgress e)
+        private static void ContentStore_Progress(object sender, ContentOperationProgress e)
         {
             if (e.File.Digest.DigestBase64 != ContentSyncLastFileDigest)
             {
@@ -111,7 +112,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 case PackagesOperationType.DownloadFileProgress:
                     UpdateConsoleForMessageRefresh();
-                    Console.Write("Sync'ing update content [{0}]: {1:000.00}%", e.Maximum, e.PercentDone);
+                    var progressInBytes = e;
+                    Console.Write("Sync'ing file {0} of {1}. {2:000.00}%", e.Current, e.Maximum, progressInBytes.PercentDone);
                     break;
             }
         }

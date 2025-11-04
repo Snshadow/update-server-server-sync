@@ -10,13 +10,13 @@ namespace Microsoft.PackageGraph.Samples
 {
     internal class Program
     {
-        static void Main(string[] _)
+        static async Task Main(string[] _)
         {
             GetAvailableUpdatesForWindows();
 
             PrintSupersededUpdates();
 
-            DownloadUpdateContent();
+            await DownloadUpdateContentAsync().ConfigureAwait(false);
         }
 
         private static void GetAvailableUpdatesForWindows()
@@ -99,7 +99,7 @@ namespace Microsoft.PackageGraph.Samples
             }
         }
 
-        private static void DownloadUpdateContent()
+        private static async Task DownloadUpdateContentAsync()
         {
             // Open the local updates store
             using var packageStore = PackageStore.Open("./store");
@@ -121,7 +121,7 @@ namespace Microsoft.PackageGraph.Samples
             var contentStore = new FileSystemContentStore("./content");
             contentStore.Progress += ContentStore_Progress;
 
-            contentStore.Download(new List<IContentFile> { contentFileToDownload }, CancellationToken.None);
+            await contentStore.DownloadAsync(new List<IContentFile> { contentFileToDownload }, CancellationToken.None);
         }
 
         private static void ContentStore_Progress(object? sender, ObjectModel.ContentOperationProgress e)
@@ -129,11 +129,13 @@ namespace Microsoft.PackageGraph.Samples
             Console.CursorLeft = 0;
             if (e.CurrentOperation == PackagesOperationType.DownloadFileProgress)
             {
-                Console.Write($"Downloading update content {e.Current}/{e.Maximum}");
+                var progressInBytes = e;
+                Console.Write($"Downloading file {e.Current} of {e.Maximum} ({progressInBytes.BytesProcessed}/{progressInBytes.TotalBytes})");
             }
             else if (e.CurrentOperation == PackagesOperationType.HashFileProgress)
             {
-                Console.Write($"Hashing update content {e.Current}/{e.Maximum}");
+                var progressInBytes = e;
+                Console.Write($"Hashing file {e.Current} of {e.Maximum} ({progressInBytes.BytesProcessed}/{progressInBytes.TotalBytes})");
             }
             else if (e.CurrentOperation == PackagesOperationType.DownloadFileEnd || e.CurrentOperation == PackagesOperationType.HashFileEnd)
             {
@@ -141,7 +143,7 @@ namespace Microsoft.PackageGraph.Samples
             }
         }
 
-        static void PackageStore_MetadataCopyProgress(object? sender, Microsoft.PackageGraph.Storage.PackageStoreEventArgs e)
+        static void PackageStore_MetadataCopyProgress(object? sender, Storage.PackageStoreEventArgs e)
         {
             Console.CursorLeft = 0;
             Console.Write($"Copying package metadata {e.Current}/{e.Total}");

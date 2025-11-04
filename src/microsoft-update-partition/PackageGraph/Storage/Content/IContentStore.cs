@@ -71,15 +71,7 @@ namespace Microsoft.PackageGraph.Storage
         /// </summary>
         /// <param name="files">List of update content files to download</param>
         /// <param name="cancelToken">Cancellation token for aborting the operation</param>
-        void Download(IEnumerable<IContentFile> files, CancellationToken cancelToken);
-
-        /// <summary>
-        /// Downloads the specified update content file
-        /// </summary>
-        /// <param name="file"></param>
-        /// <param name="cancelToken"></param>
-        /// <returns></returns>
-        Task DownloadAsync(IContentFile file, CancellationToken cancelToken);
+        Task DownloadAsync(IEnumerable<IContentFile> files, CancellationToken cancelToken);
 
         /// <summary>
         /// The size in bytes of content left to be downloaded in the current download operation

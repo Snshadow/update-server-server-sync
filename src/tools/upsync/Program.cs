@@ -6,13 +6,14 @@ using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using Spectre.Console.Cli;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync
 {
     class Program
     {
         private static readonly Lock ProgressLock = new();
-        static int Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
             var app = new CommandApp();
             app.Configure(config =>
@@ -36,7 +37,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 config.AddCommand<StoreAliasCreateCommand>("create-store-alias");
             });
 
-            return app.Run(args);
+            return await app.RunAsync(args).ConfigureAwait(false);
         }
 
         private static readonly Lock ConsoleWriteLock = new();

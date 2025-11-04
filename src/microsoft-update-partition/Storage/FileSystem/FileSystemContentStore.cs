@@ -55,19 +55,23 @@ namespace Microsoft.PackageGraph.Storage.Local
             LocalPath = path;
         }
 
-        /// <inheritdoc cref="IContentStore.Download(IEnumerable{IContentFile}, CancellationToken)"/>
-        public void Download(IEnumerable<IContentFile> files, CancellationToken cancelToken)
+        /// <inheritdoc cref="IContentStore.DownloadAsync(IEnumerable{IContentFile}, CancellationToken)"/>
+        public async Task DownloadAsync(IEnumerable<IContentFile> files, CancellationToken cancelToken)
         {
-            var contentDownloader = new ContentDownloader();
+            ContentDownloader contentDownloader = new();
             contentDownloader.OnDownloadProgress += ContentDownloader_OnDownloadProgress;
 
-            var hashChecker = new ContentHash();
+            ContentHash hashChecker = new();
             hashChecker.OnHashingProgress += HashChecker_OnHashingProgress;
 
-            var progressData = new ContentOperationProgress();
+            ContentOperationProgress progressData = new()
+            {
+                Maximum = files.Count()
+            };
 
             foreach (var file in files)
             {
+                progressData.Current++;
                 progressData.CurrentOperation = PackagesOperationType.DownloadFileStart;
                 progressData.File = file;
                 Progress?.Invoke(this, progressData);
@@ -88,7 +92,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     }
 
                     // Download the file (or resume and interrupted download)
-                    contentDownloader.DownloadToFile(GetUri(file), file, cancelToken);
+                    await contentDownloader.DownloadToFileAsync(GetUri(file), file, progressData, cancelToken).ConfigureAwait(false);
 
                     progressData.CurrentOperation = PackagesOperationType.DownloadFileEnd;
                     Progress?.Invoke(this, progressData);
@@ -99,7 +103,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     // Check the hash; must match the strongest hash specified in the update metadata
                     if (hashChecker.Check(file, contentFilePath))
                     {
-                        File.WriteAllText(GetUpdateFileMarkerPath(file.Digest), file.FileName);
+                        await File.WriteAllTextAsync(GetUpdateFileMarkerPath(file.Digest), file.FileName, cancelToken).ConfigureAwait(false);
                     }
 
                     progressData.CurrentOperation = PackagesOperationType.HashFileEnd;
@@ -178,11 +182,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             return string.Format("{0:X}", hashBytes.Last());
         }
 
-        /// <inheritdoc cref="IContentStore.DownloadAsync(IContentFile, CancellationToken)"/>
-        public Task DownloadAsync(IContentFile file, CancellationToken cancelToken)
-        {
-            throw new NotImplementedException();
-        }
 
         /// <inheritdoc cref="IContentStore.Contains(IContentFileDigest, out string)"/>
         public bool Contains(IContentFileDigest fileDigest, out string fileName)

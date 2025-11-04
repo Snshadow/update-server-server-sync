@@ -5,11 +5,12 @@ using Spectre.Console;
 using Spectre.Console.Cli;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 {
     [Description("Downloads update content from an upstream server")]
-    public class ContentSyncCommand : Command<ContentSyncCommand.Settings>
+    public class ContentSyncCommand : AsyncCommand<ContentSyncCommand.Settings>
     {
         public class Settings : CommandSettings, IMetadataStoreOptions, IMetadataFilterOptions
         {
@@ -116,9 +117,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             }
         }
 
-        public override int Execute(CommandContext context, Settings settings)
+        public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
         {
-            ContentSync.SyncContent(settings);
+            await ContentSync.SyncContentAsync(settings).ConfigureAwait(false);
             return 0;
         }
     }

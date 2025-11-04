@@ -51,10 +51,23 @@ namespace Microsoft.PackageGraph.ObjectModel
         /// <value>
         /// Percent done value, in the [0,100] range.
         /// </value>
-        public double PercentDone => (Maximum == 0 ? 0 : ((double)Current * 100) / Maximum);
+        public double PercentDone
+        {
+            get
+            {
+                if (this is ContentOperationProgress contentProgress && contentProgress.TotalBytes > 0)
+                {
+                    return contentProgress.TotalBytes == 0 ? 0 : (double)contentProgress.BytesProcessed * 100 / contentProgress.TotalBytes;
+                }
+                else
+                {
+                    return Maximum == 0 ? 0 : ((double)Current * 100) / Maximum;
+                }
+            }
+        }
 
         /// <summary>
-        /// Number of work items. Reported only for operations types that support percent done reporting. 
+        /// Number of work items. Reported only for operations types that support percent done reporting.
         /// </summary>
         /// <value>
         /// Number of work items (updates, etc.) to process
@@ -90,5 +103,15 @@ namespace Microsoft.PackageGraph.ObjectModel
         /// </summary>
         /// <value>Update file processed</value>
         public IContentFile File { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total bytes of the file being processed.
+        /// </summary>
+        public long TotalBytes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the bytes processed for the file being processed.
+        /// </summary>
+        public long BytesProcessed { get; set; }
     }
 }

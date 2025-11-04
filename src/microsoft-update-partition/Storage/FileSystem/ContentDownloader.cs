@@ -7,6 +7,7 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
@@ -15,6 +16,8 @@ namespace Microsoft.PackageGraph.Storage.Local
     /// </summary>
     public class ContentDownloader
     {
+        private static readonly HttpClient _client = new();
+
         /// <summary>
         /// Provides progress notifications during download
         /// </summary>
@@ -27,31 +30,20 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <param name="destination">Target stream</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>True on success, false otherwise</returns>
-        public static bool DownloadToStream(
+        public static async Task<bool> DownloadToStreamAsync(
             string source,
             Stream destination,
             CancellationToken cancellationToken)
         {
-            using var client = new HttpClient();
-            using var updateRequest = new HttpRequestMessage { RequestUri = new Uri(source), Method = HttpMethod.Get };
+            using var updateRequest = new HttpRequestMessage(HttpMethod.Get, source);
+
             // Stream the file
-            using HttpResponseMessage response = client
-                .SendAsync(updateRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                .GetAwaiter()
-                .GetResult();
+            using var response = await _client.SendAsync(updateRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {
-                using Stream streamToReadFrom = response.Content.ReadAsStreamAsync(cancellationToken).GetAwaiter().GetResult();
-                // Read in chunks while not at the end and cancellation was not requested
-                byte[] readBuffer = new byte[2097152 * 5];
-                var readBytesCount = streamToReadFrom.Read(readBuffer, 0, readBuffer.Length);
-                while (!cancellationToken.IsCancellationRequested && readBytesCount > 0)
-                {
-                    destination.Write(readBuffer, 0, readBytesCount);
-                    readBytesCount = streamToReadFrom.Read(readBuffer, 0, readBuffer.Length);
-                }
-
-                return readBytesCount == 0;
+                using var streamToReadFrom = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                await streamToReadFrom.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+                return true;
             }
 
             return false;
@@ -60,30 +52,22 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <summary>
         /// Downloads a single file belonging to an update package. Supports resuming a partial download
         /// </summary>
-        /// <param name="destinationFilePath">Download destination file.</param>
-        /// <param name="updateFile">The update file to download.</param>
+        /// <param name="destinationFilePath">Download destination file</param>
+        /// <param name="updateFile">The update file to download</param>
+        /// <param name="progress">The current download progress</param>
         /// <param name="cancellationToken">Cancellation token</param>
-        public void DownloadToFile(
+        public async Task DownloadToFileAsync(
             string destinationFilePath,
             IContentFile updateFile,
+            ContentOperationProgress progress,
             CancellationToken cancellationToken)
         {
-            if (!File.Exists(destinationFilePath))
+            // Destination file does not exist; create it and then download it
+            using var fileStream = new FileStream(destinationFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
+            if (fileStream.Length < (long)updateFile.Size)
             {
-                // Destination file does not exist; create it and then download it
-                using var fileStream = File.Create(destinationFilePath);
-                DownloadToStream(fileStream, updateFile, 0, cancellationToken);
-            }
-            else
-            {
-                // Destination file exists; if only partially downloaded, seek to the end and resume download
-                // from where we left off
-                using var fileStream = File.Open(destinationFilePath, FileMode.Open, FileAccess.Write);
-                if (fileStream.Length != (long)updateFile.Size)
-                {
-                    fileStream.Seek(0, SeekOrigin.End);
-                    DownloadToStream(fileStream, updateFile, fileStream.Length, cancellationToken);
-                }
+                fileStream.Seek(fileStream.Length, SeekOrigin.Begin);
+                await DownloadToStreamAsync(fileStream, updateFile, fileStream.Length, progress, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -93,80 +77,82 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <param name="destination">The file stream to write content to</param>
         /// <param name="updateFile">The update to download</param>
         /// <param name="startOffset">Offset to resume download at</param>
+        /// <param name="progress">The current download progress</param>
         /// <param name="cancellationToken">Cancellation token</param>
-        public void DownloadToStream(
+        public async Task DownloadToStreamAsync(
             Stream destination,
             IContentFile updateFile,
             long startOffset,
+            ContentOperationProgress progress,
             CancellationToken cancellationToken)
         {
-            var progress = new ContentOperationProgress()
-            {
-                File = updateFile,
-                Current = startOffset,
-                Maximum = (long)updateFile.Size,
-                CurrentOperation = PackagesOperationType.DownloadFileProgress
-            };
+            progress.File = updateFile;
+            progress.BytesProcessed = startOffset;
+            progress.TotalBytes = (long)updateFile.Size;
+            progress.CurrentOperation = PackagesOperationType.DownloadFileProgress;
 
-            // Validate starting offset
-            if (startOffset >= (long)updateFile.Size)
+            if (startOffset > progress.TotalBytes)
             {
-                throw new Exception($"Start offset {startOffset} cannot be greater than expected file size {updateFile.Size}");
+                throw new ArgumentOutOfRangeException(
+                    nameof(startOffset),
+                    $"Start offset {startOffset} cannot be greater than expected file size {progress.TotalBytes}");
             }
 
             var url = updateFile.Source;
             var uri = new Uri(url);
             if (uri.Scheme == "file")
             {
-                using var source = File.OpenRead(uri.LocalPath);
-                destination.Seek(0, SeekOrigin.Begin);
-                destination.SetLength(0);
-                source.CopyTo(destination);
+                if (startOffset < progress.TotalBytes)
+                {
+                    using var source = File.OpenRead(uri.LocalPath);
+                    destination.Seek(0, SeekOrigin.Begin);
+                    destination.SetLength(0);
+                    await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+                }
             }
             else
             {
-                using var client = new HttpClient();
-                var fileSizeOnServer = GetFileSizeOnServer(client, url, cancellationToken);
+                var fileSizeOnServer = await GetFileSizeOnServerAsync(url, cancellationToken).ConfigureAwait(false);
 
-                // Make sure our size matches the server's size
-                if (fileSizeOnServer != (long)updateFile.Size)
+                if (fileSizeOnServer != progress.TotalBytes)
                 {
-                    throw new Exception($"File size mismatch. Expected {updateFile.Size}, server advertised {fileSizeOnServer}");
+                    throw new InvalidDataException($"File size mismatch. Expected {progress.TotalBytes}, server advertised {fileSizeOnServer}");
                 }
 
-                // Build the range request for the download
-                using var updateRequest = new HttpRequestMessage { RequestUri = uri, Method = HttpMethod.Get };
-                updateRequest.Headers.Range = new RangeHeaderValue((long)startOffset, (long)fileSizeOnServer - 1);
+                if (startOffset == fileSizeOnServer)
+                {
+                    return;
+                }
 
-                // Stream the file to disk
-                using HttpResponseMessage response = client
+                using var updateRequest = new HttpRequestMessage(HttpMethod.Get, uri);
+                updateRequest.Headers.Range = new RangeHeaderValue(startOffset, fileSizeOnServer - 1);
+
+                using var response = await _client
                     .SendAsync(updateRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                    .GetAwaiter()
-                    .GetResult();
+                    .ConfigureAwait(false);
+
                 if (response.IsSuccessStatusCode)
                 {
-                    using Stream streamToReadFrom = response
+                    using var streamToReadFrom = await response
                         .Content
                         .ReadAsStreamAsync(cancellationToken)
-                        .GetAwaiter()
-                        .GetResult();
+                        .ConfigureAwait(false);
 
-                    // Read in chunks while not at the end and cancellation was not requested
-                    byte[] readBuffer = new byte[2097152 * 5];
-                    var readBytesCount = streamToReadFrom.Read(readBuffer, 0, readBuffer.Length);
-                    while (!cancellationToken.IsCancellationRequested && readBytesCount > 0)
+                    var readBuffer = new byte[2097152 * 5];
+                    var readBytesCount = await streamToReadFrom.ReadAsync(readBuffer, cancellationToken).ConfigureAwait(false);
+                    while (readBytesCount > 0 && !cancellationToken.IsCancellationRequested)
                     {
-                        destination.Write(readBuffer, 0, readBytesCount);
+                        await destination.WriteAsync(readBuffer.AsMemory(0, readBytesCount), cancellationToken).ConfigureAwait(false);
 
-                        progress.Current += readBytesCount;
+                        progress.BytesProcessed += readBytesCount;
                         OnDownloadProgress?.Invoke(this, progress);
 
-                        readBytesCount = streamToReadFrom.Read(readBuffer, 0, readBuffer.Length);
+                        readBytesCount = await streamToReadFrom.ReadAsync(readBuffer, cancellationToken).ConfigureAwait(false);
                     }
                 }
                 else
                 {
-                    throw new Exception($"Failed to get content of update from {url}: {response.ReasonPhrase}");
+                    throw new HttpRequestException($"Failed to get content of update from {url}: {response.ReasonPhrase}", null, response.StatusCode);
                 }
             }
         }
@@ -174,30 +160,26 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <summary>
         /// Retrieves the size of HTTP resource using a HEAD request.
         /// </summary>
-        /// <param name="client"></param>
-        /// <param name="url"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        private static long GetFileSizeOnServer(HttpClient client, string url, CancellationToken cancellationToken)
+        /// <param name="url">The URL of the resource</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The size of the resource in bytes</returns>
+        /// <exception cref="HttpRequestException">If the HEAD request fails</exception>
+        /// <exception cref="InvalidOperationException">If the content length cannot be determined</exception>
+        private static async Task<long> GetFileSizeOnServerAsync(string url, CancellationToken cancellationToken)
         {
             // First get the HEAD to check the server's size for the file
-            long fileSizeOnServer;
-            using (var request = new HttpRequestMessage { RequestUri = new Uri(url), Method = HttpMethod.Head })
-            {
-                using var headResponse = client
-                    .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                    .GetAwaiter()
-                    .GetResult();
-                if (!headResponse.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Failed to get HEAD of update from {url}: {headResponse.ReasonPhrase}");
-                }
+            using var request = new HttpRequestMessage(HttpMethod.Head, url);
+            using var headResponse = await _client
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                .ConfigureAwait(false);
 
-                fileSizeOnServer = headResponse.Content.Headers.ContentLength.Value;
+            if (!headResponse.IsSuccessStatusCode)
+            {
+                throw new HttpRequestException($"Failed to get HEAD of update from {url}: {headResponse.ReasonPhrase}", null, headResponse.StatusCode);
             }
 
-            return fileSizeOnServer;
+            return headResponse.Content.Headers.ContentLength ??
+                throw new InvalidOperationException($"Could not determine file size from {url}");
         }
     }
 }

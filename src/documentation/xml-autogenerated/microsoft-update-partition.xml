@@ -2261,7 +2261,7 @@
         </member>
         <member name="P:Microsoft.PackageGraph.ObjectModel.PackagesOperationProgress.Maximum">
             <summary>
-            Number of work items. Reported only for operations types that support percent done reporting. 
+            Number of work items. Reported only for operations types that support percent done reporting.
             </summary>
             <value>
             Number of work items (updates, etc.) to process
@@ -2290,6 +2290,16 @@
              The file being processed
             </summary>
             <value>Update file processed</value>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.ContentOperationProgress.TotalBytes">
+            <summary>
+            Gets or sets the total bytes of the file being processed.
+            </summary>
+        </member>
+        <member name="P:Microsoft.PackageGraph.ObjectModel.ContentOperationProgress.BytesProcessed">
+            <summary>
+            Gets or sets the bytes processed for the file being processed.
+            </summary>
         </member>
         <member name="T:Microsoft.PackageGraph.Partitions.IIndexFactory">
             <summary>
@@ -2469,20 +2479,12 @@
             <param name="updateFile">The update file</param>
             <returns>Source Uri for the content file</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IContentStore.Download(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IContentFile},System.Threading.CancellationToken)">
+        <member name="M:Microsoft.PackageGraph.Storage.IContentStore.DownloadAsync(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IContentFile},System.Threading.CancellationToken)">
             <summary>
             Downloads the specified update content files.
             </summary>
             <param name="files">List of update content files to download</param>
             <param name="cancelToken">Cancellation token for aborting the operation</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IContentStore.DownloadAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)">
-            <summary>
-            Downloads the specified update content file
-            </summary>
-            <param name="file"></param>
-            <param name="cancelToken"></param>
-            <returns></returns>
         </member>
         <member name="P:Microsoft.PackageGraph.Storage.IContentStore.QueuedSize">
             <summary>
@@ -3003,20 +3005,25 @@
             <param name="containerName">The container name where to store update content</param>
             <returns></returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.Download(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IContentFile},System.Threading.CancellationToken)">
-            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Download(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IContentFile},System.Threading.CancellationToken)"/>
+        <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.DownloadAsync(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IContentFile},System.Threading.CancellationToken)">
+            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.DownloadAsync(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IContentFile},System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.Contains(Microsoft.PackageGraph.ObjectModel.IContentFile)">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Contains(Microsoft.PackageGraph.ObjectModel.IContentFile)"/>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.ContainsAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously checks if a content file has been downloaded
+            </summary>
+            <param name="file">File to check if it was downloaded</param>
+            <param name="cancellationToken">Cancellation token</param>
+            <returns>True if the file was downloaded, false otherwise</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.Get(Microsoft.PackageGraph.ObjectModel.IContentFile)">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Get(Microsoft.PackageGraph.ObjectModel.IContentFile)"/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.GetUri(Microsoft.PackageGraph.ObjectModel.IContentFile)">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.GetUri(Microsoft.PackageGraph.ObjectModel.IContentFile)"/>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.DownloadAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)">
-            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.DownloadAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.Contains(Microsoft.PackageGraph.ObjectModel.IContentFileDigest,System.String@)">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Contains(Microsoft.PackageGraph.ObjectModel.IContentFileDigest,System.String@)"/>
@@ -3086,7 +3093,7 @@
             Provides progress notifications during download
             </summary>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.ContentDownloader.DownloadToStream(System.String,System.IO.Stream,System.Threading.CancellationToken)">
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ContentDownloader.DownloadToStreamAsync(System.String,System.IO.Stream,System.Threading.CancellationToken)">
             <summary>
             Downloads data to a stream
             </summary>
@@ -3095,32 +3102,34 @@
             <param name="cancellationToken">Cancellation token</param>
             <returns>True on success, false otherwise</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.ContentDownloader.DownloadToFile(System.String,Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)">
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ContentDownloader.DownloadToFileAsync(System.String,Microsoft.PackageGraph.ObjectModel.IContentFile,Microsoft.PackageGraph.ObjectModel.ContentOperationProgress,System.Threading.CancellationToken)">
             <summary>
             Downloads a single file belonging to an update package. Supports resuming a partial download
             </summary>
-            <param name="destinationFilePath">Download destination file.</param>
-            <param name="updateFile">The update file to download.</param>
+            <param name="destinationFilePath">Download destination file</param>
+            <param name="updateFile">The update file to download</param>
+            <param name="progress">The current download progress</param>
             <param name="cancellationToken">Cancellation token</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.ContentDownloader.DownloadToStream(System.IO.Stream,Microsoft.PackageGraph.ObjectModel.IContentFile,System.Int64,System.Threading.CancellationToken)">
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ContentDownloader.DownloadToStreamAsync(System.IO.Stream,Microsoft.PackageGraph.ObjectModel.IContentFile,System.Int64,Microsoft.PackageGraph.ObjectModel.ContentOperationProgress,System.Threading.CancellationToken)">
             <summary>
             Downloads the specified URL to the destination file stream
             </summary>
             <param name="destination">The file stream to write content to</param>
             <param name="updateFile">The update to download</param>
             <param name="startOffset">Offset to resume download at</param>
+            <param name="progress">The current download progress</param>
             <param name="cancellationToken">Cancellation token</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.ContentDownloader.GetFileSizeOnServer(System.Net.Http.HttpClient,System.String,System.Threading.CancellationToken)">
+        <member name="M:Microsoft.PackageGraph.Storage.Local.ContentDownloader.GetFileSizeOnServerAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Retrieves the size of HTTP resource using a HEAD request.
             </summary>
-            <param name="client"></param>
-            <param name="url"></param>
-            <param name="cancellationToken"></param>
-            <returns></returns>
-            <exception cref="T:System.Exception"></exception>
+            <param name="url">The URL of the resource</param>
+            <param name="cancellationToken">Cancellation token</param>
+            <returns>The size of the resource in bytes</returns>
+            <exception cref="T:System.Net.Http.HttpRequestException">If the HEAD request fails</exception>
+            <exception cref="T:System.InvalidOperationException">If the content length cannot be determined</exception>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.ContentHash">
             <summary>
@@ -3421,8 +3430,8 @@
             </summary>
             <param name="path">Path where to create the store</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.Download(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IContentFile},System.Threading.CancellationToken)">
-            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Download(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IContentFile},System.Threading.CancellationToken)"/>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.DownloadAsync(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IContentFile},System.Threading.CancellationToken)">
+            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.DownloadAsync(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IContentFile},System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.Contains(Microsoft.PackageGraph.ObjectModel.IContentFile)">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Contains(Microsoft.PackageGraph.ObjectModel.IContentFile)"/>
@@ -3450,9 +3459,6 @@
             </summary>
             <param name="fileDigest">The update content digest.</param>
             <returns>Content parent directory name</returns>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.DownloadAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)">
-            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.DownloadAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.Contains(Microsoft.PackageGraph.ObjectModel.IContentFileDigest,System.String@)">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Contains(Microsoft.PackageGraph.ObjectModel.IContentFileDigest,System.String@)"/>
