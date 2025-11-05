@@ -16,7 +16,10 @@ namespace Microsoft.PackageGraph.Storage.Local
     /// </summary>
     public class ContentDownloader
     {
-        private static readonly HttpClient _client = new();
+        private static readonly HttpClient _client = new(new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(15)
+        });
 
         /// <summary>
         /// Provides progress notifications during download

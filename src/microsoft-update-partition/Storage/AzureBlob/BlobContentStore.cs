@@ -23,6 +23,11 @@ namespace Microsoft.PackageGraph.Storage.Azure
     /// </summary>
     public class BlobContentStore : IContentStore
     {
+        private static readonly HttpClient _client = new(new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(15)
+        });
+
         /// <inheritdoc cref="IContentStore.Progress"/>
         public event EventHandler<ContentOperationProgress> Progress;
 
@@ -112,62 +117,59 @@ namespace Microsoft.PackageGraph.Storage.Azure
 
                 progress.CurrentOperation = PackagesOperationType.DownloadFileProgress;
                 var fileBlob = GetBlockBlobClientForFile(file);
-
-                using (var client = new HttpClient())
+                var fileSizeOnServer = await GetFileSizeOnSourceServerAsync(_client, file.Source, cancelToken).ConfigureAwait(false);
+                if (cancelToken.IsCancellationRequested)
                 {
-                    var fileSizeOnServer = await GetFileSizeOnSourceServerAsync(client, file.Source, cancelToken).ConfigureAwait(false);
+                    break;
+                }
+
+                if ((ulong)fileSizeOnServer != file.Size)
+                {
+                    throw new Exception($"Mismatch in file size. Expected {file.Size}, server has {fileSizeOnServer}");
+                }
+
+                int startBlock = 0;
+                var blockCount = fileSizeOnServer / BlockSize + (fileSizeOnServer % BlockSize == 0 ? 0 : 1);
+                List<string> blockIdList;
+                if ((await fileBlob.ExistsAsync(cancelToken).ConfigureAwait(false)).Value)
+                {
+                    var fileBlocks = (await fileBlob.GetBlockListAsync(BlockListTypes.Uncommitted, cancellationToken: cancelToken).ConfigureAwait(false)).Value.UncommittedBlocks;
+
+                    if (fileBlocks.Count() <= blockCount)
+                    {
+                        startBlock = fileBlocks.Count();
+                    }
+
+                    blockIdList = fileBlocks.Select(b => b.Name).ToList();
+                    progress.BytesProcessed = fileBlocks.Sum(b => b.Size);
+                }
+                else
+                {
+                    blockIdList = new List<string>();
+                }
+
+                for (int i = startBlock; i < blockCount; i++)
+                {
+                    var startOffset = i * BlockSize;
+                    var blockSize = fileSizeOnServer % BlockSize != 0 && i == (blockCount - 1) ? fileSizeOnServer % BlockSize : BlockSize;
+
+                    await fileBlob.StageBlockFromUriAsync(new Uri(file.Source), Convert.ToBase64String(BitConverter.GetBytes(i)), new StageBlockFromUriOptions { SourceRange = new HttpRange(startOffset, blockSize) }, CancellationToken.None).ConfigureAwait(false);
+                    blockIdList.Add(Convert.ToBase64String(BitConverter.GetBytes(i)));
+
                     if (cancelToken.IsCancellationRequested)
                     {
                         break;
                     }
 
-                    if ((ulong)fileSizeOnServer != file.Size)
-                    {
-                        throw new Exception($"Mismatch in file size. Expected {file.Size}, server has {fileSizeOnServer}");
-                    }
-
-                    int startBlock = 0;
-                    var blockCount = fileSizeOnServer / BlockSize + (fileSizeOnServer % BlockSize == 0 ? 0 : 1);
-                    List<string> blockIdList;
-                    if ((await fileBlob.ExistsAsync(cancelToken).ConfigureAwait(false)).Value)
-                    {
-                        var fileBlocks = (await fileBlob.GetBlockListAsync(BlockListTypes.Uncommitted, cancellationToken: cancelToken).ConfigureAwait(false)).Value.UncommittedBlocks;
-
-                        if (fileBlocks.Count() <= blockCount)
-                        {
-                            startBlock = fileBlocks.Count();
-                        }
-
-                        blockIdList = fileBlocks.Select(b => b.Name).ToList();
-                        progress.BytesProcessed = fileBlocks.Sum(b => b.Size);
-                    }
-                    else
-                    {
-                        blockIdList = new List<string>();
-                    }
-
-                    for (int i = startBlock; i < blockCount; i++)
-                    {
-                        var startOffset = i * BlockSize;
-                        var blockSize = fileSizeOnServer % BlockSize != 0 && i == (blockCount - 1) ? fileSizeOnServer % BlockSize : BlockSize;
-
-                        await fileBlob.StageBlockFromUriAsync(new Uri(file.Source), Convert.ToBase64String(BitConverter.GetBytes(i)), new StageBlockFromUriOptions { SourceRange = new HttpRange(startOffset, blockSize) }, CancellationToken.None).ConfigureAwait(false);
-                        blockIdList.Add(Convert.ToBase64String(BitConverter.GetBytes(i)));
-
-                        if (cancelToken.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
-                        Interlocked.Add(ref _DownloadedSize, blockSize);
-                        progress.BytesProcessed += blockSize;
-                        Progress?.Invoke(this, progress);
-                    }
-
-                    await fileBlob.CommitBlockListAsync(blockIdList, cancellationToken: cancelToken).ConfigureAwait(false);
-                    using var markerFile = await GetBlockBlobClientMarkerForFile(file).OpenWriteAsync(true, cancellationToken: cancelToken).ConfigureAwait(false);
-                    await markerFile.WriteAsync(Convert.FromBase64String(file.Digest.DigestBase64), cancelToken).ConfigureAwait(false);
+                    Interlocked.Add(ref _DownloadedSize, blockSize);
+                    progress.BytesProcessed += blockSize;
+                    Progress?.Invoke(this, progress);
                 }
+
+                await fileBlob.CommitBlockListAsync(blockIdList, cancellationToken: cancelToken).ConfigureAwait(false);
+                using var markerFile = await GetBlockBlobClientMarkerForFile(file).OpenWriteAsync(true, cancellationToken: cancelToken).ConfigureAwait(false);
+                await markerFile.WriteAsync(Convert.FromBase64String(file.Digest.DigestBase64), cancelToken).ConfigureAwait(false);
+
 
                 Interlocked.Add(ref _DownloadedSize, (long)file.Size * -1);
                 Interlocked.Add(ref _QueuedSize, (long)file.Size * -1);
@@ -189,7 +191,7 @@ namespace Microsoft.PackageGraph.Storage.Azure
             }
 
             return headResponse.Content.Headers.ContentLength ??
-                   throw new InvalidOperationException($"Could not determine file size from {url}");
+                throw new InvalidOperationException($"Could not determine file size from {url}");
         }
 
         /// <inheritdoc cref="IContentStore.Contains(IContentFile)"/>
