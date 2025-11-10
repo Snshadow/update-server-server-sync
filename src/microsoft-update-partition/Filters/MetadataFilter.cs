@@ -120,18 +120,34 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             {
                 PackageType = packageType,
                 ProductFilter = ProductFilter,
+                ExcludedProductFilter = ExcludedProductFilter,
                 ClassificationFilter = ClassificationFilter,
+                ExcludedClassificationFilter = ExcludedClassificationFilter,
                 IdFilter = IdFilter,
+                ExcludedIdFilter = ExcludedIdFilter,
                 TitleFilter = TitleFilter,
+                ExcludedTitleFilter = ExcludedTitleFilter,
                 SkipSuperseded = SkipSuperseded,
                 IncludeExpired = IncludeExpired,
                 FirstX = FirstX,
                 AfterX = AfterX,
                 HardwareIdFilter = HardwareIdFilter,
+                ExcludedHardwareIdFilter = ExcludedHardwareIdFilter,
                 ComputerHardwareIdFilter = ComputerHardwareIdFilter,
+                ExcludedComputerHardwareIdFilter = ExcludedComputerHardwareIdFilter,
                 KbArticleFilter = KbArticleFilter,
+                ExcludedKbArticleFilter = ExcludedKbArticleFilter,
                 SortOrder = SortOrder
             };
+        }
+
+        private static IEnumerable<Guid> GetCategoryPrerequisiteIds(MicrosoftUpdatePackage update)
+        {
+            return update.Prerequisites
+                .OfType<AtLeastOne>()
+                .Where(p => p.IsCategory)
+                .SelectMany(p => p.Simple)
+                .Select(s => s.UpdateId);
         }
 
         private static bool TryGetStoreBackedFilter(IEnumerable<IPackage> packages, out IStoreBackedFilter storeBackedFilter)
@@ -163,10 +179,22 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public List<Guid> ProductFilter;
 
         /// <summary>
+        /// Gets or sets the product exclusion filter
+        /// </summary>
+        /// <value>List of product IDs to exclude</value>
+        public List<Guid> ExcludedProductFilter;
+
+        /// <summary>
         /// Gets or sets the classification filter
         /// </summary>
         /// <value>List of classification IDs</value>
         public List<Guid> ClassificationFilter;
+
+        /// <summary>
+        /// Gets or sets the classification exclusion filter
+        /// </summary>
+        /// <value>List of classification IDs to exclude</value>
+        public List<Guid> ExcludedClassificationFilter;
         /// <summary>
         /// Get or set the ID filter
         /// </summary>
@@ -174,10 +202,22 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public List<Guid> IdFilter;
 
         /// <summary>
+        /// Get or set the ID exclusion filter
+        /// </summary>
+        /// <value>List of update IDs to exclude</value>
+        public List<Guid> ExcludedIdFilter;
+
+        /// <summary>
         /// Get or set the title filter
         /// </summary> 
         /// <value>Title filter string</value>
         public string TitleFilter;
+
+        /// <summary>
+        /// Get or set the title exclusion filter
+        /// </summary>
+        /// <value>Title filter string; matching titles are excluded</value>
+        public string ExcludedTitleFilter;
 
         /// <summary>
         /// Get or set whether to filter out superseded updates
@@ -210,16 +250,34 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public string HardwareIdFilter;
 
         /// <summary>
+        /// Returns driver updates that do not match this hardware ID
+        /// </summary>
+        /// <value>Hardware id string to exclude</value>
+        public string ExcludedHardwareIdFilter;
+
+        /// <summary>
         /// Returns only driver updates that target this computer hardware ID
         /// </summary>
         /// <value>Computer hardware ID (GUID)</value>
         public Guid ComputerHardwareIdFilter;
 
         /// <summary>
+        /// Returns only updates that do not target this computer hardware ID
+        /// </summary>
+        /// <value>Computer hardware ID (GUID) to exclude</value>
+        public Guid ExcludedComputerHardwareIdFilter;
+
+        /// <summary>
         /// Get or set the KB article filter
         /// </summary>
         /// <value>List of KB article ids - numbers only</value>
         public List<string> KbArticleFilter;
+
+        /// <summary>
+        /// Get or set the KB article exclusion filter
+        /// </summary>
+        /// <value>List of KB article ids to exclude - numbers only</value>
+        public List<string> ExcludedKbArticleFilter;
 
         /// <summary>
         /// Get the sorting order of this filter
@@ -324,11 +382,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
             IEnumerable<T> filteredUpdates;
 
-            if (!string.IsNullOrEmpty(HardwareIdFilter) || (Guid.Empty != ComputerHardwareIdFilter))
+            if (!string.IsNullOrEmpty(HardwareIdFilter) ||
+                !string.IsNullOrEmpty(ExcludedHardwareIdFilter) ||
+                ComputerHardwareIdFilter != Guid.Empty ||
+                ExcludedComputerHardwareIdFilter != Guid.Empty)
             {
                 filteredUpdates = updates.Where(u => u is DriverUpdate);
             }
-            else if (KbArticleFilter is { Count: > 0 })
+            else if (KbArticleFilter is { Count: > 0 } || ExcludedKbArticleFilter is { Count: > 0 })
             {
                 filteredUpdates = updates.Where(u => u is SoftwareUpdate);
             }
@@ -345,6 +406,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     .Any(metadata => metadata.HardwareId.Equals(HardwareIdFilter, StringComparison.OrdinalIgnoreCase)));
             }
 
+            if (!string.IsNullOrEmpty(ExcludedHardwareIdFilter))
+            {
+                filteredUpdates = filteredUpdates.Where(
+                    u => u is not DriverUpdate driverUpdate ||
+                    !driverUpdate.GetDriverMetadata()
+                        .Any(metadata => metadata.HardwareId.Equals(ExcludedHardwareIdFilter, StringComparison.OrdinalIgnoreCase)));
+            }
+
             if (ComputerHardwareIdFilter != Guid.Empty)
             {
                 filteredUpdates = filteredUpdates.Where(
@@ -353,28 +422,50 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     .Any(metadata => metadata.DistributionComputerHardwareId.Contains(ComputerHardwareIdFilter)));
             }
 
+            if (ExcludedComputerHardwareIdFilter != Guid.Empty)
+            {
+                filteredUpdates = filteredUpdates.Where(
+                    u => u is not DriverUpdate driverUpdate ||
+                    !driverUpdate.GetDriverMetadata()
+                        .Any(metadata => metadata.DistributionComputerHardwareId.Contains(ExcludedComputerHardwareIdFilter)));
+            }
+
             if (ProductFilter is { Count: > 0 })
             {
-                filteredUpdates = filteredUpdates.Where(u =>
-                {
-                    var categories = u.Prerequisites.OfType<AtLeastOne>().Where(p => p.IsCategory).SelectMany(p => p.Simple).Select(s => s.UpdateId);
-                    return categories.Intersect(ProductFilter).Any();
-                });
+                var productSet = ProductFilter.ToHashSet();
+                filteredUpdates = filteredUpdates.Where(u => GetCategoryPrerequisiteIds(u).Any(productSet.Contains));
+            }
+
+            if (ExcludedProductFilter is { Count: > 0 })
+            {
+                var excludedProductSet = ExcludedProductFilter.ToHashSet();
+                filteredUpdates = filteredUpdates.Where(u => !GetCategoryPrerequisiteIds(u).Any(excludedProductSet.Contains));
             }
 
             if (ClassificationFilter is { Count: > 0 })
             {
-                filteredUpdates = filteredUpdates.Where(u =>
-                {
-                    var categories = u.Prerequisites.OfType<AtLeastOne>().Where(p => p.IsCategory).SelectMany(p => p.Simple).Select(s => s.UpdateId);
-                    return categories.Intersect(ClassificationFilter).Any();
-                });
+                var classificationSet = ClassificationFilter.ToHashSet();
+                filteredUpdates = filteredUpdates.Where(u => GetCategoryPrerequisiteIds(u).Any(classificationSet.Contains));
+            }
+
+            if (ExcludedClassificationFilter is { Count: > 0 })
+            {
+                var excludedClassificationSet = ExcludedClassificationFilter.ToHashSet();
+                filteredUpdates = filteredUpdates.Where(u => !GetCategoryPrerequisiteIds(u).Any(excludedClassificationSet.Contains));
             }
 
             if (KbArticleFilter is { Count: > 0 })
             {
                 var kbLookup = KbArticleFilter.ToHashSet();
                 filteredUpdates = filteredUpdates.OfType<SoftwareUpdate>().Where(u => kbLookup.Contains(u.KBArticleId)).Cast<T>();
+            }
+
+            if (ExcludedKbArticleFilter is { Count: > 0 })
+            {
+                var excludedKbLookup = ExcludedKbArticleFilter.ToHashSet();
+                filteredUpdates = filteredUpdates.Where(u =>
+                    u is not SoftwareUpdate softwareUpdate ||
+                    !excludedKbLookup.Contains(softwareUpdate.KBArticleId));
             }
 
             // Apply the title filter
@@ -384,11 +475,23 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 filteredUpdates = filteredUpdates.Where(category => category.MatchTitle(filterTokens));
             }
 
+            if (!string.IsNullOrEmpty(ExcludedTitleFilter))
+            {
+                var excludeTokens = ExcludedTitleFilter.Trim().Split([' '], StringSplitOptions.RemoveEmptyEntries);
+                filteredUpdates = filteredUpdates.Where(category => !category.MatchTitle(excludeTokens));
+            }
+
             // Apply the id filter
             if (IdFilter is { Count: > 0 })
             {
                 // Remove all updates that don't match the ID filter
                 filteredUpdates = filteredUpdates.Where(u => IdFilter.Contains(u.Id.ID));
+            }
+
+            if (ExcludedIdFilter is { Count: > 0 })
+            {
+                var excludedIdSet = ExcludedIdFilter.ToHashSet();
+                filteredUpdates = filteredUpdates.Where(u => !excludedIdSet.Contains(u.Id.ID));
             }
 
             if (SkipSuperseded)

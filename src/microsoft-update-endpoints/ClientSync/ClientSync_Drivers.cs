@@ -37,9 +37,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             var installedNonLeafUpdatesGuids = GetInstalledNotLeafGuidsFromSyncParameters(parameters);
 
             // Initialize the response
-            var syncResult = new SyncInfo()
+            var response = new SyncInfo()
             {
-                NewCookie = new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = cookie.EncryptedData },
+                NewCookie = new Cookie()
+                {
+                    Expiration = DateTime.UtcNow.AddDays(5),
+                    EncryptedData = cookie.EncryptedData
+                },
                 DriverSyncNotNeeded = "false",
                 Truncated = false
             };
@@ -61,18 +65,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                     hardwareIdsToMatch.AddRange(device.CompatibleIDs);
                 }
 
+                // TODO store and get data from store instead of generating using whole list
                 // Get best match driver
-                var driverMatchResult = DriverMatcher.MatchDriver(hardwareIdsToMatch, computerHardwareIds, installedNonLeafUpdatesGuids);
+                var driverMatcher = DriverUpdateMatching.FromPackageSource(MetadataSource);
+                var driverMatchResult = driverMatcher.MatchDriver(hardwareIdsToMatch, computerHardwareIds, installedNonLeafUpdatesGuids);
 
                 // If we have a match and the client does not have it, add it to the list
                 if (driverMatchResult is not null &&
                     !cachedDrivers.Contains(driverMatchResult.Driver.Id) &&
                     !IsInstalledDriverBetterMatch(device.installedDriver, driverMatchResult, hardwareIdsToMatch, computerHardwareIds))
                 {
-                    if (GetDeployment(IdToRevisionMap[driverMatchResult.Driver.Id.ID]) is not null)
+                    if (GetDeployment(driverMatchResult.Driver.Id.Revision) is not null)
                     {
                         var identity = driverMatchResult.Driver.Id;
-                        var revision = IdToRevisionMap[driverMatchResult.Driver.Id.ID];
+                        var revision = driverMatchResult.Driver.Id.Revision;
 
                         // Get core XML fragment for driver update
                         var coreXml = GetCoreFragment(identity);
@@ -109,7 +115,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 // Stop matching if we have max updates already
                 if (driverUpdates.Count == MaxUpdatesInResponse)
                 {
-                    syncResult.Truncated = true;
+                    response.Truncated = true;
                     break;
                 }
             }
@@ -119,16 +125,16 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 OnUnApprovedDriverUpdatesRequested?.Invoke(unapprovedDriversMatched);
             }
 
-            syncResult.NewUpdates = driverUpdates.ToArray();
+            response.NewUpdates = driverUpdates.ToArray();
 
             MetadataSourceLock.ExitReadLock();
 
-            var computerId = GetComputerIdFromCookie(cookie);
+            var (computerId, _) = ParseCookie(cookie);
 
             // Update last synchronization time for computer
             DeployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
 
-            return Task.FromResult(syncResult);
+            return Task.FromResult(response);
         }
 
         /// <summary>

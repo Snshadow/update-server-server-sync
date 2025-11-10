@@ -86,11 +86,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
                 var typedHeaders = Request.GetTypedHeaders();
                 if (typedHeaders.Range is not null)
                 {
-                    ContentLogger.LogInformation($"Requested {fileName}, range {typedHeaders.Range.Ranges.First().From} -> {typedHeaders.Range.Ranges.First().To}");
+                    ContentLogger.LogInformation("Requested {fileName}, range {from} -> {to}", fileName, typedHeaders.Range.Ranges.First().From, typedHeaders.Range.Ranges.First().To);
                 }
                 else
                 {
-                    ContentLogger.LogInformation($"Requested {fileName}, no ranges");
+                    ContentLogger.LogInformation("Requested {fileName}, no ranges", fileName);
                 }
                 return new FileStreamResult(ContentStore.Get(parsedContentHash), "application/octet-stream")
                 {
@@ -131,7 +131,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
 
             if (ContentStore.Contains(parsedContentHash, out var fileName))
             {
-                ContentLogger.LogInformation($"HEAD {fileName}");
+                ContentLogger.LogInformation("HEAD {fileName}", fileName);
 
                 using (var contentStream = ContentStore.Get(parsedContentHash))
                 {

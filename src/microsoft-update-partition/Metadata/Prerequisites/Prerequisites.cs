@@ -15,28 +15,28 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
                 return true;
             }
 
-            foreach(var prereq in update.Prerequisites)
+            foreach (var prereq in update.Prerequisites)
             {
-                if (prereq is Simple)
+                if (prereq is Simple simple)
                 {
-                    if (!installedPrerequisites.Contains((prereq as Simple).UpdateId))
+                    if (!installedPrerequisites.Contains(simple.UpdateId))
                     {
                         return false;
                     }
                 }
-                else if (prereq is AtLeastOne)
+                else if (prereq is AtLeastOne atLeastOne)
                 {
-                    var atLeastOne = false;
-                    foreach(var atLeastOnePrereq in (prereq as AtLeastOne).Simple)
+                    var hasAtLeastOne = false;
+                    foreach (var atLeastOnePrereq in atLeastOne.Simple)
                     {
                         if (installedPrerequisites.Contains(atLeastOnePrereq.UpdateId))
                         {
-                            atLeastOne = true;
+                            hasAtLeastOne = true;
                             break;
                         }
                     }
 
-                    if (!atLeastOne)
+                    if (!hasAtLeastOne)
                     {
                         return false;
                     }

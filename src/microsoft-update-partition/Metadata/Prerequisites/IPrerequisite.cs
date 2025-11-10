@@ -9,6 +9,5 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
     /// </summary>
     public interface IPrerequisite
     {
-        
     }
 }

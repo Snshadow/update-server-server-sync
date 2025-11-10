@@ -1156,8 +1156,11 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             var hasProductFilter = metadataFilter.ProductFilter is { Count: > 0 };
             var hasClassificationFilter = metadataFilter.ClassificationFilter is { Count: > 0 };
+            var hasExcludedProductFilter = metadataFilter.ExcludedProductFilter is { Count: > 0 };
+            var hasExcludedClassificationFilter = metadataFilter.ExcludedClassificationFilter is { Count: > 0 };
+            var requiresCategoryFiltering = hasProductFilter || hasClassificationFilter || hasExcludedProductFilter || hasExcludedClassificationFilter;
 
-            if (hasProductFilter || hasClassificationFilter)
+            if (requiresCategoryFiltering)
             {
                 tableBuilder.Append("""
 
@@ -1176,8 +1179,6 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 groupByBuilder.Append("\nHAVING 1=1");
 
-                List<string> idParamList = [];
-
                 if (hasProductFilter)
                 {
                     var productParams = metadataFilter.ProductFilter.Select((id, index) =>
@@ -1187,7 +1188,17 @@ namespace Microsoft.PackageGraph.Storage.Local
                         return paramName;
                     }).ToList();
                     groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", productParams)}) THEN 1 END) > 0");
-                    idParamList.AddRange(productParams);
+                }
+
+                if (hasExcludedProductFilter)
+                {
+                    var excludedProductParams = metadataFilter.ExcludedProductFilter.Select((id, index) =>
+                    {
+                        var paramName = $"@excluded_product{index}";
+                        command.Parameters.Add(paramName, SqliteType.Text).Value = id;
+                        return paramName;
+                    }).ToList();
+                    groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", excludedProductParams)}) THEN 1 END) = 0");
                 }
 
                 if (hasClassificationFilter)
@@ -1199,10 +1210,18 @@ namespace Microsoft.PackageGraph.Storage.Local
                         return paramName;
                     }).ToList();
                     groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", classificationParams)}) THEN 1 END) > 0");
-                    idParamList.AddRange(classificationParams);
                 }
 
-                whereBuilder.Append($"\nAND c.value COLLATE NOCASE IN ({string.Join(",", idParamList)})");
+                if (hasExcludedClassificationFilter)
+                {
+                    var excludedClassificationParams = metadataFilter.ExcludedClassificationFilter.Select((id, index) =>
+                    {
+                        var paramName = $"@excluded_classification{index}";
+                        command.Parameters.Add(paramName, SqliteType.Text).Value = id;
+                        return paramName;
+                    }).ToList();
+                    groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", excludedClassificationParams)}) THEN 1 END) = 0");
+                }
             }
 
             if (metadataFilter.PackageType != -1)
@@ -1215,6 +1234,12 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 whereBuilder.Append("\nAND i.title LIKE @title");
                 command.Parameters.Add("@title", SqliteType.Text).Value = $"%{metadataFilter.TitleFilter}%";
+            }
+
+            if (!string.IsNullOrEmpty(metadataFilter.ExcludedTitleFilter))
+            {
+                whereBuilder.Append("\nAND i.title NOT LIKE @excluded_title");
+                command.Parameters.Add("@excluded_title", SqliteType.Text).Value = $"%{metadataFilter.ExcludedTitleFilter}%";
             }
 
             if (!metadataFilter.IncludeExpired)
@@ -1236,8 +1261,24 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 whereBuilder.Append($"\nAND i.guid IN ({string.Join(",", idParams)})");
             }
+            if (metadataFilter.ExcludedIdFilter is { Count: > 0 })
+            {
+                var index = 0;
+                List<string> excludedIdParams = [];
+                foreach (var id in metadataFilter.ExcludedIdFilter)
+                {
+                    var paramName = $"@excluded_id{index}";
+                    excludedIdParams.Add(paramName);
+                    command.Parameters.Add(paramName, SqliteType.Text).Value = id;
+                    index++;
+                }
 
-            if (metadataFilter.KbArticleFilter is { Count: > 0 } || metadataFilter.SortOrder.KbArticle != SortOrder.None)
+                whereBuilder.Append($"\nAND i.guid NOT IN ({string.Join(",", excludedIdParams)})");
+            }
+
+            if (metadataFilter.KbArticleFilter is { Count: > 0 } ||
+                metadataFilter.ExcludedKbArticleFilter is { Count: > 0 } ||
+                metadataFilter.SortOrder.KbArticle != SortOrder.None)
             {
                 tableBuilder.Append("\nINNER JOIN software_informations AS si ON si.revision_id = i.id");
 
@@ -1255,6 +1296,21 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                     whereBuilder.Append($"\nAND si.kb_article_id IN ({string.Join(",", kbParams)})");
                 }
+
+                if (metadataFilter.ExcludedKbArticleFilter is { Count: > 0 })
+                {
+                    var index = 0;
+                    List<string> excludedKbParams = [];
+                    foreach (var kb in metadataFilter.ExcludedKbArticleFilter)
+                    {
+                        var paramName = $"@excluded_kb{index}";
+                        excludedKbParams.Add(paramName);
+                        command.Parameters.Add(paramName, SqliteType.Text).Value = kb;
+                        index++;
+                    }
+
+                    whereBuilder.Append($"\nAND si.kb_article_id NOT IN ({string.Join(",", excludedKbParams)})");
+                }
             }
 
             if (metadataFilter.SkipSuperseded)
@@ -1265,7 +1321,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             if (countOnly)
             {
                 queryBuilder.Append("SELECT COUNT(*)");
-                if (hasProductFilter || hasClassificationFilter)
+                if (groupByBuilder.Length > 0)
                 {
                     queryBuilder.Append(" FROM (SELECT 1");
                 }
@@ -1282,7 +1338,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 queryBuilder.Append($"\nGROUP BY {groupByBuilder}");
             }
 
-            if (countOnly && (hasProductFilter || hasClassificationFilter))
+            if (countOnly && groupByBuilder.Length > 0)
             {
                 queryBuilder.Append(')');
             }
@@ -1291,8 +1347,10 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 var requiresDriverFiltering = metadataFilter switch
                 {
-                    { HardwareIdFilter: not null and { Length: > 0 } } => true,
+                    { HardwareIdFilter.Length: > 0 } => true,
+                    { ExcludedHardwareIdFilter.Length: > 0 } => true,
                     { ComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
+                    { ExcludedComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
                     _ => false
                 };
 
@@ -1380,7 +1438,9 @@ namespace Microsoft.PackageGraph.Storage.Local
             var requiresDriverFiltering = metadataFilter switch
             {
                 { HardwareIdFilter: not null and { Length: > 0 } } => true,
+                { ExcludedHardwareIdFilter: not null and { Length: > 0 } } => true,
                 { ComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
+                { ExcludedComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
                 _ => false
             };
 
@@ -1407,11 +1467,31 @@ namespace Microsoft.PackageGraph.Storage.Local
                         }
                     }
 
+                    if (!string.IsNullOrEmpty(metadataFilter.ExcludedHardwareIdFilter))
+                    {
+                        var excludedHardwareMatch = metadata.Any(md =>
+                            md.HardwareId.Equals(metadataFilter.ExcludedHardwareIdFilter, StringComparison.OrdinalIgnoreCase));
+                        if (excludedHardwareMatch)
+                        {
+                            continue;
+                        }
+                    }
+
                     if (metadataFilter.ComputerHardwareIdFilter != Guid.Empty)
                     {
                         var computerMatch = metadata.Any(md =>
                             md.DistributionComputerHardwareId.Contains(metadataFilter.ComputerHardwareIdFilter));
                         if (!computerMatch)
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (metadataFilter.ExcludedComputerHardwareIdFilter != Guid.Empty)
+                    {
+                        var excludedComputerMatch = metadata.Any(md =>
+                            md.DistributionComputerHardwareId.Contains(metadataFilter.ExcludedComputerHardwareIdFilter));
+                        if (excludedComputerMatch)
                         {
                             continue;
                         }

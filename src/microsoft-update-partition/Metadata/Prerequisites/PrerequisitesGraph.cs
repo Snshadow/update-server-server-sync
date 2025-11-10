@@ -24,14 +24,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
         /// Creates a prerequisite graph for all the packages contained in the specified store
         /// </summary>
         /// <param name="source">Package metadata store</param>
+        /// <param name="cachedGuids">Cached updates known by the client</param>
         /// <returns></returns>
         /// <exception cref="Exception">If an unknown prerequisite type is encountered</exception>
-        public static PrerequisitesGraph FromIndexedPackageSource(IMetadataStore source)
+        public static PrerequisitesGraph FromIndexedPackageSource(IMetadataStore source, List<Guid> cachedGuids)
         {
-            var graph = new Dictionary<Guid, PrerequisiteGraphNode>();
+            Dictionary<Guid, PrerequisiteGraphNode> graph = [];
+            MetadataFilter filter = new()
+            {
+                IncludeExpired = true,
+                ExcludedIdFilter = cachedGuids
+            };
 
-            var allMicrosoftUpdatePackages = source.OfType<MicrosoftUpdatePackage>();
-            var updatesWithPrerequisites = allMicrosoftUpdatePackages.Where(update => (update.Prerequisites?.Count ?? 0) > 0);
+            var newMicrosoftUpdatePackages = filter.Apply<MicrosoftUpdatePackage>(source);
+            var updatesWithPrerequisites = newMicrosoftUpdatePackages.Where(update => (update.Prerequisites?.Count ?? 0) > 0);
 
             foreach (var updateWithPrerequisites in updatesWithPrerequisites)
             {
@@ -45,13 +51,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
                 var prerequisites = updateWithPrerequisites.Prerequisites;
                 var flatListPrerequisites = prerequisites.SelectMany(p =>
                 {
-                    if (p is Simple)
+                    if (p is Simple simple)
                     {
-                        return new List<Guid>() { (p as Simple).UpdateId };
+                        return [simple.UpdateId];
                     }
-                    else if (p is AtLeastOne)
+                    else if (p is AtLeastOne atLeastOne)
                     {
-                        return (p as AtLeastOne).Simple.Select(s => s.UpdateId);
+                        return atLeastOne.Simple.Select(s => s.UpdateId);
                     }
                     else
                     {

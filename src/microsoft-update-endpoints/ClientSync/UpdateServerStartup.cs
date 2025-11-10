@@ -121,9 +121,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 app.UseEndpoints(endpoints =>
                 {
                     endpoints.MapControllerRoute(
-                       name: "getContent",
-                       pattern: "microsoftupdate/content/{contentHash}",
-                       defaults: new { controller = "MicrosoftUpdateContent", action = "GetMicrosoftUpdateContent" });
+                        name: "getContent",
+                        pattern: "microsoftupdate/content/{contentHash}",
+                        defaults: new { controller = "MicrosoftUpdateContent", action = "GetMicrosoftUpdateContent" });
                 });
             }
 

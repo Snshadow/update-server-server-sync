@@ -132,7 +132,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     .GroupBy(identity => identity.ID)
                     .ToDictionary(group => group.Key, group => group.ToList());
 
-                if (_identityLookup is not null && _identityLookup.TryGetValue(id, out var identities))
+                if (_identityLookup?.TryGetValue(id, out var identities) == true)
                 {
                     List<MicrosoftUpdatePackage> resolvedPackages = [];
                     foreach (var identity in identities)

@@ -3,13 +3,13 @@
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.ServiceModel;
@@ -30,34 +30,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// </summary>
         public IMetadataStore MetadataSource { get; private set; }
 
-        readonly ReaderWriterLockSlim MetadataSourceLock = new();
-
-        /// <summary>
-        /// Mapping of update index to its identity
-        /// Update indexes are used when communicating with clients, as they are smaller that full Identities
-        /// </summary>
-        Dictionary<int, MicrosoftUpdatePackageIdentity> MetadataSourceIndex;
-
-        Config ServiceConfiguration;
-
-        private IEnumerable<Guid> RootUpdates;
-
-        private IEnumerable<Guid> NonLeafUpdates;
-
-        private IEnumerable<Guid> LeafUpdatesGuids;
-
-        private List<Guid> SoftwareLeafUpdateGuids;
-
-        private Dictionary<Guid, int> IdToRevisionMap;
-        private Dictionary<Guid, MicrosoftUpdatePackageIdentity> IdToFullIdentityMap;
-
         private IDeploySyncStore DeployAndSyncStore;
+
+        private Config ServiceConfiguration;
+
+        private readonly ReaderWriterLockSlim MetadataSourceLock = new();
 
         private const int MaxUpdatesInResponse = 50;
 
-        private string ContentRoot;
-
-        DriverUpdateMatching DriverMatcher;
+        private string _contentRoot;
 
         /// <summary>
         /// Delegate for handling unapproved driver update requests
@@ -83,7 +64,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="hostName"></param>
         public void SetContentURLBase(string hostName)
         {
-            ContentRoot = hostName;
+            _contentRoot = hostName;
         }
 
         /// <summary>
@@ -114,58 +95,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataSource = metadataSource;
 
-            if (MetadataSource is not null)
+            if (MetadataSource is null)
             {
-                PrerequisitesGraph prereqGraph = PrerequisitesGraph.FromIndexedPackageSource(MetadataSource);
-
-                // Get leaf updates - updates that have prerequisites and no dependents
-                LeafUpdatesGuids = prereqGraph.GetLeafUpdates();
-
-                // Get non leaf updates: updates that have prerequisites and dependents
-                NonLeafUpdates = prereqGraph.GetNonLeafUpdates();
-
-                // Get root updates: updates that have no prerequisites
-                RootUpdates = prereqGraph.GetRootUpdates();
-
-                // Filter out leaf updates and only retain software ones that are not superseded
-                var leafSoftwareUpdates = MetadataSource.
-                    OfType<SoftwareUpdate>()
-                    .GroupBy(u => u.Id.ID)
-                    .Select(k => k.Key)
-                    .ToHashSet();
-                SoftwareLeafUpdateGuids = LeafUpdatesGuids.Where(g => leafSoftwareUpdates.Contains(g)).ToList();
-
-                // Get the mapping of update index to identity that is used in the metadata source.
-                MetadataSourceIndex = new Dictionary<int, MicrosoftUpdatePackageIdentity>();
-                foreach (var package in MetadataSource.OfType<MicrosoftUpdatePackage>())
-                {
-                    MetadataSourceIndex.Add(MetadataSource.GetPackageIndex(package.Id), package.Id);
-                }
-
-                var latestRevisionSelector = MetadataSourceIndex
-                    .ToDictionary(k => k.Value, v => v.Key)
-                    .GroupBy(p => p.Key.ID)
-                    .Select(group => group.OrderBy(g => g.Key.Revision).Last());
-
-                // Create a mapping for index to update GUID
-                IdToRevisionMap = latestRevisionSelector.ToDictionary(k => k.Key.ID, v => v.Value);
-
-                // Create a mapping from GUID to full identity
-                IdToFullIdentityMap = latestRevisionSelector.ToDictionary(k => k.Key.ID, v => v.Key);
-
-                DriverMatcher = DriverUpdateMatching.FromPackageSource(MetadataSource);
-            }
-            else
-            {
-                LeafUpdatesGuids = null;
-                NonLeafUpdates = null;
-                RootUpdates = null;
-                SoftwareLeafUpdateGuids = null;
-                MetadataSourceIndex = null;
-                IdToRevisionMap = null;
-                IdToFullIdentityMap = null;
                 DeployAndSyncStore = null;
-                DriverMatcher = null;
             }
 
             MetadataSourceLock.ExitWriteLock();
@@ -202,8 +134,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>A new cookie</returns>
         public Task<Cookie> GetCookieAsync(AuthorizationCookie[] authCookies, Cookie oldCookie, DateTime lastChange, DateTime currentTime, string protocolVersion)
         {
-            // TODO: implement time based EncryptedData to check the requester
-            return Task.FromResult(new Cookie() { Expiration = DateTime.UtcNow.AddDays(5), EncryptedData = authCookies?[0].CookieData ?? new byte[12] });
+            var cookieData = authCookies?[0]?.CookieData;
+            var cookieString = (cookieData is { Length: > 0 }) ? Convert.ToBase64String(cookieData) : string.Empty;
+            var now = DateTime.UtcNow;
+
+            return Task.FromResult(new Cookie()
+            {
+                Expiration = now.AddDays(5),
+                EncryptedData = Encoding.UTF8.GetBytes($"{cookieString}:{now.ToBinary().ToString(CultureInfo.InvariantCulture)}")
+            });
         }
 
         /// <summary>
@@ -265,12 +204,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             List<MicrosoftUpdatePackage> requestedUpdates = new();
             foreach (var requestedRevision in revisionIDs)
             {
-                if (!MetadataSourceIndex.TryGetValue(requestedRevision, out MicrosoftUpdatePackageIdentity id))
-                {
-                    throw new Exception("RevisionID not found");
-                }
-
-                requestedUpdates.Add(MetadataSource.GetPackage(id) as MicrosoftUpdatePackage);
+                requestedUpdates.Add(MetadataSource.GetPackage(requestedRevision) as MicrosoftUpdatePackage);
             }
 
             var updateDataList = new List<UpdateData>();
@@ -311,7 +245,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 fileList.Add(new FileLocation()
                 {
                     FileDigest = Convert.FromBase64String(files[i].Digest.DigestBase64),
-                    Url = string.IsNullOrEmpty(ContentRoot) ? files[i].Urls[0].MuUrl : $"{ContentRoot}/{files[i].Digest.HexString.ToLower()}"
+                    Url = string.IsNullOrEmpty(_contentRoot) ? files[i].Urls[0].MuUrl : $"{_contentRoot}/{files[i].Digest.HexString.ToLower()}"
                 });
             }
 
@@ -418,10 +352,23 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             }
         }
 
-        static private string GetComputerIdFromCookie(Cookie cookie)
+        private static (string comptuerId, DateTime cookieTime) ParseCookie(Cookie cookie)
         {
-            // Remove null character at the end of cookie.EncryptedData
-            return Encoding.UTF8.GetString(cookie.EncryptedData).Trim('\0');
+            var cookieString = Encoding.UTF8.GetString(cookie.EncryptedData);
+            var parts = cookieString.Split(':', 2);
+
+            if (parts.Length == 2)
+            {
+                var dateData = long.Parse(parts[1], NumberStyles.Number, CultureInfo.InvariantCulture);
+
+                // Remove null character at the end of cookie.EncryptedData
+                var computerId = Encoding.UTF8.GetString(Convert.FromBase64String(parts[0])).Trim('\0');
+                var cookieTime = DateTime.FromBinary(dateData);
+
+                return (computerId, cookieTime);
+            }
+
+            throw new InvalidDataException("Invalid cookie data");
         }
 
         private IDeployment GetDeployment(int revisionId)
@@ -441,10 +388,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             {
                 foreach (var nonLeafRevision in clientIndexes)
                 {
-                    if (!MetadataSourceIndex.TryGetValue(nonLeafRevision, out MicrosoftUpdatePackageIdentity nonLeafId))
-                    {
-                        throw new Exception("RevisionID not found");
-                    }
+                    var nonLeafId = MetadataSource.GetPackage(nonLeafRevision).Id as MicrosoftUpdatePackageIdentity;
 
                     updateIdentities.Add(nonLeafId);
                 }

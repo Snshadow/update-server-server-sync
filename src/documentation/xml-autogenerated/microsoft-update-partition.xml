@@ -109,11 +109,23 @@
             </summary>
             <value>List of product IDs</value>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ExcludedProductFilter">
+            <summary>
+            Gets or sets the product exclusion filter
+            </summary>
+            <value>List of product IDs to exclude</value>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ClassificationFilter">
             <summary>
             Gets or sets the classification filter
             </summary>
             <value>List of classification IDs</value>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ExcludedClassificationFilter">
+            <summary>
+            Gets or sets the classification exclusion filter
+            </summary>
+            <value>List of classification IDs to exclude</value>
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IdFilter">
             <summary>
@@ -121,11 +133,23 @@
             </summary>
             <value>List of update IDs (ID only, no revision)</value>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ExcludedIdFilter">
+            <summary>
+            Get or set the ID exclusion filter
+            </summary>
+            <value>List of update IDs to exclude</value>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.TitleFilter">
             <summary>
             Get or set the title filter
             </summary> 
             <value>Title filter string</value>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ExcludedTitleFilter">
+            <summary>
+            Get or set the title exclusion filter
+            </summary>
+            <value>Title filter string; matching titles are excluded</value>
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.SkipSuperseded">
             <summary>
@@ -157,17 +181,35 @@
             </summary>
             <value>Hardware id string</value>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ExcludedHardwareIdFilter">
+            <summary>
+            Returns driver updates that do not match this hardware ID
+            </summary>
+            <value>Hardware id string to exclude</value>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ComputerHardwareIdFilter">
             <summary>
             Returns only driver updates that target this computer hardware ID
             </summary>
             <value>Computer hardware ID (GUID)</value>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ExcludedComputerHardwareIdFilter">
+            <summary>
+            Returns only updates that do not target this computer hardware ID
+            </summary>
+            <value>Computer hardware ID (GUID) to exclude</value>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.KbArticleFilter">
             <summary>
             Get or set the KB article filter
             </summary>
             <value>List of KB article ids - numbers only</value>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ExcludedKbArticleFilter">
+            <summary>
+            Get or set the KB article exclusion filter
+            </summary>
+            <value>List of KB article ids to exclude - numbers only</value>
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.SortOrder">
             <summary>
@@ -1679,11 +1721,12 @@
             Models the prerequisite graph for all packages contained within a metadata store
             </summary>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites.PrerequisitesGraph.FromIndexedPackageSource(Microsoft.PackageGraph.Storage.IMetadataStore)">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites.PrerequisitesGraph.FromIndexedPackageSource(Microsoft.PackageGraph.Storage.IMetadataStore,System.Collections.Generic.List{System.Guid})">
             <summary>
             Creates a prerequisite graph for all the packages contained in the specified store
             </summary>
             <param name="source">Package metadata store</param>
+            <param name="cachedGuids">Cached updates known by the client</param>
             <returns></returns>
             <exception cref="T:System.Exception">If an unknown prerequisite type is encountered</exception>
         </member>
