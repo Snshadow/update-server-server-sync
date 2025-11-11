@@ -99,6 +99,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             var filter = new MetadataFilter()
             {
+                IncludeExpired = true,
                 IdFilter = [id]
             };
 
@@ -116,7 +117,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingRootUpdatesToSyncUpdatesResponse(PrerequisitesGraph prereqGraph, SyncInfo response, out bool updatesAdded)
         {
-            var filter = new MetadataFilter() { IdFilter = prereqGraph.GetRootUpdates().ToList() };
+            var filter = new MetadataFilter()
+            {
+                IncludeExpired = true,
+                IdFilter = prereqGraph.GetRootUpdates().ToList()
+            };
 
             var missingRootUpdates = filter.Apply(MetadataSource)
                 .Select(p => p.Id)
@@ -147,7 +152,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingNonLeafUpdatesToSyncUpdatesResponse(PrerequisitesGraph prereqGraph, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
-            var filter = new MetadataFilter() { IdFilter = prereqGraph.GetNonLeafUpdates().ToList() };
+            var filter = new MetadataFilter()
+            {
+                IncludeExpired = true,
+                IdFilter = prereqGraph.GetNonLeafUpdates().ToList()
+            };
 
             var missingNonLeafs = filter.Apply(MetadataSource)
                 .Select(p => p.Id)
@@ -179,7 +188,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingBundleUpdatesToSyncUpdatesResponse(PrerequisitesGraph prereqGraph, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
-            var filter = new MetadataFilter() { IdFilter = prereqGraph.GetLeafUpdates().ToList() };
+            var filter = new MetadataFilter()
+            {
+                IncludeExpired = true,
+                IdFilter = prereqGraph.GetLeafUpdates().ToList()
+            };
 
             var allMissingBundles = filter.Apply(MetadataSource)
                 .Select(p => p.Id)
@@ -211,7 +224,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingSoftwareUpdatesToSyncUpdatesResponse(PrerequisitesGraph prereqGraph, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
-            var filter = new MetadataFilter() { IdFilter = prereqGraph.GetLeafUpdates().ToList() };
+            var filter = new MetadataFilter()
+            {
+                IncludeExpired = true,
+                IdFilter = prereqGraph.GetLeafUpdates().ToList()
+            };
 
             var allMissingApplicableUpdates = filter.Apply(MetadataSource)
                 .Select(p => p.Id)

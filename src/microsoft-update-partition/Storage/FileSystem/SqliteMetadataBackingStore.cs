@@ -416,12 +416,10 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             using (var metadataStream = package.GetMetadataStream())
             {
-                // Encode to UTF-8 then gzip compress it to save space.
-                using var encodeStream = Encoding.CreateTranscodingStream(metadataStream, Encoding.Unicode, Encoding.UTF8, true);
                 using var valueStream = new MemoryStream();
                 using (var compressStream = new GZipStream(valueStream, CompressionLevel.Optimal, true))
                 {
-                    encodeStream.CopyTo(compressStream);
+                    metadataStream.CopyTo(compressStream);
                 }
 
                 insertMetadataCommand.Parameters["@metadata"].Value = valueStream.ToArray();

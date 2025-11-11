@@ -45,7 +45,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
             var cabTempFile = Path.GetTempFileName();
             var xmlTempFile = Path.GetTempFileName();
 
-            var inMemoryStream = new MemoryStream();
             try
             {
                 File.WriteAllBytes(cabTempFile, compressedData);
@@ -55,35 +54,38 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-                var expandProcess = Process.Start(startInfo);
-                expandProcess.WaitForExit();
 
-                using var decompressedFile = File.OpenRead(xmlTempFile);
-                using var recompressor = new GZipStream(inMemoryStream, CompressionLevel.Fastest, true);
-                decompressedFile.CopyTo(recompressor);
+                using (var expandProcess = Process.Start(startInfo))
+                {
+                    expandProcess.WaitForExit();
+                }
+
+                using MemoryStream inMemoryStream = new();
+
+                // Recompress the XML with GZIP as UTF8
+                using (var utf8Decompressed = Encoding.CreateTranscodingStream(File.OpenRead(xmlTempFile), Encoding.Unicode, Encoding.UTF8))
+                {
+                    using var recompressor = new GZipStream(inMemoryStream, CompressionLevel.Fastest, true);
+                    utf8Decompressed.CopyTo(recompressor);
+                }
+
+                return inMemoryStream.ToArray();
             }
             catch (Exception)
             {
-                inMemoryStream = null;
-            }
-
-            if (File.Exists(cabTempFile))
-            {
-                File.Delete(cabTempFile);
-            }
-
-            if (File.Exists(xmlTempFile))
-            {
-                File.Delete(xmlTempFile);
-            }
-
-            if (inMemoryStream is not null)
-            {
-                return inMemoryStream.ToArray();
-            }
-            else
-            {
                 return null;
+            }
+            finally
+            {
+                if (File.Exists(cabTempFile))
+                {
+                    File.Delete(cabTempFile);
+                }
+
+                if (File.Exists(xmlTempFile))
+                {
+                    File.Delete(xmlTempFile);
+                }
             }
         }
 
@@ -92,9 +94,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
             // We use temporary files to write the in-memory cabinet,
             // Then run cabextract on it with --pipe output
             var cabTempFile = Path.GetTempFileName();
-            var xmlTempFile = Path.GetTempFileName();
 
-            var inMemoryStream = new MemoryStream();
             try
             {
                 File.WriteAllBytes(cabTempFile, compressedData);
@@ -106,38 +106,38 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Compression
                     StandardOutputEncoding = Encoding.Unicode,
                     RedirectStandardOutput = true
                 };
-                var expandProcess = Process.Start(startInfo);
+                using var expandProcess = Process.Start(startInfo);
 
                 // Read the decompressed data from the pipe
                 if (expandProcess is not null)
                 {
-                    using var writer = new StreamWriter(xmlTempFile);
-                    expandProcess.StandardOutput.BaseStream.CopyTo(writer.BaseStream);
+                    using MemoryStream inMemoryStream = new();
+
+                    // Recompress the XML with GZIP as UTF8
+                    using (var utf8Decompressed = Encoding.CreateTranscodingStream(expandProcess.StandardOutput.BaseStream, Encoding.Unicode, Encoding.UTF8, true))
+                    {
+                        using var recompressor = new GZipStream(inMemoryStream, CompressionLevel.Fastest, true);
+                        utf8Decompressed.CopyTo(recompressor);
+                    }
 
                     expandProcess.WaitForExit();
+
+                    return inMemoryStream.ToArray();
                 }
 
-                // Recompress the XML with GZIP as UTF8
-                using var decompressor = File.OpenRead(xmlTempFile);
-                using var recompressor = new GZipStream(inMemoryStream, CompressionLevel.Fastest, true);
-                decompressor.CopyTo(recompressor);
+                return null;
             }
             catch (Exception)
             {
-                inMemoryStream = null;
+                return null;
             }
-
-            if (File.Exists(cabTempFile))
+            finally
             {
-                File.Delete(cabTempFile);
+                if (File.Exists(cabTempFile))
+                {
+                    File.Delete(cabTempFile);
+                }
             }
-
-            if (File.Exists(xmlTempFile))
-            {
-                File.Delete(xmlTempFile);
-            }
-
-            return inMemoryStream?.ToArray();
         }
 
         /// <summary>

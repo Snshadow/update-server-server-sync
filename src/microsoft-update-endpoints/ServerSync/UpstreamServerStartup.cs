@@ -110,9 +110,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
-                   name: "getContent",
-                   pattern: "microsoftupdate/content/{contentHash}",
-                   defaults: new { controller = "MicrosoftUpdateContent", action = "GetMicrosoftUpdateContent" });
+                    name: "getContent",
+                    pattern: "microsoftupdate/content/{contentHash}",
+                    defaults: new { controller = "MicrosoftUpdateContent", action = "GetMicrosoftUpdateContent" });
             });
 
             // Wire the upstream WCF services
@@ -122,7 +122,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
 
 
             // This entry is for backwards compat with WSUS, which seems to add an extra '/' that does not get routed properly by ASP
-            app.UseSoapEndpoint<AuthenticationWebService>("//DssAuthWebService/DssAuthWebService.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
+            app.UseSoapEndpoint<AuthenticationWebService>("/DssAuthWebService/DssAuthWebService.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
         }
     }
 }

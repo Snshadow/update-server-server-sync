@@ -57,7 +57,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
         public static DriverUpdateMatching FromPackageSource(IMetadataStore packageSource)
         {
             var newDriverUpdateMatching = new DriverUpdateMatching(packageSource);
-            var filter = new MetadataFilter();
+            MetadataFilter filter = new()
+            {
+                IncludeExpired = true
+            };
 
             var allDrivers = filter.Apply<DriverUpdate>(packageSource);
             foreach (var driverUpdate in allDrivers)

@@ -20,12 +20,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             byte[] metadata;
             if (!string.IsNullOrEmpty(serverSyncData.XmlUpdateBlob))
             {
-                var compressedStream = new MemoryStream();
+                using MemoryStream compressedStream = new();
                 using (var compressor = new GZipStream(compressedStream, CompressionLevel.Fastest, true))
                 {
-                    new MemoryStream(
-                        Encoding.Unicode.GetBytes(serverSyncData.XmlUpdateBlob), false)
-                        .CopyTo(compressor);
+                    using var utf8Stream = Encoding.CreateTranscodingStream(new MemoryStream(Encoding.Unicode.GetBytes(serverSyncData.XmlUpdateBlob), false), Encoding.Unicode, Encoding.UTF8);
+                    utf8Stream.CopyTo(compressor);
                 }
 
                 metadata = compressedStream.ToArray();

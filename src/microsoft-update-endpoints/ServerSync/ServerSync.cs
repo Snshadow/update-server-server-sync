@@ -277,7 +277,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                         Id = rawIdentity
                     };
 
-                    using (var metadataReader = new StreamReader(PackageStore.GetMetadata(update.Id), Encoding.Unicode))
+                    using (var metadataReader = new StreamReader(PackageStore.GetMetadata(update.Id)))
                     {
                         rawUpdateData.XmlUpdateBlob = metadataReader.ReadToEnd();
                     }
