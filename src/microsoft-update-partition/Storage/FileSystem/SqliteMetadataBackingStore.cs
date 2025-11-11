@@ -1079,24 +1079,47 @@ namespace Microsoft.PackageGraph.Storage.Local
             };
 
             MetadataCopyProgress?.Invoke(this, progressArgs);
-            packageEntries.AsParallel().ForAll(packageEntry =>
+
+            if (destination.SupportsParallelProcessing)
             {
-                if (cancelToken.IsCancellationRequested)
+                packageEntries.AsParallel().ForAll(packageEntry =>
                 {
-                    return;
-                }
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
 
-                destination.AddPackage(GetPackage(packageEntry));
+                    destination.AddPackage(GetPackage(packageEntry));
 
-                lock (progressArgs)
+                    lock (progressArgs)
+                    {
+                        progressArgs.Current++;
+                    }
+                    if (progressArgs.Current % 100 == 0)
+                    {
+                        MetadataCopyProgress?.Invoke(this, progressArgs);
+                    }
+                });
+            }
+            else
+            {
+                foreach (var packageEntry in packageEntries)
                 {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    destination.AddPackage(GetPackage(packageEntry));
+
                     progressArgs.Current++;
+
+                    if (progressArgs.Current % 100 == 0)
+                    {
+                        MetadataCopyProgress?.Invoke(this, progressArgs);
+                    }
                 }
-                if (progressArgs.Current % 100 == 0)
-                {
-                    MetadataCopyProgress?.Invoke(this, progressArgs);
-                }
-            });
+            }
         }
 
         public void CopyTo(IMetadataSink destination, IMetadataFilter filter, CancellationToken cancelToken)
@@ -1109,24 +1132,47 @@ namespace Microsoft.PackageGraph.Storage.Local
                 Current = 0
             };
             MetadataCopyProgress?.Invoke(this, progressArgs);
-            packageEntries.AsParallel().ForAll(packageEntry =>
+
+            if (destination.SupportsParallelProcessing)
             {
-                if (cancelToken.IsCancellationRequested)
+                packageEntries.AsParallel().ForAll(packageEntry =>
                 {
-                    return;
-                }
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
 
-                destination.AddPackage(GetPackage(packageEntry));
+                    destination.AddPackage(GetPackage(packageEntry));
 
-                lock (progressArgs)
+                    lock (progressArgs)
+                    {
+                        progressArgs.Current++;
+                    }
+                    if (progressArgs.Current % 100 == 0)
+                    {
+                        MetadataCopyProgress?.Invoke(this, progressArgs);
+                    }
+                });
+            }
+            else
+            {
+                foreach (var packageEntry in packageEntries)
                 {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    destination.AddPackage(GetPackage(packageEntry));
+
                     progressArgs.Current++;
+
+                    if (progressArgs.Current % 100 == 0)
+                    {
+                        MetadataCopyProgress?.Invoke(this, progressArgs);
+                    }
                 }
-                if (progressArgs.Current % 100 == 0)
-                {
-                    MetadataCopyProgress?.Invoke(this, progressArgs);
-                }
-            });
+            }
         }
 
         private static string BuildSortOrder(MetadataSortOrder sortOrder)

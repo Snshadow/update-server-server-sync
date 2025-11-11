@@ -181,11 +181,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                         var retrievedPackages = _Client.GetUpdateDataForIds(batch.ToList());
                         destination.AddPackages(retrievedPackages);
 
-                        lock (progressArgs)
-                        {
-                            progressArgs.Current += retrievedPackages.Count;
-                            MetadataCopyProgress?.Invoke(this, progressArgs);
-                        }
+                        progressArgs.Current += retrievedPackages.Count;
+                        MetadataCopyProgress?.Invoke(this, progressArgs);
                     }
                 }
             }
