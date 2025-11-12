@@ -1,0 +1,2 @@
+# Informational: regenerate Microsoft.UpdateServices.WebServices.ClientAuthentication proxy (run from repo root)
+dotnet-svcutil "src/microsoft-update-webservices/client-auth.wsdl" --namespace *,Microsoft.UpdateServices.WebServices.ClientAuthentication --targetFramework net10.0 --outputDir "src\microsoft-update-webservices\Connected Services\Microsoft.UpdateServices.WebServices.ClientAuthentication" --outputFile Reference.cs --noLogo

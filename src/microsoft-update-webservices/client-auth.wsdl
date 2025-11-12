@@ -1,0 +1,86 @@
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/"
+  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+  xmlns:tns="http://www.microsoft.com/SoftwareDistribution/Server/SimpleAuthWebService"
+  xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+  targetNamespace="http://www.microsoft.com/SoftwareDistribution/Server/SimpleAuthWebService"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified"
+      targetNamespace="http://www.microsoft.com/SoftwareDistribution/Server/SimpleAuthWebService">
+      <s:element name="GetAuthorizationCookie">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="clientId" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="targetGroupName" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="dnsName" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetAuthorizationCookieResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetAuthorizationCookieResult"
+              type="tns:AuthorizationCookie" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="AuthorizationCookie">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="PlugInId" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CookieData" type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="GetAuthorizationCookieSoapIn">
+    <wsdl:part name="parameters" element="tns:GetAuthorizationCookie" />
+  </wsdl:message>
+  <wsdl:message name="GetAuthorizationCookieSoapOut">
+    <wsdl:part name="parameters" element="tns:GetAuthorizationCookieResponse" />
+  </wsdl:message>
+  <wsdl:portType name="SimpleAuthSoap">
+    <wsdl:operation name="GetAuthorizationCookie">
+      <wsdl:input message="tns:GetAuthorizationCookieSoapIn" />
+      <wsdl:output message="tns:GetAuthorizationCookieSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="SimpleAuthSoap" type="tns:SimpleAuthSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetAuthorizationCookie">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/SimpleAuthWebService/GetAuthorizationCookie"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="SimpleAuthSoap12" type="tns:SimpleAuthSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetAuthorizationCookie">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/SimpleAuthWebService/GetAuthorizationCookie"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="SimpleAuth">
+    <wsdl:port name="SimpleAuthSoap" binding="tns:SimpleAuthSoap">
+      <soap:address location="http://localhost/SimpleAuthWebService/SimpleAuth.asmx" />
+    </wsdl:port>
+    <wsdl:port name="SimpleAuthSoap12" binding="tns:SimpleAuthSoap12">
+      <soap12:address location="http://localhost/SimpleAuthWebService/SimpleAuth.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

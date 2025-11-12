@@ -5,7 +5,7 @@
     "Uri": "https://go.microsoft.com/fwlink/?linkid=858517"
   },
   "ExtendedData": {
-    "Uri": "https://sws.update.microsoft.com/ServerSyncWebService/ServerSyncWebService.asmx?wsdl",
+    "Uri": "../../server-sync.wsdl",
     "Namespace": "Microsoft.UpdateServices.WebServices.ServerSync",
     "SelectedAccessLevelForGeneratedClass": "Public",
     "GenerateMessageContract": false,

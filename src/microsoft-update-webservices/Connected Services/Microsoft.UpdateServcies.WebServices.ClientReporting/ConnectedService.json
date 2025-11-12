@@ -3,7 +3,7 @@
   "Version": "15.0.30423.811",
   "ExtendedData": {
     "inputs": [
-      "C:/Users/Cristi/Desktop/client-reporting.wsdl"
+      "../../client-reporting.wsdl"
     ],
     "collectionTypes": [
       "System.Array",
@@ -265,7 +265,7 @@
       "System.Xml.XPath.XDocument, {Microsoft.NETCore.App, 2.1.0}",
       "WindowsBase, {Microsoft.NETCore.App, 2.1.0}"
     ],
-    "targetFramework": "netcoreapp2.1",
+    "targetFramework": "net10.0",
     "typeReuseMode": "All"
   }
 }

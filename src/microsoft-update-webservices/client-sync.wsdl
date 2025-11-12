@@ -1,0 +1,1036 @@
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/"
+  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+  xmlns:tns="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService"
+  xmlns:s1="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService"
+  xmlns:s2="http://microsoft.com/wsdl/types/"
+  xmlns:s="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+  targetNamespace="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified"
+      targetNamespace="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService">
+      <s:import namespace="http://microsoft.com/wsdl/types/" />
+      <s:element name="GetConfig">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="protocolVersion" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetConfigResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetConfigResult" type="tns:Config" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="Config">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="LastChange" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsRegistrationRequired" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="AuthInfo" type="tns:ArrayOfAuthPlugInInfo" />
+          <s:element minOccurs="0" maxOccurs="1" name="AllowedEventIds" type="tns:ArrayOfInt" />
+          <s:element minOccurs="0" maxOccurs="1" name="Properties"
+            type="tns:ArrayOfConfigurationProperty" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfAuthPlugInInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="AuthPlugInInfo" nillable="true"
+            type="tns:AuthPlugInInfo" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="AuthPlugInInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="PlugInID" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ServiceUrl" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Parameter" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfInt">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="int" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfConfigurationProperty">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ConfigurationProperty"
+            nillable="true" type="tns:ConfigurationProperty" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ConfigurationProperty">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Name" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Value" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetConfig2">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="ClientConfiguration"
+              type="tns:ClientConfiguration" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetConfig2Response">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetConfig2Result" type="tns:Config" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ClientConfiguration">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="ProcessorArchitecture"
+            type="tns:Architecture" />
+          <s:element minOccurs="0" maxOccurs="1" name="AlwaysOnAlwaysConnected" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="ClientVersion" type="tns:OSVersion" />
+          <s:element minOccurs="0" maxOccurs="1" name="OSVersion" type="tns:OSVersion" />
+          <s:element minOccurs="0" maxOccurs="1" name="ProcotolVersion" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="Architecture">
+        <s:restriction base="s:string">
+          <s:enumeration value="Unknown" />
+          <s:enumeration value="X86Compatible" />
+          <s:enumeration value="IA64Compatible" />
+          <s:enumeration value="Amd64Compatible" />
+          <s:enumeration value="ArmCompatible" />
+          <s:enumeration value="LpiaCompatible" />
+        </s:restriction>
+      </s:simpleType>
+      <s:complexType name="OSVersion">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="MajorVersion" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="MinorVersion" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="BuildNumber" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="ServicePackMajorNumber" type="s:short" />
+          <s:element minOccurs="1" maxOccurs="1" name="ServicePackMinorNumber" type="s:short" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetCookie">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="authCookies"
+              type="tns:ArrayOfAuthorizationCookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="oldCookie" type="tns:Cookie" />
+            <s:element minOccurs="1" maxOccurs="1" name="lastChange" type="s:dateTime" />
+            <s:element minOccurs="1" maxOccurs="1" name="currentTime" type="s:dateTime" />
+            <s:element minOccurs="0" maxOccurs="1" name="protocolVersion" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfAuthorizationCookie">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="AuthorizationCookie" nillable="true"
+            type="tns:AuthorizationCookie" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="AuthorizationCookie">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="PlugInId" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CookieData" type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Cookie">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Expiration" type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="EncryptedData" type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetCookieResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetCookieResult" type="tns:Cookie" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="RegisterComputer">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="computerInfo" type="tns:ComputerInfo" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ComputerInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="DnsName" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="OSMajorVersion" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="OSMinorVersion" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="OSBuildNumber" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="OSServicePackMajorNumber" type="s:short" />
+          <s:element minOccurs="1" maxOccurs="1" name="OSServicePackMinorNumber" type="s:short" />
+          <s:element minOccurs="0" maxOccurs="1" name="OSLocale" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ComputerManufacturer" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ComputerModel" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="BiosVersion" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="BiosName" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="BiosReleaseDate" type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="ProcessorArchitecture" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="SuiteMask" type="s:short" />
+          <s:element minOccurs="1" maxOccurs="1" name="OldProductType" type="s:unsignedByte" />
+          <s:element minOccurs="1" maxOccurs="1" name="NewProductType" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="SystemMetrics" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="ClientVersionMajorNumber" type="s:short" />
+          <s:element minOccurs="1" maxOccurs="1" name="ClientVersionMinorNumber" type="s:short" />
+          <s:element minOccurs="1" maxOccurs="1" name="ClientVersionBuildNumber" type="s:short" />
+          <s:element minOccurs="1" maxOccurs="1" name="ClientVersionQfeNumber" type="s:short" />
+          <s:element minOccurs="0" maxOccurs="1" name="OSDescription" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="OEM" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="DeviceType" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FirmwareVersion" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MobileOperator" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="RegisterComputerResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="StartCategoryScan">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="requestedCategories"
+              type="tns:ArrayOfCategoryRelationship" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfCategoryRelationship">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="CategoryRelationship" nillable="true"
+            type="tns:CategoryRelationship" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="CategoryRelationship">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="IndexOfAndGroup" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="CategoryId" type="s2:guid" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="StartCategoryScanResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="preferredCategoryIds"
+              type="tns:ArrayOfGuid" />
+            <s:element minOccurs="0" maxOccurs="1" name="requestedCategoryIdsInError"
+              type="tns:ArrayOfGuid" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfGuid">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="guid" type="s2:guid" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="SyncUpdates">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="parameters" type="tns:SyncUpdateParameters" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="SyncUpdateParameters">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="ExpressQuery" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="InstalledNonLeafUpdateIDs"
+            type="tns:ArrayOfInt" />
+          <s:element minOccurs="0" maxOccurs="1" name="OtherCachedUpdateIDs" type="tns:ArrayOfInt" />
+          <s:element minOccurs="0" maxOccurs="1" name="SystemSpec" type="tns:ArrayOfDevice" />
+          <s:element minOccurs="0" maxOccurs="1" name="CachedDriverIDs" type="tns:ArrayOfInt" />
+          <s:element minOccurs="1" maxOccurs="1" name="SkipSoftwareSync" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="FilterCategoryIds"
+            type="tns:ArrayOfCategoryIdentifier" />
+          <s:element minOccurs="0" maxOccurs="1" name="NeedTwoGroupOutOfScopeUpdates"
+            type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="ComputerSpec"
+            type="s1:ComputerHardwareSpecification" />
+          <s:element minOccurs="0" maxOccurs="1" name="FeatureScoreMatchingKey" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfDevice">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="Device" nillable="true"
+            type="tns:Device" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Device">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="HardwareIDs" type="tns:ArrayOfString" />
+          <s:element minOccurs="0" maxOccurs="1" name="CompatibleIDs" type="tns:ArrayOfString" />
+          <s:element minOccurs="0" maxOccurs="1" name="installedDriver" type="tns:InstalledDriver" />
+          <s:element minOccurs="0" maxOccurs="1" name="extensionDriver"
+            type="tns:ArrayOfExtensionDriver" />
+          <s:element minOccurs="0" maxOccurs="1" name="DriverRecoveryIDs"
+            type="tns:ArrayOfDriverRecoveryID" />
+          <s:element minOccurs="0" maxOccurs="1" name="DeviceFlags" type="s:unsignedByte" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfString">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="string" nillable="true"
+            type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="InstalledDriver">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="MatchingID" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="DriverVerDate" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="DriverVerVersion" type="s:long" />
+          <s:element minOccurs="0" maxOccurs="1" name="Class" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Manufacturer" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Provider" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Model" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MatchingComputerHWID" nillable="true"
+            type="s2:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="DriverRank" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="extensionDriver">
+        <s:sequence>
+          <s:element name="ExtensionId" type="s:string" minOccurs="1" maxOccurs="1" />
+          <s:element name="DriverVerDate" type="s:dateTime" minOccurs="1" maxOccurs="1" />
+          <s:element name="DriverVerVersion" type="s:long" minOccurs="1" maxOccurs="1" />
+          <s:element name="Class" type="s:string" minOccurs="1" maxOccurs="1" />
+          <s:element name="DriverRank" type="s:int" minOccurs="1" maxOccurs="1" />
+          <s:element name="MatchingComputerHWID" type="q4:guid" nillable="true"
+            xmlns:q4="http://microsoft.com/wsdl/types/" minOccurs="0" maxOccurs="1" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfExtensionDriver">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="unbounded" name="extensionDriver" nillable="true"
+            type="tns:extensionDriver" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfDriverRecoveryID">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="DriverRecoveryID" nillable="true"
+            type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ComputerHardwareSpecification">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="HardwareIDs" type="s1:ArrayOfGuid" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfCategoryIdentifier">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="CategoryIdentifier" nillable="true"
+            type="tns:CategoryIdentifier" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="CategoryIdentifier">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Id" type="s2:guid" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="SyncUpdatesResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="SyncUpdatesResult" type="tns:SyncInfo" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="SyncInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="NewUpdates" type="tns:ArrayOfUpdateInfo" />
+          <s:element minOccurs="0" maxOccurs="1" name="OutOfScopeRevisionIDs" type="tns:ArrayOfInt" />
+          <s:element minOccurs="0" maxOccurs="1" name="ChangedUpdates" type="tns:ArrayOfUpdateInfo" />
+          <s:element minOccurs="1" maxOccurs="1" name="Truncated" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="NewCookie" type="tns:Cookie" />
+          <s:element minOccurs="0" maxOccurs="1" name="DeployedOutOfScopeRevisionIds"
+            type="tns:ArrayOfInt" />
+          <s:element minOccurs="0" maxOccurs="1" name="DriverSyncNotNeeded" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfUpdateInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="UpdateInfo" nillable="true"
+            type="tns:UpdateInfo" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="UpdateInfo">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="ID" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="Deployment" type="tns:Deployment" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsLeaf" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="Xml" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Deployment">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="ID" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Action" type="tns:DeploymentAction" />
+          <s:element minOccurs="0" maxOccurs="1" name="Deadline" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsAssigned" type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="LastChangeTime" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="DownloadPriority" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="HardwareIds" type="tns:ArrayOfString" />
+          <s:element minOccurs="0" maxOccurs="1" name="AutoSelect" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="AutoDownload" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="SupersedenceBehavior" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FlagBitmask" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name=" ClientBehaviors"
+            type="tns:ArrayOfClientBehavior" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="DeploymentAction">
+        <s:restriction base="s:string">
+          <s:enumeration value="OptionalInstall" />
+          <s:enumeration value="Install" />
+          <s:enumeration value="Uninstall" />
+          <s:enumeration value="PreDeploymentCheck" />
+          <s:enumeration value="Block" />
+          <s:enumeration value="Evaluate" />
+          <s:enumeration value="Bundle" />
+        </s:restriction>
+      </s:simpleType>
+      <s:complexType name="ArrayOfClientBehavior">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ClientMetadata"
+            nillable="true" type="tns:ClientMetadata" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ClientMetadata">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="MetadataType" type="tns:MetadataType" />
+          <s:element minOccurs="1" maxOccurs="1" name="Metadata" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Verification" type="tns:Verification" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="MetadataType">
+        <s:restriction base="s:string">
+          <s:enumeration value="Audience" />
+          <s:enumeration value="Update" />
+          <s:enumeration value="Admin" />
+        </s:restriction>
+      </s:simpleType>
+      <s:complexType name="Verification">
+        <s:attribute name="Timestamp" type="s:dateTime" use="required" />
+        <s:attribute name="LeafCertificateId" type="s:unsignedInt" use="required" />
+        <s:attribute name="Signature" type="s:base64Binary" use="required" />
+        <s:attribute name="Algorithm" type="s:string" use="required" />
+      </s:complexType>
+      <s:element name="SyncPrinterCatalog">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="installedNonLeafUpdateIDs"
+              type="tns:ArrayOfInt" />
+            <s:element minOccurs="0" maxOccurs="1" name="printerUpdateIDs" type="tns:ArrayOfInt" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="SyncPrinterCatalogResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="SyncPrinterCatalogResult"
+              type="tns:SyncInfo" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="RefreshCache">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="globalIDs" type="tns:ArrayOfUpdateIdentity" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfUpdateIdentity">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="UpdateIdentity" nillable="true"
+            type="tns:UpdateIdentity" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="UpdateIdentity">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="UpdateID" type="s2:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="RevisionNumber" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="RefreshCacheResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="RefreshCacheResult"
+              type="tns:ArrayOfRefreshCacheResult" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfRefreshCacheResult">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="RefreshCacheResult" nillable="true"
+            type="tns:RefreshCacheResult" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="RefreshCacheResult">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="RevisionID" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="GlobalID" type="tns:UpdateIdentity" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsLeaf" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="Deployment" type="tns:Deployment" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetExtendedUpdateInfo">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="revisionIDs" type="tns:ArrayOfInt" />
+            <s:element minOccurs="0" maxOccurs="1" name="infoTypes"
+              type="tns:ArrayOfXmlUpdateFragmentType" />
+            <s:element minOccurs="0" maxOccurs="1" name="locales" type="tns:ArrayOfString" />
+            <s:element minOccurs="0" maxOccurs="1" name="GeoId" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="callerAttributes" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfXmlUpdateFragmentType">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="XmlUpdateFragmentType"
+            type="tns:XmlUpdateFragmentType" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="XmlUpdateFragmentType">
+        <s:restriction base="s:string">
+          <s:enumeration value="Published" />
+          <s:enumeration value="Core" />
+          <s:enumeration value="Extended" />
+          <s:enumeration value="VerificationRule" />
+          <s:enumeration value="LocalizedProperties" />
+          <s:enumeration value="Eula" />
+          <s:enumeration value="FileUrl" />
+          <s:enumeration value="FileDecryption" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GetExtendedUpdateInfoResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetExtendedUpdateInfoResult"
+              type="tns:ExtendedUpdateInfo" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ExtendedUpdateInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Updates" type="tns:ArrayOfUpdateData" />
+          <s:element minOccurs="0" maxOccurs="1" name="FileLocations" type="tns:ArrayOfFileLocation" />
+          <s:element minOccurs="0" maxOccurs="1" name="OutOfScopeRevisionIDs" type="tns:ArrayOfInt" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfUpdateData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="Update" nillable="true"
+            type="tns:UpdateData" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="UpdateData">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="ID" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="Xml" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfFileLocation">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="FileLocation" nillable="true"
+            type="tns:FileLocation" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="FileLocation">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="FileDigest" type="s:base64Binary" />
+          <s:element minOccurs="0" maxOccurs="1" name="Url" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="PiecesHashUrl" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="BlockMapUrl" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="DecryptionInformation" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FileDigestAlgorithm" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="EncryptedFileDigest" type="s:base64Binary" />
+          <s:element minOccurs="0" maxOccurs="1" name="EncryptedFileDigestAlgorithm"
+            type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetFileLocations">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="fileDigests" type="tns:ArrayOfBase64Binary" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfBase64Binary">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="base64Binary" nillable="true"
+            type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetExtendedUpdateInfo2">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="updateIDs" type="tns:ArrayOfUpdateIdentity" />
+            <s:element minOccurs="0" maxOccurs="1" name="infoTypes"
+              type="tns:ArrayOfXmlUpdateFragmentType" />
+            <s:element minOccurs="0" maxOccurs="1" name="locales" type="tns:ArrayOfString" />
+            <s:element minOccurs="0" maxOccurs="1" name="callerAttributes" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetExtendedUpdateInfo2Response">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetExtendedUpdateInfo2Result"
+              type="s1:ExtendedUpdateInfo2" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ExtendedUpdateInfo2">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Updates" type="tns:ArrayOfUpdateData" />
+          <s:element minOccurs="0" maxOccurs="1" name="FileLocations" type="tns:ArrayOfFileLocation" />
+          <s:element minOccurs="0" maxOccurs="1" name="UpdateReportingSamplingRates"
+            type="tns:ArrayOfUpdateReportingSampleRate" />
+          <s:element minOccurs="0" maxOccurs="1" name="FileDecryptionData"
+            type="tns:ArrayOfFileDecryption" />
+          <s:element minOccurs="0" maxOccurs="1" name="FileDecryptionData2"
+            type="tns:ArrayOfFileDecryption2" />
+          <s:element minOccurs="0" maxOccurs="1" name="UpdateEncryptionDetails"
+            type="tns:ArrayOfUpdateEncryptionDetail" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfUpdateReportingSampleRate">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="UpdateReportingSampleRate"
+            nillable="true" type="tns:UpdateReportingSampleRate" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="UpdateReportingSampleRate">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="UpdateId" type="s2:guid"
+            xmlns:q2="http://microsoft.com/wsdl/types/" />
+          <s:element minOccurs="1" maxOccurs="1" name="SamplingRateForInstall" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="SamplingRateForDownload" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfFileDecryption">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="FileDecryption" nillable="true"
+            type="tns:FileDecryption" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="FileDecryption">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="FileDigest" type="s:base64Binary" />
+          <s:element minOccurs="0" maxOccurs="1" name="DecryptionKey" type="s:base64Binary" />
+          <s:element minOccurs="0" maxOccurs="1" name="SecurityData" type="tns:ArrayOfBase64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfFileDecryption2">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="FileDecryption2" nillable="true"
+            type="tns:FileDecryption2" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="FileDecryption2">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="FileDigest" type="s:base64Binary" />
+          <s:element minOccurs="0" maxOccurs="1" name="DecryptionKey" type="s:base64Binary" />
+          <s:element minOccurs="0" maxOccurs="1" name="SecurityData" type="tns:ArrayOfBase64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfUpdateEncryptionDetail">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="UpdateEncryptionDetail"
+            nillable="true" type="tns:UpdateEncryptionDetail" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="UpdateEncryptionDetail">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="UpdateIdentity" type="tns:UpdateIdentity" />
+          <s:element minOccurs="1" maxOccurs="1" name="HasEncryptedFiles" type="s:boolean" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetFileLocationsResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetFileLocationsResult"
+              type="tns:GetFileLocationsResults" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetFileLocationsResults">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="FileLocations" type="tns:ArrayOfFileLocation" />
+          <s:element minOccurs="0" maxOccurs="1" name="NewCookie" type="tns:Cookie" />
+        </s:sequence>
+      </s:complexType>
+    </s:schema>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://microsoft.com/wsdl/types/">
+      <s:simpleType name="guid">
+        <s:restriction base="s:string">
+          <s:pattern
+            value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" />
+        </s:restriction>
+      </s:simpleType>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="GetConfigSoapIn">
+    <wsdl:part name="parameters" element="tns:GetConfig" />
+  </wsdl:message>
+  <wsdl:message name="GetConfigSoapOut">
+    <wsdl:part name="parameters" element="tns:GetConfigResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetConfig2SoapIn">
+    <wsdl:part name="parameters" element="tns:GetConfig2" />
+  </wsdl:message>
+  <wsdl:message name="GetConfig2SoapOut">
+    <wsdl:part name="parameters" element="tns:GetConfig2Response" />
+  </wsdl:message>
+  <wsdl:message name="GetCookieSoapIn">
+    <wsdl:part name="parameters" element="tns:GetCookie" />
+  </wsdl:message>
+  <wsdl:message name="GetCookieSoapOut">
+    <wsdl:part name="parameters" element="tns:GetCookieResponse" />
+  </wsdl:message>
+  <wsdl:message name="RegisterComputerSoapIn">
+    <wsdl:part name="parameters" element="tns:RegisterComputer" />
+  </wsdl:message>
+  <wsdl:message name="RegisterComputerSoapOut">
+    <wsdl:part name="parameters" element="tns:RegisterComputerResponse" />
+  </wsdl:message>
+  <wsdl:message name="StartCategoryScanSoapIn">
+    <wsdl:part name="parameters" element="tns:StartCategoryScan" />
+  </wsdl:message>
+  <wsdl:message name="StartCategoryScanSoapOut">
+    <wsdl:part name="parameters" element="tns:StartCategoryScanResponse" />
+  </wsdl:message>
+  <wsdl:message name="SyncUpdatesSoapIn">
+    <wsdl:part name="parameters" element="tns:SyncUpdates" />
+  </wsdl:message>
+  <wsdl:message name="SyncUpdatesSoapOut">
+    <wsdl:part name="parameters" element="tns:SyncUpdatesResponse" />
+  </wsdl:message>
+  <wsdl:message name="SyncPrinterCatalogSoapIn">
+    <wsdl:part name="parameters" element="tns:SyncPrinterCatalog" />
+  </wsdl:message>
+  <wsdl:message name="SyncPrinterCatalogSoapOut">
+    <wsdl:part name="parameters" element="tns:SyncPrinterCatalogResponse" />
+  </wsdl:message>
+  <wsdl:message name="RefreshCacheSoapIn">
+    <wsdl:part name="parameters" element="tns:RefreshCache" />
+  </wsdl:message>
+  <wsdl:message name="RefreshCacheSoapOut">
+    <wsdl:part name="parameters" element="tns:RefreshCacheResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetExtendedUpdateInfoSoapIn">
+    <wsdl:part name="parameters" element="tns:GetExtendedUpdateInfo" />
+  </wsdl:message>
+  <wsdl:message name="GetExtendedUpdateInfoSoapOut">
+    <wsdl:part name="parameters" element="tns:GetExtendedUpdateInfoResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetExtendedUpdateInfo2SoapIn">
+    <wsdl:part name="parameters" element="tns:GetExtendedUpdateInfo2" />
+  </wsdl:message>
+  <wsdl:message name="GetExtendedUpdateInfo2SoapOut">
+    <wsdl:part name="parameters" element="tns:GetExtendedUpdateInfo2Response" />
+  </wsdl:message>
+  <wsdl:message name="GetFileLocationsSoapIn">
+    <wsdl:part name="parameters" element="tns:GetFileLocations" />
+  </wsdl:message>
+  <wsdl:message name="GetFileLocationsSoapOut">
+    <wsdl:part name="parameters" element="tns:GetFileLocationsResponse" />
+  </wsdl:message>
+  <wsdl:portType name="ClientSoap">
+    <wsdl:operation name="GetConfig">
+      <wsdl:input message="tns:GetConfigSoapIn" />
+      <wsdl:output message="tns:GetConfigSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetConfig2">
+      <wsdl:input message="tns:GetConfig2SoapIn" />
+      <wsdl:output message="tns:GetConfig2SoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetCookie">
+      <wsdl:input message="tns:GetCookieSoapIn" />
+      <wsdl:output message="tns:GetCookieSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RegisterComputer">
+      <wsdl:input message="tns:RegisterComputerSoapIn" />
+      <wsdl:output message="tns:RegisterComputerSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="StartCategoryScan">
+      <wsdl:input message="tns:StartCategoryScanSoapIn" />
+      <wsdl:output message="tns:StartCategoryScanSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="SyncUpdates">
+      <wsdl:input message="tns:SyncUpdatesSoapIn" />
+      <wsdl:output message="tns:SyncUpdatesSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="SyncPrinterCatalog">
+      <wsdl:input message="tns:SyncPrinterCatalogSoapIn" />
+      <wsdl:output message="tns:SyncPrinterCatalogSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RefreshCache">
+      <wsdl:input message="tns:RefreshCacheSoapIn" />
+      <wsdl:output message="tns:RefreshCacheSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetExtendedUpdateInfo">
+      <wsdl:input message="tns:GetExtendedUpdateInfoSoapIn" />
+      <wsdl:output message="tns:GetExtendedUpdateInfoSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetExtendedUpdateInfo2">
+      <wsdl:input message="tns:GetExtendedUpdateInfo2SoapIn" />
+      <wsdl:output message="tns:GetExtendedUpdateInfo2SoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetFileLocations">
+      <wsdl:input message="tns:GetFileLocationsSoapIn" />
+      <wsdl:output message="tns:GetFileLocationsSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ClientSoap" type="tns:ClientSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetConfig">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetConfig"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetConfig2">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetConfig2"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetCookie">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetCookie"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RegisterComputer">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/RegisterComputer"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="StartCategoryScan">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/StartCategoryScan"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SyncUpdates">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/SyncUpdates"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SyncPrinterCatalog">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/SyncPrinterCatalog"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RefreshCache">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/RefreshCache"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetExtendedUpdateInfo">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtendedUpdateInfo"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetExtendedUpdateInfo2">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtendedUpdateInfo2"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetFileLocations">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetFileLocations"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="ClientSoap12" type="tns:ClientSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetConfig">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetConfig"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetConfig2">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetConfig2"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetCookie">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetCookie"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RegisterComputer">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/RegisterComputer"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="StartCategoryScan">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/StartCategoryScan"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SyncUpdates">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/SyncUpdates"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SyncPrinterCatalog">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/SyncPrinterCatalog"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RefreshCache">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/RefreshCache"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetExtendedUpdateInfo">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtendedUpdateInfo"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetFileLocations">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetFileLocations"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="Client">
+    <wsdl:port name="ClientSoap" binding="tns:ClientSoap">
+      <soap:address location="http://localhost/ClientWebService/Client.asmx" />
+    </wsdl:port>
+    <wsdl:port name="ClientSoap12" binding="tns:ClientSoap12">
+      <soap12:address location="http://localhost/ClientWebService/Client.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

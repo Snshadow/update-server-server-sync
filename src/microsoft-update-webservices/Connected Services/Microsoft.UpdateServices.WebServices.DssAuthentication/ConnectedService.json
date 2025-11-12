@@ -2,7 +2,7 @@
   "ProviderId": "Microsoft.VisualStudio.ConnectedService.Wcf",
   "Version": "15.0.20628.921",
   "ExtendedData": {
-    "Uri": "https://sws.update.microsoft.com/DssAuthWebService/DssAuthWebService.asmx?wsdl",
+    "Uri": "../../dss-authentication.wsdl",
     "Namespace": "Microsoft.UpdateServices.WebServices.DssAuthentication",
     "SelectedAccessLevelForGeneratedClass": "Public",
     "GenerateMessageContract": false,

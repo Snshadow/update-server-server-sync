@@ -1,0 +1,2 @@
+# Informational: regenerate Microsoft.UpdateServices.WebServices.ServerSync proxy (run from repo root)
+dotnet-svcutil "src/microsoft-update-webservices/server-sync.wsdl" --namespace *,Microsoft.UpdateServices.WebServices.ServerSync --targetFramework net10.0 --outputDir "src\microsoft-update-webservices\Connected Services\Microsoft.UpdateServices.WebServices.ServerSync" --outputFile Reference.cs --noLogo

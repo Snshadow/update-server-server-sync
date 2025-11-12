@@ -1,0 +1,199 @@
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/"
+  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+  xmlns:tns="http://www.microsoft.com/SoftwareDistribution/Server/DssAuthWebService"
+  xmlns:s1="http://microsoft.com/wsdl/types/"
+  xmlns:s="http://www.w3.org/2001/XMLSchema"
+  xmlns:s2="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable"
+  xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+  targetNamespace="http://www.microsoft.com/SoftwareDistribution/Server/DssAuthWebService"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified"
+      targetNamespace="http://www.microsoft.com/SoftwareDistribution/Server/DssAuthWebService">
+      <s:import namespace="http://microsoft.com/wsdl/types/" />
+      <s:element name="GetAuthorizationCookie">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="accountName"
+              type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="accountGuid"
+              type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="programKeys"
+              type="tns:ArrayOfGuid" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfGuid">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="guid"
+            type="s1:guid" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetAuthorizationCookieResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1"
+              name="GetAuthorizationCookieResult"
+              type="tns:AuthorizationCookie" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="AuthorizationCookie">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="PlugInId"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CookieData"
+            type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+    </s:schema>
+    <s:schema elementFormDefault="qualified"
+      targetNamespace="http://microsoft.com/wsdl/types/">
+      <s:simpleType name="guid">
+        <s:restriction base="s:string">
+          <s:pattern
+            value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" />
+        </s:restriction>
+      </s:simpleType>
+    </s:schema>
+    <s:schema elementFormDefault="qualified"
+      targetNamespace="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable">
+      <s:element name="Ping">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="pingLevel"
+              type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="PingResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="PingResult"
+              type="s2:MonitoredServicesResponse" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="MonitoredServicesResponse">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="SuccessFlag"
+            type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="ServicesTime"
+            type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="ServicesName"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ServicesMachine"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsHttps"
+            type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="RequestContentType"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ConfigFilePath"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ConfigFileProjectName"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1"
+            name="ConfigFileEnvironmentName" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="ConfigFileLastModifiedTime" type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="ConfigFileVersion"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="ConfigFileNextExpirationTime" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="ConfigFileExpirationModuloInMinutes" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="DatabaseInfo"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CustomInfo"
+            type="s:string" />
+        </s:sequence>
+      </s:complexType>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="GetAuthorizationCookieSoapIn">
+    <wsdl:part name="parameters" element="tns:GetAuthorizationCookie" />
+  </wsdl:message>
+  <wsdl:message name="GetAuthorizationCookieSoapOut">
+    <wsdl:part name="parameters" element="tns:GetAuthorizationCookieResponse" />
+  </wsdl:message>
+  <wsdl:message name="PingSoapIn">
+    <wsdl:part name="parameters" element="s2:Ping" />
+  </wsdl:message>
+  <wsdl:message name="PingSoapOut">
+    <wsdl:part name="parameters" element="s2:PingResponse" />
+  </wsdl:message>
+  <wsdl:portType name="DssAuthWebServiceSoap">
+    <wsdl:operation name="GetAuthorizationCookie">
+      <wsdl:input message="tns:GetAuthorizationCookieSoapIn" />
+      <wsdl:output message="tns:GetAuthorizationCookieSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Ping">
+      <wsdl:input message="tns:PingSoapIn" />
+      <wsdl:output message="tns:PingSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="DssAuthWebServiceSoap" type="tns:DssAuthWebServiceSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetAuthorizationCookie">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/DssAuthWebService/GetAuthorizationCookie"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Ping">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable/Ping"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="DssAuthWebServiceSoap12" type="tns:DssAuthWebServiceSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetAuthorizationCookie">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/DssAuthWebService/GetAuthorizationCookie"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Ping">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable/Ping"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="DssAuthWebService">
+    <wsdl:port name="DssAuthWebServiceSoap" binding="tns:DssAuthWebServiceSoap">
+      <soap:address
+        location="http://localhost/DssAuthWebService/DssAuthWebService.asmx" />
+    </wsdl:port>
+    <wsdl:port name="DssAuthWebServiceSoap12"
+      binding="tns:DssAuthWebServiceSoap12">
+      <soap12:address
+        location="http://localhost/DssAuthWebService/DssAuthWebService.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
