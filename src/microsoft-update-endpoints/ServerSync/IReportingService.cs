@@ -8,9 +8,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "2.0.1-preview-30422-0661")]
     [System.ServiceModel.ServiceContractAttribute(Namespace = "http://www.microsoft.com/SoftwareDistribution", ConfigurationName = "Microsoft.UpdateServices.WebServices.ServerReporting.WebServiceSoap")]
-    interface IReportingServiceAspNetCore
+    interface IReportingWebService
     {
-
         [System.ServiceModel.OperationContractAttribute(Action = "http://www.microsoft.com/SoftwareDistribution/ReportEventBatch", ReplyAction = "*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults = true)]
         System.Threading.Tasks.Task<bool> ReportEventBatchAsync(Microsoft.UpdateServices.WebServices.ServerReporting.Cookie cookie, System.DateTime clientTime, Microsoft.UpdateServices.WebServices.ServerReporting.ReportingEvent[] eventBatch);

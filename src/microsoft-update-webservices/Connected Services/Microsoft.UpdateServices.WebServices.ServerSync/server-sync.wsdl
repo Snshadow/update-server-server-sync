@@ -105,11 +105,11 @@
           <s:element minOccurs="1" maxOccurs="1" name="CatalogOnlySync" type="s:boolean" />
           <s:element minOccurs="1" maxOccurs="1" name="LazySync" type="s:boolean" />
           <s:element minOccurs="1" maxOccurs="1" name="ServerHostsPsfFiles" type="s:boolean" />
-          <s:element minOccurs="1" maxOccurs="1" name="MaxNumberOfComputerIdsInRequest" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="MaxNumberOfUpdatesPerRequest" type="s:int" />
           <s:element minOccurs="1" maxOccurs="1" name="MaxNumberOfDriverSetsPerRequest" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="MaxNumberOfComputerIdsInRequest" type="s:int" />
           <s:element minOccurs="1" maxOccurs="1" name="MaxNumberOfPnpHardwareIdsInRequest"
             type="s:int" />
-          <s:element minOccurs="1" maxOccurs="1" name="MaxNumberOfUpdatesPerRequest" type="s:int" />
           <s:element minOccurs="0" maxOccurs="1" name="NewConfigAnchor" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="ProtocolVersion" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="LanguageUpdateList"
@@ -309,6 +309,38 @@
           <s:element minOccurs="0" maxOccurs="1" name="DecryptionKey" type="s:base64Binary" />
         </s:sequence>
       </s:complexType>
+      <s:element name="GetDriverIdList">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="filter" type="tns:ServerSyncDriverFilter" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetDriverIdListResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetDriverIdListResult"
+              type="tns:DriverSetAndRevisionIdList" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetDriverSetData">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie" type="tns:Cookie" />
+            <s:element minOccurs="0" maxOccurs="1" name="driverSets" type="tns:ArrayOfGuid" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetDriverSetDataResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetDriverSetDataResult"
+              type="tns:ServerDriverSetData" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
       <s:element name="DownloadFiles">
         <s:complexType>
           <s:sequence>
@@ -405,6 +437,56 @@
           </s:sequence>
         </s:complexType>
       </s:element>
+      <s:complexType name="DriverSetAndRevisionIdList">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Anchor" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="NewRevisions"
+            type="tns:ArrayOfUpdateIdentity" />
+          <s:element minOccurs="0" maxOccurs="1" name="NewDriverSets" type="tns:ArrayOfGuid" />
+          <s:element minOccurs="0" maxOccurs="1" name="RemovedDriverSets" type="tns:ArrayOfGuid" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="HardwareIdAndDelta">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Id" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="Delta" type="s:boolean" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfHardwareIdAndDelta">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="HardwareIdAndDelta" nillable="true"
+            type="tns:HardwareIdAndDelta" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ServerSyncDriverFilter">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="DssProtocolVersion" type="tns:Version" />
+          <s:element minOccurs="0" maxOccurs="1" name="Anchor" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Categories" type="tns:ArrayOfIdAndDelta" />
+          <s:element minOccurs="0" maxOccurs="1" name="ComputerIds" type="tns:ArrayOfIdAndDelta" />
+          <s:element minOccurs="0" maxOccurs="1" name="PnpHardwareIds"
+            type="tns:ArrayOfHardwareIdAndDelta" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ServerSyncDriverSetData">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="DriverSetId" type="s1:guid" />
+          <s:element minOccurs="0" maxOccurs="1" name="DriverSetXml" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfServerSyncDriverSetData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ServerSyncDriverSetData"
+            nillable="true"
+            type="tns:ServerSyncDriverSetData" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ServerDriverSetData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="DriverSets"
+            type="tns:ArrayOfServerSyncDriverSetData" />
+        </s:sequence>
+      </s:complexType>
     </s:schema>
     <s:schema elementFormDefault="qualified" targetNamespace="http://microsoft.com/wsdl/types/">
       <s:simpleType name="guid">
@@ -450,6 +532,7 @@
             type="s:int" />
           <s:element minOccurs="0" maxOccurs="1" name="DatabaseInfo" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="CustomInfo" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="DebugMode" type="s:boolean" />
         </s:sequence>
       </s:complexType>
     </s:schema>
@@ -489,6 +572,18 @@
   </wsdl:message>
   <wsdl:message name="GetUpdateDecryptionDataSoapOut">
     <wsdl:part name="parameters" element="tns:GetUpdateDecryptionDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetDriverIdListSoapIn">
+    <wsdl:part name="parameters" element="tns:GetDriverIdList" />
+  </wsdl:message>
+  <wsdl:message name="GetDriverIdListSoapOut">
+    <wsdl:part name="parameters" element="tns:GetDriverIdListResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetDriverSetDataSoapIn">
+    <wsdl:part name="parameters" element="tns:GetDriverSetData" />
+  </wsdl:message>
+  <wsdl:message name="GetDriverSetDataSoapOut">
+    <wsdl:part name="parameters" element="tns:GetDriverSetDataResponse" />
   </wsdl:message>
   <wsdl:message name="DownloadFilesSoapIn">
     <wsdl:part name="parameters" element="tns:DownloadFiles" />
@@ -538,6 +633,14 @@
     <wsdl:operation name="GetUpdateDecryptionData">
       <wsdl:input message="tns:GetUpdateDecryptionDataSoapIn" />
       <wsdl:output message="tns:GetUpdateDecryptionDataSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDriverIdList">
+      <wsdl:input message="tns:GetDriverIdListSoapIn" />
+      <wsdl:output message="tns:GetDriverIdListSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDriverSetData">
+      <wsdl:input message="tns:GetDriverSetDataSoapIn" />
+      <wsdl:output message="tns:GetDriverSetDataSoapOut" />
     </wsdl:operation>
     <wsdl:operation name="DownloadFiles">
       <wsdl:input message="tns:DownloadFilesSoapIn" />
@@ -611,6 +714,26 @@
     <wsdl:operation name="GetUpdateDecryptionData">
       <soap:operation
         soapAction="http://www.microsoft.com/SoftwareDistribution/GetUpdateDecryptionData"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDriverIdList">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetDriverIdList"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDriverSetData">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetDriverSetData"
         style="document" />
       <wsdl:input>
         <soap:body use="literal" />
@@ -717,6 +840,26 @@
     <wsdl:operation name="GetUpdateDecryptionData">
       <soap12:operation
         soapAction="http://www.microsoft.com/SoftwareDistribution/GetUpdateDecryptionData"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDriverIdList">
+      <soap12:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetDriverIdList"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDriverSetData">
+      <soap:operation soapAction="http://www.microsoft.com/SoftwareDistribution/GetDriverSetData"
         style="document" />
       <wsdl:input>
         <soap12:body use="literal" />

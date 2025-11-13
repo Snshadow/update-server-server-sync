@@ -10,7 +10,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
     /// <summary>
     /// Reporting service implementation.
     /// </summary>
-    public class ReportingWebService : IReportingServiceAspNetCore
+    public class ReportingWebService : IReportingWebService
     {
         /// <summary>
         /// Not implemented

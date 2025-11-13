@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync;
 using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
@@ -27,15 +27,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             var bindEndpoint = options.Endpoint;
             var bindPort = options.Port;
 
-            var host = new WebHostBuilder()
-                // Bind to an IP address of HOST NAME
-                // Use the same endpoint information when configuring update group policy on the devices
-                // that should get updates from this server
-                .UseUrls($"http://{bindEndpoint}:{bindPort}")
-                // Use the sample MUv6 server startup. Use the sample startup code as a starting point for customization
-                .UseStartup<UpdateServerStartup>()
-                .UseKestrel()
-                .ConfigureKestrel((context, opts) => { })
+            var host = Host.CreateDefaultBuilder()
                 .ConfigureLogging((hostingContext, logging) =>
                 {
                     logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
@@ -60,6 +52,18 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     };
 
                     config.AddInMemoryCollection(configDictionary);
+                })
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder
+                        // Bind to an IP address of HOST NAME
+                        // Use the same endpoint information when configuring update group policy on the devices
+                        // that should get updates from this server
+                        .UseUrls($"http://{bindEndpoint}:{bindPort}")
+                        // Use the sample MUv6 server startup. Use the sample startup code as a starting point for customization
+                        .UseStartup<UpdateServerStartup>()
+                        .UseKestrel()
+                        .ConfigureKestrel((context, opts) => { });
                 })
                 .Build();
 

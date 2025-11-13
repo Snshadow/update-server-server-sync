@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,7 +20,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
     /// Upstream update server implementation. Provides updates over the ServerSync protocol to downstream servers.
     /// <para>The communication protocol with clients is SOAP</para>
     /// </summary>
-    public class ServerSyncWebService : IServerSyncAspNetCore
+    public partial class ServerSyncWebService : IServerSyncWebService
     {
         /// <summary>
         /// The source of upate metadata that this server serves.
@@ -75,8 +74,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             var result = new ServerAuthConfig()
             {
                 LastChange = DateTime.UtcNow,
-                AuthInfo = [
-                    new AuthPlugInInfo() {
+                AuthInfo =
+                [
+                    new AuthPlugInInfo()
+                    {
                         PlugInID = "DssTargeting",
                         ServiceUrl = "DssAuthWebService/DssAuthWebService.asmx"
                     }
@@ -84,12 +85,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             };
 
             GetAuthConfigResponse response = new(
-                new GetAuthConfigResponseBody()
+                new GetAuthConfigResponseBody
                 {
                     GetAuthConfigResult = result
-                });
+                }
+            );
 
-            return Task.FromResult(response.GetAuthConfigResponse1.GetAuthConfigResult);
+            return Task.FromResult(response.Body.GetAuthConfigResult);
         }
 
         /// <summary>
@@ -103,7 +105,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             ServiceConfigurationLock.EnterReadLock();
             capturedConfigData = ServiceConfiguration;
             ServiceConfigurationLock.ExitReadLock();
-            return Task.FromResult(capturedConfigData);
+
+            GetConfigDataResponse response = new(
+                new GetConfigDataResponseBody
+                {
+                    GetConfigDataResult = capturedConfigData
+                }
+            );
+            return Task.FromResult(response.Body.GetConfigDataResult);
         }
 
         /// <summary>
@@ -136,7 +145,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
 
             try
             {
-                if (request.GetRevisionIdList.filter.GetConfig)
+                if (request.Body.filter.GetConfig)
                 {
                     MetadataFilter filter = new();
 
@@ -150,7 +159,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     response.NewRevisions = categories
                         .Select(u => new UpdateIdentity()
                         {
-                            UpdateID = u.Id.ID,
+                            UpdateID = u.Id.ID.ToString(),
                             RevisionNumber = u.Id.Revision
                         })
                         .ToArray();
@@ -158,22 +167,22 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                 else
                 {
                     MetadataFilter filter = new();
-                    if (request.GetRevisionIdList.filter.Categories != null)
+                    if (request.Body.filter.Categories != null)
                     {
                         filter.ProductFilter = request
-                            .GetRevisionIdList
+                            .Body
                             .filter
                             .Categories
-                            .Select(p => p.Id)
+                            .Select(p => Guid.Parse(p.Id))
                             .ToList();
                     }
-                    if (request.GetRevisionIdList.filter.Classifications != null)
+                    if (request.Body.filter.Classifications != null)
                     {
                         filter.ClassificationFilter = request
-                            .GetRevisionIdList
+                            .Body
                             .filter
                             .Classifications
-                            .Select(c => c.Id)
+                            .Select(c => Guid.Parse(c.Id))
                             .ToList();
                     }
 
@@ -198,7 +207,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                         .Distinct()
                         .Select(u => new UpdateIdentity()
                         {
-                            UpdateID = u.ID,
+                            UpdateID = u.ID.ToString(),
                             RevisionNumber = u.Revision
                         })
                         .ToArray();
@@ -233,7 +242,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
             }
 
             // Make sure the request is not larger than the config says
-            var updateRequestCount = request.GetUpdateData.updateIds.Length;
+            var updateRequestCount = request.Body.updateIds.Length;
             if (updateRequestCount > serviceConfiguration.MaxNumberOfUpdatesPerRequest)
             {
                 return null;
@@ -246,9 +255,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
 
             try
             {
-                foreach (var rawIdentity in request.GetUpdateData.updateIds)
+                foreach (var rawIdentity in request.Body.updateIds)
                 {
-                    var updateIdentity = new MicrosoftUpdatePackageIdentity(rawIdentity.UpdateID, rawIdentity.RevisionNumber);
+                    var updateIdentity = new MicrosoftUpdatePackageIdentity(Guid.Parse(rawIdentity.UpdateID), rawIdentity.RevisionNumber);
 
                     if (!PackageStore.ContainsPackage(updateIdentity))
                     {

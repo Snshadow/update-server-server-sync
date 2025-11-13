@@ -1,0 +1,1004 @@
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/"
+  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+  xmlns:tns="http://www.microsoft.com/SoftwareDistribution"
+  xmlns:s1="http://microsoft.com/wsdl/types/"
+  xmlns:s="http://www.w3.org/2001/XMLSchema"
+  xmlns:s2="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable"
+  xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+  targetNamespace="http://www.microsoft.com/SoftwareDistribution"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified"
+      targetNamespace="http://www.microsoft.com/SoftwareDistribution">
+      <s:import namespace="http://microsoft.com/wsdl/types/" />
+      <s:element name="ReportEventBatch">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie"
+              type="tns:Cookie" />
+            <s:element minOccurs="1" maxOccurs="1" name="clientTime"
+              type="s:dateTime" />
+            <s:element minOccurs="0" maxOccurs="1" name="eventBatch"
+              type="tns:ArrayOfReportingEvent" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="Cookie">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Expiration"
+            type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="EncryptedData"
+            type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfReportingEvent">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ReportingEvent"
+            nillable="true" type="tns:ReportingEvent" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ReportingEvent">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="BasicData"
+            type="tns:BasicData" />
+          <s:element minOccurs="0" maxOccurs="1" name="ExtendedData"
+            type="tns:ExtendedData" />
+          <s:element minOccurs="0" maxOccurs="1" name="PrivateData"
+            type="tns:PrivateData" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="BasicData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="TargetID"
+            type="tns:ComputerTargetIdentifier" />
+          <s:element minOccurs="1" maxOccurs="1" name="SequenceNumber"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="TimeAtTarget"
+            type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="EventInstanceID"
+            type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="NamespaceID"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="EventID"
+            type="s:short" />
+          <s:element minOccurs="1" maxOccurs="1" name="SourceID"
+            type="s:short" />
+          <s:element minOccurs="0" maxOccurs="1" name="UpdateID"
+            type="tns:UpdateRevisionIdentifier" />
+          <s:element minOccurs="1" maxOccurs="1" name="Win32HResult"
+            type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="AppName"
+            type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ComputerTargetIdentifier">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Sid" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="UpdateRevisionIdentifier">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="UpdateID"
+            type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="RevisionNumber"
+            type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ExtendedData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="ReplacementStrings"
+            type="tns:ArrayOfString" />
+          <s:element minOccurs="0" maxOccurs="1" name="MiscData"
+            type="tns:ArrayOfString" />
+          <s:element minOccurs="0" maxOccurs="1" name="ComputerBrand"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ComputerModel"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="BiosRevision"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="ProcessorArchitecture"
+            type="tns:ProcessorArchitecture" />
+          <s:element minOccurs="1" maxOccurs="1" name="OSVersion"
+            type="tns:DetailedVersion" />
+          <s:element minOccurs="1" maxOccurs="1" name="OSLocaleID"
+            type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="DeviceID"
+            type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfString">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="string"
+            nillable="true" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="ProcessorArchitecture">
+        <s:restriction base="s:string">
+          <s:enumeration value="Unknown" />
+          <s:enumeration value="X86Compatible" />
+          <s:enumeration value="IA64Compatible" />
+          <s:enumeration value="Amd64Compatible" />
+        </s:restriction>
+      </s:simpleType>
+      <s:complexType name="DetailedVersion">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Major" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Minor" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Build" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="Revision"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="ServicePackMajor"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="ServicePackMinor"
+            type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="PrivateData">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="ComputerDnsName"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="UserAccountName"
+            type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="ReportEventBatchResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1"
+              name="ReportEventBatchResult" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ReportEventBatch2">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="computerId"
+              type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="clientTime"
+              type="s:dateTime" />
+            <s:element minOccurs="0" maxOccurs="1" name="eventBatch"
+              type="tns:ArrayOfReportingEvent" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ReportEventBatch2Response">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1"
+              name="ReportEventBatch2Result" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetRequiredInventoryType">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie"
+              type="tns:Cookie" />
+            <s:element minOccurs="1" maxOccurs="1" name="rulesId"
+              type="s1:guid" />
+            <s:element minOccurs="0" maxOccurs="1" name="rulesVersion"
+              type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetRequiredInventoryTypeResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1"
+              name="GetRequiredInventoryTypeResult" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ReportInventory">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie"
+              type="tns:Cookie" />
+            <s:element minOccurs="1" maxOccurs="1" name="clientTime"
+              type="s:dateTime" />
+            <s:element minOccurs="0" maxOccurs="1" name="inventory"
+              type="tns:ReportingInventory" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ReportingInventory">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="IsCompressed"
+            type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="RawXml"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CompressedXml"
+            type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="ReportInventoryResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="ReportInventoryResult"
+              type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetRollupConfiguration">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie"
+              type="tns:Cookie" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetRollupConfigurationResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1"
+              name="GetRollupConfigurationResult"
+              type="tns:RollupConfiguration" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="RollupConfiguration">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="DoDetailedRollup"
+            type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="RollupResetGuid"
+            type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="ServerId"
+            type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="RollupDownstreamServersMaxBatchSize" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="RollupComputersMaxBatchSize" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="GetOutOfSyncComputersMaxBatchSize" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="RollupComputerStatusMaxBatchSize" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="RollupDownstreamServers">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie"
+              type="tns:Cookie" />
+            <s:element minOccurs="1" maxOccurs="1" name="clientTime"
+              type="s:dateTime" />
+            <s:element minOccurs="0" maxOccurs="1" name="downstreamServers"
+              type="tns:ArrayOfDownstreamServerRollupInfo" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfDownstreamServerRollupInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded"
+            name="DownstreamServerRollupInfo" nillable="true"
+            type="tns:DownstreamServerRollupInfo" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="DownstreamServerRollupInfo">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="ServerId"
+            type="s1:guid" />
+          <s:element minOccurs="0" maxOccurs="1" name="FullDomainName"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="LastSyncTime"
+            type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="ParentServerId"
+            type="s1:guid" />
+          <s:element minOccurs="0" maxOccurs="1" name="Version"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsReplica"
+            type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="LastRollupTime"
+            type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="ServerSummary"
+            type="tns:DownstreamServerRollupServerSummary" />
+          <s:element minOccurs="0" maxOccurs="1" name="ClientSummaries"
+            type="tns:ArrayOfDownstreamServerRollupClientSummary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="DownstreamServerRollupServerSummary">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="UpdateCount"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="DeclinedUpdateCount"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="ApprovedUpdateCount"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="NotApprovedUpdateCount"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="UpdatesWithStaleUpdateApprovalsCount" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="ExpiredUpdateCount"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="CriticalOrSecurityUpdatesNotApprovedForInstallCount"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="WsusInfrastructureUpdatesNotApprovedForInstallCount"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="UpdatesWithClientErrorsCount" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="UpdatesWithServerErrorsCount" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="UpdatesNeedingFilesCount" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="UpdatesNeededByComputersCount" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="UpdatesUpToDateCount"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="CustomComputerTargetGroupCount" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="ComputerTargetCount"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="ComputerTargetsNeedingUpdatesCount" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="ComputerTargetsWithUpdateErrorsCount" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="ComputersUpToDateCount"
+            type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfDownstreamServerRollupClientSummary">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded"
+            name="DownstreamServerRollupClientSummary" nillable="true"
+            type="tns:DownstreamServerRollupClientSummary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="DownstreamServerRollupClientSummary">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="OSMajorVersion"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="OSMinorVersion"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="OSBuildNumber"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="OSServicePackMajorNumber" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="OSServicePackMinorNumber" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="OSLocale"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="SuiteMask"
+            type="s:short" />
+          <s:element minOccurs="1" maxOccurs="1" name="OldProductType"
+            type="s:unsignedByte" />
+          <s:element minOccurs="1" maxOccurs="1" name="NewProductType"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="SystemMetrics"
+            type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="ProcessorArchitecture"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="Count" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="ActivitySummaries"
+            type="tns:ArrayOfDownstreamServerRollupClientActivitySummary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfDownstreamServerRollupClientActivitySummary">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded"
+            name="DownstreamServerRollupClientActivitySummary"
+            nillable="true"
+            type="tns:DownstreamServerRollupClientActivitySummary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="DownstreamServerRollupClientActivitySummary">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="UpdateId"
+            type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="RevisionNumber"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="InstallSuccessCount"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="InstallFailureCount"
+            type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="RollupDownstreamServersResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="RollupComputers">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie"
+              type="tns:Cookie" />
+            <s:element minOccurs="1" maxOccurs="1" name="clientTime"
+              type="s:dateTime" />
+            <s:element minOccurs="0" maxOccurs="1" name="computers"
+              type="tns:ArrayOfComputerRollupInfo" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfComputerRollupInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded"
+            name="ComputerRollupInfo" nillable="true"
+            type="tns:ComputerRollupInfo" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ComputerRollupInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Details"
+            type="tns:ComputerRollupDetails" />
+        </s:sequence>
+        <s:attribute name="ComputerId" type="s:string" />
+        <s:attribute name="LastSyncTime" type="s:dateTime" use="required" />
+        <s:attribute name="LastSyncResult" type="s:int" use="required" />
+        <s:attribute name="LastReportedRebootTime" type="s:dateTime"
+          use="required" />
+        <s:attribute name="LastReportedStatusTime" type="s:dateTime"
+          use="required" />
+        <s:attribute name="LastInventoryTime" type="s:dateTime"
+          use="required" />
+        <s:attribute name="ParentServerId" type="s1:guid" use="required" />
+      </s:complexType>
+      <s:complexType name="ComputerRollupDetails">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="TargetGroupIdList"
+            type="tns:ArrayOfGuid" />
+          <s:element minOccurs="0" maxOccurs="1"
+            name="RequestedTargetGroupNames"
+            type="tns:ArrayOfString" />
+        </s:sequence>
+        <s:attribute name="IPAddress" type="s:string" />
+        <s:attribute name="FullDomainName" type="s:string" />
+        <s:attribute name="OSMajorVersion" type="s:int" use="required" />
+        <s:attribute name="OSMinorVersion" type="s:int" use="required" />
+        <s:attribute name="OSBuildNumber" type="s:int" use="required" />
+        <s:attribute name="OSServicePackMajorNumber" type="s:int"
+          use="required" />
+        <s:attribute name="OSServicePackMinorNumber" type="s:int"
+          use="required" />
+        <s:attribute name="OSLocale" type="s:string" />
+        <s:attribute name="OSFamily" type="s:string" />
+        <s:attribute name="OSDescription" type="s:string" />
+        <s:attribute name="ComputerMake" type="s:string" />
+        <s:attribute name="ComputerModel" type="s:string" />
+        <s:attribute name="BiosVersion" type="s:string" />
+        <s:attribute name="BiosName" type="s:string" />
+        <s:attribute name="BiosReleaseDate" type="s:dateTime" use="required" />
+        <s:attribute name="ProcessorArchitecture" type="s:string" />
+        <s:attribute name="SuiteMask" type="s:short" use="required" />
+        <s:attribute name="OldProductType" type="s:unsignedByte"
+          use="required" />
+        <s:attribute name="NewProductType" type="s:int" use="required" />
+        <s:attribute name="SystemMetrics" type="s:int" use="required" />
+        <s:attribute name="ClientVersion" type="s:string" />
+      </s:complexType>
+      <s:complexType name="ArrayOfGuid">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="guid"
+            type="s1:guid" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="RollupComputersResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="RollupComputersResult"
+              type="tns:ArrayOfChangedComputer" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfChangedComputer">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ChangedComputer"
+            nillable="true" type="tns:ChangedComputer" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ChangedComputer">
+        <s:attribute name="ComputerId" type="s:string" />
+        <s:attribute name="Change" type="tns:ComputerChangeType"
+          use="required" />
+      </s:complexType>
+      <s:simpleType name="ComputerChangeType">
+        <s:restriction base="s:string">
+          <s:enumeration value="Deleted" />
+          <s:enumeration value="NewParent" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GetOutOfSyncComputers">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie"
+              type="tns:Cookie" />
+            <s:element minOccurs="1" maxOccurs="1" name="parentServerId"
+              type="s1:guid" />
+            <s:element minOccurs="0" maxOccurs="1" name="lastRollupNumbers"
+              type="tns:ArrayOfComputerLastRollupNumber" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfComputerLastRollupNumber">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded"
+            name="ComputerLastRollupNumber" nillable="true"
+            type="tns:ComputerLastRollupNumber" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ComputerLastRollupNumber">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="ComputerId"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="RollupNumber"
+            type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetOutOfSyncComputersResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1"
+              name="GetOutOfSyncComputersResult"
+              type="tns:ArrayOfString" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="RollupComputerStatus">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="cookie"
+              type="tns:Cookie" />
+            <s:element minOccurs="1" maxOccurs="1" name="clientTime"
+              type="s:dateTime" />
+            <s:element minOccurs="1" maxOccurs="1" name="parentServerId"
+              type="s1:guid" />
+            <s:element minOccurs="0" maxOccurs="1" name="computers"
+              type="tns:ArrayOfComputerStatusRollupInfo" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfComputerStatusRollupInfo">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded"
+            name="ComputerStatusRollupInfo" nillable="true"
+            type="tns:ComputerStatusRollupInfo" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ComputerStatusRollupInfo">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="InstanceId"
+            type="s1:guid" />
+          <s:element minOccurs="0" maxOccurs="1" name="ComputerId"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="EffectiveLastDetectionTime" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="RollupNumber"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsFullRollup"
+            type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="UpdateStatus"
+            type="tns:ArrayOfComputerStatusRollupUpdateStatus" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfComputerStatusRollupUpdateStatus">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded"
+            name="ComputerStatusRollupUpdateStatus" nillable="true"
+            type="tns:ComputerStatusRollupUpdateStatus" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ComputerStatusRollupUpdateStatus">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="UpdateId"
+            type="s1:guid" />
+          <s:element minOccurs="1" maxOccurs="1" name="SummarizationState"
+            type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="LastChangeTime"
+            type="s:dateTime" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="RollupComputerStatusResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1"
+              name="RollupComputerStatusResult" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+    </s:schema>
+    <s:schema elementFormDefault="qualified"
+      targetNamespace="http://microsoft.com/wsdl/types/">
+      <s:simpleType name="guid">
+        <s:restriction base="s:string">
+          <s:pattern
+            value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" />
+        </s:restriction>
+      </s:simpleType>
+    </s:schema>
+    <s:schema elementFormDefault="qualified"
+      targetNamespace="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable">
+      <s:element name="Ping">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="pingLevel"
+              type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="PingResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="PingResult"
+              type="s2:MonitoredServicesResponse" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="MonitoredServicesResponse">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="SuccessFlag"
+            type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="ServicesTime"
+            type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="ServicesName"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ServicesMachine"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsHttps"
+            type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="RequestContentType"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ConfigFilePath"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ConfigFileProjectName"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1"
+            name="ConfigFileEnvironmentName" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="ConfigFileLastModifiedTime" type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="ConfigFileVersion"
+            type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="ConfigFileNextExpirationTime" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1"
+            name="ConfigFileExpirationModuloInMinutes" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="DatabaseInfo"
+            type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CustomInfo"
+            type="s:string" />
+        </s:sequence>
+      </s:complexType>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="ReportEventBatchSoapIn">
+    <wsdl:part name="parameters" element="tns:ReportEventBatch" />
+  </wsdl:message>
+  <wsdl:message name="ReportEventBatchSoapOut">
+    <wsdl:part name="parameters" element="tns:ReportEventBatchResponse" />
+  </wsdl:message>
+  <wsdl:message name="ReportEventBatch2SoapIn">
+    <wsdl:part name="parameters" element="tns:ReportEventBatch2" />
+  </wsdl:message>
+  <wsdl:message name="ReportEventBatch2SoapOut">
+    <wsdl:part name="parameters" element="tns:ReportEventBatch2Response" />
+  </wsdl:message>
+  <wsdl:message name="GetRequiredInventoryTypeSoapIn">
+    <wsdl:part name="parameters" element="tns:GetRequiredInventoryType" />
+  </wsdl:message>
+  <wsdl:message name="GetRequiredInventoryTypeSoapOut">
+    <wsdl:part name="parameters"
+      element="tns:GetRequiredInventoryTypeResponse" />
+  </wsdl:message>
+  <wsdl:message name="ReportInventorySoapIn">
+    <wsdl:part name="parameters" element="tns:ReportInventory" />
+  </wsdl:message>
+  <wsdl:message name="ReportInventorySoapOut">
+    <wsdl:part name="parameters" element="tns:ReportInventoryResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetRollupConfigurationSoapIn">
+    <wsdl:part name="parameters" element="tns:GetRollupConfiguration" />
+  </wsdl:message>
+  <wsdl:message name="GetRollupConfigurationSoapOut">
+    <wsdl:part name="parameters"
+      element="tns:GetRollupConfigurationResponse" />
+  </wsdl:message>
+  <wsdl:message name="RollupDownstreamServersSoapIn">
+    <wsdl:part name="parameters" element="tns:RollupDownstreamServers" />
+  </wsdl:message>
+  <wsdl:message name="RollupDownstreamServersSoapOut">
+    <wsdl:part name="parameters"
+      element="tns:RollupDownstreamServersResponse" />
+  </wsdl:message>
+  <wsdl:message name="RollupComputersSoapIn">
+    <wsdl:part name="parameters" element="tns:RollupComputers" />
+  </wsdl:message>
+  <wsdl:message name="RollupComputersSoapOut">
+    <wsdl:part name="parameters" element="tns:RollupComputersResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetOutOfSyncComputersSoapIn">
+    <wsdl:part name="parameters" element="tns:GetOutOfSyncComputers" />
+  </wsdl:message>
+  <wsdl:message name="GetOutOfSyncComputersSoapOut">
+    <wsdl:part name="parameters" element="tns:GetOutOfSyncComputersResponse" />
+  </wsdl:message>
+  <wsdl:message name="RollupComputerStatusSoapIn">
+    <wsdl:part name="parameters" element="tns:RollupComputerStatus" />
+  </wsdl:message>
+  <wsdl:message name="RollupComputerStatusSoapOut">
+    <wsdl:part name="parameters" element="tns:RollupComputerStatusResponse" />
+  </wsdl:message>
+  <wsdl:message name="PingSoapIn">
+    <wsdl:part name="parameters" element="s2:Ping" />
+  </wsdl:message>
+  <wsdl:message name="PingSoapOut">
+    <wsdl:part name="parameters" element="s2:PingResponse" />
+  </wsdl:message>
+  <wsdl:portType name="WebServiceSoap">
+    <wsdl:operation name="ReportEventBatch">
+      <wsdl:input message="tns:ReportEventBatchSoapIn" />
+      <wsdl:output message="tns:ReportEventBatchSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="ReportEventBatch2">
+      <wsdl:input message="tns:ReportEventBatch2SoapIn" />
+      <wsdl:output message="tns:ReportEventBatch2SoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetRequiredInventoryType">
+      <wsdl:input message="tns:GetRequiredInventoryTypeSoapIn" />
+      <wsdl:output message="tns:GetRequiredInventoryTypeSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="ReportInventory">
+      <wsdl:input message="tns:ReportInventorySoapIn" />
+      <wsdl:output message="tns:ReportInventorySoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetRollupConfiguration">
+      <wsdl:input message="tns:GetRollupConfigurationSoapIn" />
+      <wsdl:output message="tns:GetRollupConfigurationSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RollupDownstreamServers">
+      <wsdl:input message="tns:RollupDownstreamServersSoapIn" />
+      <wsdl:output message="tns:RollupDownstreamServersSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RollupComputers">
+      <wsdl:input message="tns:RollupComputersSoapIn" />
+      <wsdl:output message="tns:RollupComputersSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetOutOfSyncComputers">
+      <wsdl:input message="tns:GetOutOfSyncComputersSoapIn" />
+      <wsdl:output message="tns:GetOutOfSyncComputersSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RollupComputerStatus">
+      <wsdl:input message="tns:RollupComputerStatusSoapIn" />
+      <wsdl:output message="tns:RollupComputerStatusSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Ping">
+      <wsdl:input message="tns:PingSoapIn" />
+      <wsdl:output message="tns:PingSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="WebServiceSoap" type="tns:WebServiceSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="ReportEventBatch">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/ReportEventBatch"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ReportEventBatch2">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/ReportEventBatch2"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRequiredInventoryType">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/GetRequiredInventoryType"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ReportInventory">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/ReportInventory"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRollupConfiguration">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/GetRollupConfiguration"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RollupDownstreamServers">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/RollupDownstreamServers"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RollupComputers">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/RollupComputers"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetOutOfSyncComputers">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/GetOutOfSyncComputers"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RollupComputerStatus">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/RollupComputerStatus"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Ping">
+      <soap:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable/Ping"
+        style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="WebServiceSoap12" type="tns:WebServiceSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="ReportEventBatch">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/ReportEventBatch"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ReportEventBatch2">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/ReportEventBatch2"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRequiredInventoryType">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/GetRequiredInventoryType"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ReportInventory">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/ReportInventory"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetRollupConfiguration">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/GetRollupConfiguration"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RollupDownstreamServers">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/RollupDownstreamServers"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RollupComputers">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/RollupComputers"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetOutOfSyncComputers">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/GetOutOfSyncComputers"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RollupComputerStatus">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/RollupComputerStatus"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Ping">
+      <soap12:operation
+        soapAction="http://www.microsoft.com/SoftwareDistribution/Server/IMonitorable/Ping"
+        style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="WebService">
+    <wsdl:port name="WebServiceSoap" binding="tns:WebServiceSoap">
+      <soap:address
+        location="http://localhost/ReportingWebService/WebService.asmx" />
+    </wsdl:port>
+    <wsdl:port name="WebServiceSoap12" binding="tns:WebServiceSoap12">
+      <soap12:address
+        location="http://localhost/ReportingWebService/WebService.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

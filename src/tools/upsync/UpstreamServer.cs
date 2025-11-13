@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync;
 using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
@@ -26,13 +26,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             var metadataPath = options.Path;
             var contentPath = options.ContentSourcePath;
 
-            var host = new WebHostBuilder()
-                // Bind to a specific IP address or HOST NAME
-                .UseUrls($"http://{bindEndpoint}:{bindPort}")
-                // Use the sample startup provided. Use the sample startup as a starting point for a custom startup
-                .UseStartup<UpstreamServerStartup>()
-                .UseKestrel()
-                .ConfigureKestrel((context, opts) => { })
+            var host = Host.CreateDefaultBuilder()
                 .ConfigureLogging((hostingContext, logging) =>
                 {
                     logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
@@ -45,15 +39,25 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     // Pass along configuration to the startup.
                     var configDictionary = new Dictionary<string, string>()
                     {
-            // Path to local metadata store
-            { "metadata-path", metadataPath },
-            // Path to local update content store
-            { "content-path", contentPath },
-            // Path to the WSUS configuration file
-            { "service-config-json", serviceConfigurationJson }
+                        // Path to local metadata store
+                        { "metadata-path", metadataPath },
+                        // Path to local update content store
+                        { "content-path", contentPath },
+                        // Path to the WSUS configuration file
+                        { "service-config-json", serviceConfigurationJson }
                     };
 
                     config.AddInMemoryCollection(configDictionary);
+                })
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder
+                        // Bind to a specific IP address or HOST NAME
+                        .UseUrls($"http://{bindEndpoint}:{bindPort}")
+                        // Use the sample startup provided. Use the sample startup as a starting point for a custom startup
+                        .UseStartup<UpstreamServerStartup>()
+                        .UseKestrel()
+                        .ConfigureKestrel((context, opts) => { });
                 })
                 .Build();
 

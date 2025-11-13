@@ -78,7 +78,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     {
                         // Request deltas if we have an anchor from a previous query
                         Delta = !string.IsNullOrEmpty(anchor),
-                        Id = ProductFilter[i]
+                        Id = ProductFilter[i].ToString()
                     };
                 }
             }
@@ -92,7 +92,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     {
                         // Request deltas if we have an anchor from a previous query
                         Delta = !string.IsNullOrEmpty(anchor),
-                        Id = ClassificationFilter[i]
+                        Id = ClassificationFilter[i].ToString()
                     };
                 }
             }

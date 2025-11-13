@@ -34,7 +34,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <summary>
         /// Client used to issue SOAP requests
         /// </summary>
-        private readonly IServerSyncWebService ServerSyncClient;
+        private readonly ServerSyncProxySoapClient ServerSyncClient;
 
         /// <summary>
         /// Cached access cookie. If not set in the constructor, a new access token will be obtained
@@ -77,7 +77,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                 httpBindingWithTimeout.Security.Mode = System.ServiceModel.BasicHttpSecurityMode.Transport;
             }
 
-            ServerSyncClient = new ServerSyncWebServiceClient(httpBindingWithTimeout, serviceEndpoint);
+            ServerSyncClient = new ServerSyncProxySoapClient(httpBindingWithTimeout, serviceEndpoint);
         }
 
         internal async Task RefreshAccessToken(string accountName, Guid? accountGuid)
@@ -157,20 +157,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         {
             var configDataRequest = new GetConfigDataRequest
             {
-                GetConfigData = new GetConfigDataRequestBody()
+                Body = new GetConfigDataRequestBody()
                 {
                     configAnchor = null,
                     cookie = AccessToken.AccessCookie
                 }
             };
 
-            var configDataReply = await ServerSyncClient.GetConfigDataAsync(configDataRequest);
-            if (configDataReply is null || configDataReply.GetConfigDataResponse1 is null || configDataReply.GetConfigDataResponse1.GetConfigDataResult is null)
+            var configDataReply = await ServerSyncClient.GetConfigDataAsync(configDataRequest.Body.cookie, configDataRequest.Body.configAnchor);
+            if (configDataReply is null || configDataReply.Body is null || configDataReply.Body.GetConfigDataResult is null)
             {
                 throw new Exception("Failed to get config data.");
             }
 
-            return configDataReply.GetConfigDataResponse1.GetConfigDataResult;
+            return configDataReply.Body.GetConfigDataResult;
         }
 
         internal IEnumerable<MicrosoftUpdatePackageIdentity> GetCategoryIds(out string newAnchor, string oldAnchor = null)
@@ -189,7 +189,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             // Create a request for categories
             var revisionIdRequest = new GetRevisionIdListRequest
             {
-                GetRevisionIdList = new GetRevisionIdListRequestBody()
+                Body = new GetRevisionIdListRequestBody()
                 {
                     cookie = AccessToken.AccessCookie,
                     filter = new ServerSyncFilter()
@@ -198,29 +198,29 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
             if (!string.IsNullOrEmpty(oldAnchor))
             {
-                revisionIdRequest.GetRevisionIdList.filter.Anchor = oldAnchor;
+                revisionIdRequest.Body.filter.Anchor = oldAnchor;
             }
 
             // GetConfig must be true to request just categories
-            revisionIdRequest.GetRevisionIdList.filter.GetConfig = true;
+            revisionIdRequest.Body.filter.GetConfig = true;
 
-            var revisionsIdReply = ServerSyncClient.GetRevisionIdListAsync(revisionIdRequest).GetAwaiter().GetResult();
+            var revisionsIdReply = ServerSyncClient.GetRevisionIdListAsync(revisionIdRequest.Body.cookie, revisionIdRequest.Body.filter).GetAwaiter().GetResult();
             if (revisionsIdReply is null ||
-                revisionsIdReply.GetRevisionIdListResponse1 is null ||
-                revisionsIdReply.GetRevisionIdListResponse1.GetRevisionIdListResult is null)
+                revisionsIdReply.Body is null ||
+                revisionsIdReply.Body.GetRevisionIdListResult is null)
             {
                 throw new Exception("Failed to get revision ID list");
             }
 
-            newAnchor = revisionsIdReply.GetRevisionIdListResponse1.GetRevisionIdListResult.Anchor;
+            newAnchor = revisionsIdReply.Body.GetRevisionIdListResult.Anchor;
 
             // Return IDs and the anchor for this query. The anchor can be used to get a delta list in the future.
             return revisionsIdReply
-                .GetRevisionIdListResponse1
+                .Body
                 .GetRevisionIdListResult
                 .NewRevisions
                 .Select(
-                    rawId => new MicrosoftUpdatePackageIdentity(rawId.UpdateID, rawId.RevisionNumber));
+                    rawId => new MicrosoftUpdatePackageIdentity(Guid.Parse(rawId.UpdateID), rawId.RevisionNumber));
         }
 
         internal IEnumerable<MicrosoftUpdatePackageIdentity> GetUpdateIds(UpstreamSourceFilter updatesFilter, out string newAnchor)
@@ -239,7 +239,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             // Create a request for categories
             var revisionIdRequest = new GetRevisionIdListRequest
             {
-                GetRevisionIdList = new GetRevisionIdListRequestBody()
+                Body = new GetRevisionIdListRequestBody()
                 {
                     cookie = AccessToken.AccessCookie,
                     filter = updatesFilter.ToServerSyncFilter()
@@ -247,10 +247,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             };
 
             // GetConfig must be false to request updates
-            revisionIdRequest.GetRevisionIdList.filter.GetConfig = false;
+            revisionIdRequest.Body.filter.GetConfig = false;
 
-            var revisionsIdReply = ServerSyncClient.GetRevisionIdListAsync(revisionIdRequest).GetAwaiter().GetResult();
-            if (revisionsIdReply?.GetRevisionIdListResponse1?.GetRevisionIdListResult is null)
+            var revisionsIdReply = ServerSyncClient.GetRevisionIdListAsync(revisionIdRequest.Body.cookie, revisionIdRequest.Body.filter).GetAwaiter().GetResult();
+            if (revisionsIdReply?.Body?.GetRevisionIdListResult is null)
             {
                 throw new Exception("Failed to get revision ID list");
             }
@@ -258,8 +258,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             newAnchor = null;
 
             // Return IDs and the anchor for this query. The anchor can be used to get a delta list in the future.
-            return revisionsIdReply.GetRevisionIdListResponse1.GetRevisionIdListResult.NewRevisions.Select(
-                rawId => new MicrosoftUpdatePackageIdentity(rawId.UpdateID, rawId.RevisionNumber));
+            return revisionsIdReply.Body.GetRevisionIdListResult.NewRevisions.Select(
+                rawId => new MicrosoftUpdatePackageIdentity(Guid.Parse(rawId.UpdateID), rawId.RevisionNumber));
         }
 
         /// <summary>
@@ -280,7 +280,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             }
 
             var rawUpdateIds = updateIds
-                .Select(id => new UpdateIdentity() { UpdateID = id.ID, RevisionNumber = id.Revision })
+                .Select(id => new UpdateIdentity() { UpdateID = id.ID.ToString(), RevisionNumber = id.Revision })
                 .ToList();
 
             // Data retrieval is done is done in batches of upto MaxNumberOfUpdatesPerRequest
@@ -293,7 +293,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             {
                 var updateDataRequest = new GetUpdateDataRequest
                 {
-                    GetUpdateData = new GetUpdateDataRequestBody()
+                    Body = new GetUpdateDataRequestBody()
                     {
                         cookie = AccessToken.AccessCookie,
                         updateIds = batch
@@ -306,7 +306,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                 {
                     try
                     {
-                        updateDataReply = ServerSyncClient.GetUpdateDataAsync(updateDataRequest).GetAwaiter().GetResult();
+                        updateDataReply = ServerSyncClient.GetUpdateDataAsync(updateDataRequest.Body.cookie, updateDataRequest.Body.updateIds).GetAwaiter().GetResult();
                     }
                     catch (TimeoutException)
                     {
@@ -320,17 +320,17 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     retryCount++;
                 } while (updateDataReply is null && retryCount < 10);
 
-                if (updateDataReply?.GetUpdateDataResponse1?.GetUpdateDataResult is null)
+                if (updateDataReply?.Body?.GetUpdateDataResult is null)
                 {
                     throw new Exception("Failed to get update metadata");
                 }
 
                 // Parse the list of raw files into a more usable format
-                var filesList = updateDataReply.GetUpdateDataResponse1.GetUpdateDataResult.fileUrls
+                var filesList = updateDataReply.Body.GetUpdateDataResult.fileUrls
                 .Select(rawFile => InMemoryUpdateFactory.FromServerSyncData(rawFile))
                 .ToDictionary(file => file.DigestBase64);
 
-                foreach (var rawUpdate in updateDataReply.GetUpdateDataResponse1.GetUpdateDataResult.updates)
+                foreach (var rawUpdate in updateDataReply.Body.GetUpdateDataResult.updates)
                 {
                     packages.Add(InMemoryUpdateFactory.FromServerSyncData(rawUpdate, filesList));
                 }
@@ -353,14 +353,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
 
                 var updateDataRequest = new GetUpdateDataRequest
                 {
-                    GetUpdateData = new GetUpdateDataRequestBody()
+                    Body = new GetUpdateDataRequestBody()
                     {
                         cookie = AccessToken.AccessCookie,
                         updateIds = new UpdateIdentity[]
                         {
                             new UpdateIdentity()
                             {
-                                UpdateID = partialUpdateId,
+                                UpdateID = partialUpdateId.ToString(),
                                 RevisionNumber = currentRevision
                             }
                         }
@@ -373,7 +373,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                 {
                     try
                     {
-                        updateDataReply = ServerSyncClient.GetUpdateDataAsync(updateDataRequest).GetAwaiter().GetResult();
+                        updateDataReply = ServerSyncClient.GetUpdateDataAsync(updateDataRequest.Body.cookie, updateDataRequest.Body.updateIds).GetAwaiter().GetResult();
                     }
                     catch (TimeoutException)
                     {
@@ -387,7 +387,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     retryCount++;
                 } while (updateDataReply is null && retryCount < 10);
 
-                if (updateDataReply?.GetUpdateDataResponse1?.GetUpdateDataResult is null)
+                if (updateDataReply?.Body?.GetUpdateDataResult is null)
                 {
                     currentRevision--;
                 }
@@ -395,13 +395,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                 {
                     // Parse the list of raw files into a more usable format
                     var filesList = new List<UpdateFileUrl>(
-                        updateDataReply.GetUpdateDataResponse1.GetUpdateDataResult.fileUrls.Select(
+                        updateDataReply.Body.GetUpdateDataResult.fileUrls.Select(
                             rawFile => new UpdateFileUrl(
                                 Convert.ToBase64String(rawFile.FileDigest),
                                 rawFile.MUUrl,
                                 rawFile.UssUrl
                                 )));
-                    var update = updateDataReply.GetUpdateDataResponse1.GetUpdateDataResult.updates.First();
+                    var update = updateDataReply.Body.GetUpdateDataResult.updates.First();
 
                     return (update, filesList);
                 }

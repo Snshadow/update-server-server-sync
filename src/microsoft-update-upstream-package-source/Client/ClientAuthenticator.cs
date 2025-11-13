@@ -167,7 +167,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             }
 
             // Create a WSUS server sync client
-            IServerSyncWebService serverSyncClient = new ServerSyncWebServiceClient(httpBinding, upstreamEndpoint);
+            ServerSyncProxySoap serverSyncClient = new ServerSyncProxySoapClient(httpBinding, upstreamEndpoint);
 
             // Retrieve the authentication information
             authConfigResponse = await serverSyncClient.GetAuthConfigAsync(new GetAuthConfigRequest());
@@ -176,12 +176,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             {
                 throw new Exception("Authentication config response was null.");
             }
-            else if (authConfigResponse.GetAuthConfigResponse1.GetAuthConfigResult.AuthInfo is null)
+            else if (authConfigResponse.Body.GetAuthConfigResult.AuthInfo is null)
             {
                 throw new Exception("Authentication config payload was null.");
             }
 
-            return authConfigResponse.GetAuthConfigResponse1.GetAuthConfigResult.AuthInfo;
+            return authConfigResponse.Body.GetAuthConfigResult.AuthInfo;
         }
 
         /// <summary>
@@ -199,27 +199,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             }
 
             // Create a DSS client using the endpoint retrieved above
-            IDSSAuthWebService authenticationService = new DSSAuthWebServiceClient(httpBinding, upstreamEndpoint);
+            var authenticationService = new DssAuthWebServiceSoapClient(httpBinding, upstreamEndpoint);
 
             // Issue the request. All accounts are allowed, so we just generate a random account guid and name
-            var cookieRequest = new GetAuthorizationCookieRequest
-            {
-                GetAuthorizationCookie = new GetAuthorizationCookieRequestBody
-                {
-                    accountGuid = AccountName,
-                    accountName = AccountGuid.ToString()
-                }
-            };
 
-            var getAuthCookieResponse = await authenticationService.GetAuthorizationCookieAsync(cookieRequest);
+            var getAuthCookieResponse = await authenticationService.GetAuthorizationCookieAsync(AccountName, AccountGuid.ToString(), null);
 
             if (getAuthCookieResponse is null ||
-                getAuthCookieResponse.GetAuthorizationCookieResponse1.GetAuthorizationCookieResult.CookieData is null)
+                getAuthCookieResponse.Body.GetAuthorizationCookieResult.CookieData is null)
             {
                 throw new Exception("Failed to get authorization token. Response or cookie is null.");
             }
 
-            return getAuthCookieResponse.GetAuthorizationCookieResponse1.GetAuthorizationCookieResult;
+            return getAuthCookieResponse.Body.GetAuthorizationCookieResult;
         }
 
         /// <summary>
@@ -237,31 +229,30 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             }
 
             // Create a service client on the default Microsoft upstream server.
-            IServerSyncWebService serverSyncClient = new ServerSyncWebServiceClient(httpBinding, upstreamEndpoint);
+            ServerSyncProxySoap serverSyncClient = new ServerSyncProxySoapClient(httpBinding, upstreamEndpoint);
 
             // Create an access cookie request using the authentication cookie parameter.
             var cookieRequest = new GetCookieRequest
             {
-                GetCookie = new GetCookieRequestBody()
+                Body = new GetCookieRequestBody()
                 {
-                    authCookies = new UpdateServices.WebServices.ServerSync.AuthorizationCookie[]
-                    {
-                        new UpdateServices.WebServices.ServerSync.AuthorizationCookie()
+                    authCookies = [
+                        new()
                         {
                             CookieData = authCookie.CookieData,
                             PlugInId = authCookie.PlugInId
                         }
-                    },
+                    ],
                     oldCookie = null,
                     protocolVersion = "1.7"
                 }
             };
 
-            cookieRequest.GetCookie.authCookies = new UpdateServices.WebServices.ServerSync.AuthorizationCookie[] { new UpdateServices.WebServices.ServerSync.AuthorizationCookie() };
-            cookieRequest.GetCookie.authCookies[0].CookieData = authCookie.CookieData;
-            cookieRequest.GetCookie.authCookies[0].PlugInId = authCookie.PlugInId;
-            cookieRequest.GetCookie.oldCookie = null;
-            cookieRequest.GetCookie.protocolVersion = "1.7";
+            cookieRequest.Body.authCookies = [new()];
+            cookieRequest.Body.authCookies[0].CookieData = authCookie.CookieData;
+            cookieRequest.Body.authCookies[0].PlugInId = authCookie.PlugInId;
+            cookieRequest.Body.oldCookie = null;
+            cookieRequest.Body.protocolVersion = "1.7";
 
             GetCookieResponse cookieResponse;
             try
@@ -274,12 +265,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             }
 
             if (cookieResponse is null ||
-                cookieResponse.GetCookieResponse1.GetCookieResult.EncryptedData is null)
+                cookieResponse.Body.GetCookieResult.EncryptedData is null)
             {
                 throw new Exception("Failed to get access cookie. Response or cookie is null.");
             }
 
-            return cookieResponse.GetCookieResponse1.GetCookieResult;
+            return cookieResponse.Body.GetCookieResult;
         }
     }
 }

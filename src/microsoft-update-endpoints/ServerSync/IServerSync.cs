@@ -14,7 +14,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCodeAttribute("dotnet-svcutil", "1.0.0.1")]
     [ServiceContractAttribute(Namespace = "http://www.microsoft.com/SoftwareDistribution", ConfigurationName = "IServerSyncWebService")]
-    interface IServerSyncAspNetCore
+    interface IServerSyncWebService
     {
         [OperationContractAttribute(Action = "http://www.microsoft.com/SoftwareDistribution/GetAuthConfig", ReplyAction = "http://www.microsoft.com/SoftwareDistribution/IServerSyncWebService/GetAuthConfig" +
             "Response")]

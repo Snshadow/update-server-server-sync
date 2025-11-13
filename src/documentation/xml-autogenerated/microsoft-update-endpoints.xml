@@ -497,12 +497,12 @@
             GetAuthorizationCookieAsync returns AuthorizationCookie instead of the nested GetAuthorizationCookieResult\GetAuthorizationResultBody
             </summary>
         </member>
-        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync.IReportingServiceAspNetCore">
+        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync.IReportingWebService">
             <summary>
             Declare an interface for the reporting web service (WCF) that can be used in AspNetCore with slight modifications.
             </summary>
         </member>
-        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync.IServerSyncAspNetCore">
+        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync.IServerSyncWebService">
             <summary>
             Declare an interface for the ServerSyncWebService (WCF) that can be used in AspNetCore with slight modifications.
             SOAP operations that return *Response\*ResponseBody are modified to return the actual data in the *ResponseBody data contract. This
