@@ -99,6 +99,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             var filter = new MetadataFilter()
             {
+                IncludeBundled = true,
                 IncludeExpired = true,
                 IdFilter = [id]
             };
@@ -119,6 +120,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             var filter = new MetadataFilter()
             {
+                IncludeBundled = true,
                 IncludeExpired = true,
                 IdFilter = prereqGraph.GetRootUpdates().ToList()
             };
@@ -154,6 +156,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             var filter = new MetadataFilter()
             {
+                IncludeBundled = true,
                 IncludeExpired = true,
                 IdFilter = prereqGraph.GetNonLeafUpdates().ToList()
             };
@@ -190,6 +193,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             var filter = new MetadataFilter()
             {
+                IncludeBundled = true,
                 IncludeExpired = true,
                 IdFilter = prereqGraph.GetLeafUpdates().ToList()
             };
@@ -226,6 +230,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             var filter = new MetadataFilter()
             {
+                IncludeBundled = true,
                 IncludeExpired = true,
                 IdFilter = prereqGraph.GetLeafUpdates().ToList()
             };

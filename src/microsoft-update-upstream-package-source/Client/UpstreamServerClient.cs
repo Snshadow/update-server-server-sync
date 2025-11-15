@@ -205,9 +205,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
             revisionIdRequest.Body.filter.GetConfig = true;
 
             var revisionsIdReply = ServerSyncClient.GetRevisionIdListAsync(revisionIdRequest.Body.cookie, revisionIdRequest.Body.filter).GetAwaiter().GetResult();
-            if (revisionsIdReply is null ||
-                revisionsIdReply.Body is null ||
-                revisionsIdReply.Body.GetRevisionIdListResult is null)
+            if (revisionsIdReply?.Body?.GetRevisionIdListResult is null)
             {
                 throw new Exception("Failed to get revision ID list");
             }
@@ -356,14 +354,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     Body = new GetUpdateDataRequestBody()
                     {
                         cookie = AccessToken.AccessCookie,
-                        updateIds = new UpdateIdentity[]
-                        {
+                        updateIds = [
                             new UpdateIdentity()
                             {
                                 UpdateID = partialUpdateId.ToString(),
                                 RevisionNumber = currentRevision
                             }
-                        }
+                        ]
                     }
                 };
 

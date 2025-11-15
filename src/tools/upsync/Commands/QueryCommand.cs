@@ -74,6 +74,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [Description("Ignore superseded updates")]
             public bool SkipSuperseded { get; set; }
 
+            [CommandOption("--include-bundled")]
+            [Description("Include bundled updates by other updates")]
+            public bool IncludeBundled { get; set; }
+
             [CommandOption("--include-expired")]
             [Description("Include expired updates")]
             public bool IncludeExpired { get; set; }

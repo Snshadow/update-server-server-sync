@@ -117,7 +117,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             {
                 var filter = new MetadataFilter()
                 {
-                    IdFilter = new List<Guid> { id },
+                    IdFilter = [id],
+                    IncludeBundled = true,
                     IncludeExpired = true,
                 };
 

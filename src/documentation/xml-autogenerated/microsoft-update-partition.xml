@@ -157,6 +157,12 @@
             </summary>
             <value>True to skip superseded updates, false otherwise</value>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IncludeBundled">
+            <summary>
+            Get or set whether to include updates bundled by other updates
+            </summary>
+            <value>True to include bundled updates, false otherwise</value>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IncludeExpired">
             <summary>
             Get or set whether to include expired updates

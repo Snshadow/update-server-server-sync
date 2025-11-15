@@ -24,6 +24,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
         bool SkipSuperseded { get; }
 
+        bool IncludeBundled { get; }
+
         bool IncludeExpired { get; }
 
         IEnumerable<string> KbArticleFilter { get; }
@@ -157,6 +159,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
 
             filter.SkipSuperseded = filterOptions.SkipSuperseded;
+            filter.IncludeBundled = filterOptions.IncludeBundled;
             filter.IncludeExpired = filterOptions.IncludeExpired;
             filter.FirstX = filterOptions.FirstX;
             filter.AfterX = filterOptions.AfterX;

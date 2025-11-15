@@ -128,6 +128,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 TitleFilter = TitleFilter,
                 ExcludedTitleFilter = ExcludedTitleFilter,
                 SkipSuperseded = SkipSuperseded,
+                IncludeBundled = IncludeBundled,
                 IncludeExpired = IncludeExpired,
                 FirstX = FirstX,
                 AfterX = AfterX,
@@ -224,6 +225,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// </summary>
         /// <value>True to skip superseded updates, false otherwise</value>
         public bool SkipSuperseded;
+
+        /// <summary>
+        /// Get or set whether to include updates bundled by other updates
+        /// </summary>
+        /// <value>True to include bundled updates, false otherwise</value>
+        public bool IncludeBundled;
 
         /// <summary>
         /// Get or set whether to include expired updates
@@ -499,6 +506,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 filteredUpdates = filteredUpdates
                     .Where(u => u is not SoftwareUpdate softwareUpdate ||
                     (softwareUpdate.IsSupersededBy?.Count ?? 0) == 0);
+            }
+
+            if (!IncludeBundled)
+            {
+                filteredUpdates = filteredUpdates
+                    .Where(u => u is not SoftwareUpdate softwareUpdate ||
+                    (softwareUpdate.BundledWithUpdates?.Count ?? 0) == 0);
             }
 
             if (!IncludeExpired)

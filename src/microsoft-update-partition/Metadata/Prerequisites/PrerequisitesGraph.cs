@@ -32,6 +32,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
             Dictionary<Guid, PrerequisiteGraphNode> graph = [];
             MetadataFilter filter = new()
             {
+                IncludeBundled = true,
                 IncludeExpired = true,
                 ExcludedIdFilter = cachedGuids
             };

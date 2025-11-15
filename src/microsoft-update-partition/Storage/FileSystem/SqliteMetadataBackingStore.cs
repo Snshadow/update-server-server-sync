@@ -1357,6 +1357,11 @@ namespace Microsoft.PackageGraph.Storage.Local
                 }
             }
 
+            if (!metadataFilter.IncludeBundled)
+            {
+                whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM bundled as b WHERE b.guid = i.guid AND b.revision = i.revision)");
+            }
+
             if (metadataFilter.SkipSuperseded)
             {
                 whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM superseded AS sup WHERE sup.superseded_guid = i.guid)");

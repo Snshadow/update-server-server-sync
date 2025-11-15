@@ -100,6 +100,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             public string[] SortOrder { get; set; }
             IEnumerable<string> IMetadataFilterOptions.SortOrder => SortOrder;
 
+            // Always false for this command.
+            public bool IncludeBundled { get; }
+
             public override ValidationResult Validate()
             {
                 if (string.IsNullOrEmpty(SourceAlias) && string.IsNullOrEmpty(SourcePath))
