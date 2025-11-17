@@ -166,7 +166,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                 }
                 else
                 {
-                    MetadataFilter filter = new();
+                    MetadataFilter filter = new()
+                    {
+                        IncludeBundled = true,
+                        IncludeExpired = true
+                    };
                     if (request.Body.filter.Categories != null)
                     {
                         filter.ProductFilter = request
@@ -186,13 +190,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                             .ToList();
                     }
 
-                    var filteredResult = filter.Apply(PackageStore).Select(p => p.Id as MicrosoftUpdatePackageIdentity);
+                    var filteredPackages = filter.Apply(PackageStore);
 
                     // Also select all updates that are bundled with updates matching the filter
                     List<MicrosoftUpdatePackageIdentity> bundledUpdates = [];
-                    foreach (var result in filteredResult)
+                    foreach (var package in filteredPackages)
                     {
-                        if (PackageStore.GetPackage(result) is SoftwareUpdate softwareUpdate)
+                        if (package is SoftwareUpdate softwareUpdate)
                         {
                             if (softwareUpdate.BundledUpdates is not null)
                             {
@@ -202,7 +206,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     }
 
                     // Deduplicate result and convert to raw identity format
-                    response.NewRevisions = filteredResult
+                    response.NewRevisions = filteredPackages
+                        .Select(p => p.Id as MicrosoftUpdatePackageIdentity)
                         .Union(bundledUpdates)
                         .Distinct()
                         .Select(u => new UpdateIdentity()
