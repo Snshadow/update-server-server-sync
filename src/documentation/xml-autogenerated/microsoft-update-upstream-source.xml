@@ -576,19 +576,26 @@
             </summary>
             <returns>Hash code</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
-            <summary>
-            Get the number of packages that match the criteria
-            </summary>
-            <param name="packages">The packages to filter</param>
-            <returns>The number of matching packages</returns>
-        </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
             Applies the filter to a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> and returns the matched packages
             </summary>
             <param name="packages">The packages to filter</param>
             <returns>List of packages that match the filter</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.GetMatchingIdentities(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Get the identities of packages that match the criteria 
+            </summary>
+            <param name="packages">The packages to filter</param>
+            <returns>Matching packages' identities</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Get the number of packages that match the criteria
+            </summary>
+            <param name="packages">The packages to filter</param>
+            <returns>The number of matching packages</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamUpdatesSource">
             <summary>

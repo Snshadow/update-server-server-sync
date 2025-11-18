@@ -579,6 +579,11 @@ namespace Microsoft.PackageGraph.Storage.Local
             return identities.Select(GetPackage).GetEnumerator();
         }
 
+        public IEnumerable<IPackageIdentity> GetIdentitiesFromStore(MetadataFilter filter)
+        {
+            return GetPackageIdentities(filter);
+        }
+
         public IEnumerable<IPackage> FilterFromStore(MetadataFilter filter)
         {
             using var enumerator = GetEnumerator(filter);
@@ -590,14 +595,9 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public int CountFromStore(MetadataFilter filter)
         {
-            if (filter is not MetadataFilter metadataFilter)
-            {
-                return 0;
-            }
-
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
-            BuildFilterQuery(metadataFilter, command, true);
+            BuildFilterQuery(filter, command, true);
             return (int)(command.ExecuteScalar() as long? ?? 0);
         }
 

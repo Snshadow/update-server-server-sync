@@ -12,17 +12,24 @@ namespace Microsoft.PackageGraph.Storage
     public interface IMetadataFilter
     {
         /// <summary>
-        /// Get the number of packages that match the criteria
-        /// </summary>
-        /// <param name="packages">The packages to filter</param>
-        /// <returns>The number of matching packages</returns>
-        int GetCount(IEnumerable<IPackage> packages);
-
-        /// <summary>
         /// Apply the filter to a collection of packages
         /// </summary>
         /// <param name="packages">The packages to filter</param>
         /// <returns>Matching packages</returns>
         IEnumerable<IPackage> Apply(IEnumerable<IPackage> packages);
+
+        /// <summary>
+        /// Get the identities of packages that match the criteria
+        /// </summary>
+        /// <param name="packages">The packages to filter</param>
+        /// <returns>Matching packages' identities</returns>
+        IEnumerable<IPackageIdentity> GetMatchingIdentities(IEnumerable<IPackage> packages);
+
+        /// <summary>
+        /// Get the number of packages that match the criteria
+        /// </summary>
+        /// <param name="packages">The packages to filter</param>
+        /// <returns>The number of matching packages</returns>
+        int GetCount(IEnumerable<IPackage> packages);
     }
 }

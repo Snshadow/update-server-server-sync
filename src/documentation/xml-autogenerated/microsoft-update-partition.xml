@@ -255,6 +255,21 @@
             <param name="packages">The packages to filter</param>
             <returns>Matching packages</returns>
         </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetMatchingIdentities``1(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Get the identities of packages that match the criteria from <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> 
+            </summary>
+            <typeparam name="T">Package identity type to query. The type must inherit <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity"/></typeparam>
+            <param name="packages">The packages to filter</param>
+            <returns>Matching packages' identities</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetMatchingIdentities(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Get the identities of packages that match the criteria from <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> 
+            </summary>
+            <param name="packages">The packages to filter</param>
+            <returns>Matching packages' identities</returns>
+        </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
             Get the number of packages that match the criteria
@@ -2651,19 +2666,26 @@
             Interface for filtering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> or for selectively quering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/>
             </summary>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
-            <summary>
-            Get the number of packages that match the criteria
-            </summary>
-            <param name="packages">The packages to filter</param>
-            <returns>The number of matching packages</returns>
-        </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
             <summary>
             Apply the filter to a collection of packages
             </summary>
             <param name="packages">The packages to filter</param>
             <returns>Matching packages</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.GetMatchingIdentities(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Get the identities of packages that match the criteria
+            </summary>
+            <param name="packages">The packages to filter</param>
+            <returns>Matching packages' identities</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+            <summary>
+            Get the number of packages that match the criteria
+            </summary>
+            <param name="packages">The packages to filter</param>
+            <returns>The number of matching packages</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataLookup">
             <summary>
@@ -3012,14 +3034,21 @@
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IStoreBackedFilter.CountFromStore(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter)">
             <summary>
-            Counts the packages that match the specified filter.
+            Counts the packages that match the specified filter
             </summary>
-            <param name="filter">The metadata filter to apply</param>
+            <param name="filter">The metadata filter containing the package type</param>
             <returns>The number of matching packages</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IStoreBackedFilter.GetIdentitiesFromStore(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter)">
+            <summary>
+            Gets the identities of packages that match the specified filter
+            </summary>
+            <param name="filter">The metadata filter containing the package type</param>
+            <returns>Matching packages' identities</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IStoreBackedFilter.FilterFromStore(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter)">
             <summary>
-            Applies the provided metadata filter and returns the matching packages.
+            Applies the provided metadata filter and returns the matching packages
             </summary>
             <param name="filter">The metadata filter containing the package type</param>
             <returns>Matching packages</returns>

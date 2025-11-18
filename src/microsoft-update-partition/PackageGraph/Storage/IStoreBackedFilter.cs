@@ -13,14 +13,21 @@ namespace Microsoft.PackageGraph.Storage
     public interface IStoreBackedFilter
     {
         /// <summary>
-        /// Counts the packages that match the specified filter.
+        /// Counts the packages that match the specified filter
         /// </summary>
-        /// <param name="filter">The metadata filter to apply</param>
+        /// <param name="filter">The metadata filter containing the package type</param>
         /// <returns>The number of matching packages</returns>
         int CountFromStore(MetadataFilter filter);
 
         /// <summary>
-        /// Applies the provided metadata filter and returns the matching packages.
+        /// Gets the identities of packages that match the specified filter
+        /// </summary>
+        /// <param name="filter">The metadata filter containing the package type</param>
+        /// <returns>Matching packages' identities</returns>
+        IEnumerable<IPackageIdentity> GetIdentitiesFromStore(MetadataFilter filter);
+
+        /// <summary>
+        /// Applies the provided metadata filter and returns the matching packages
         /// </summary>
         /// <param name="filter">The metadata filter containing the package type</param>
         /// <returns>Matching packages</returns>

@@ -177,16 +177,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         }
 
         /// <summary>
-        /// Get the number of packages that match the criteria
-        /// </summary>
-        /// <param name="packages">The packages to filter</param>
-        /// <returns>The number of matching packages</returns>
-        public int GetCount(IEnumerable<IPackage> packages)
-        {
-            return Apply(packages).Count();
-        }
-
-        /// <summary>
         /// Applies the filter to a <see cref="IMetadataStore"/> and returns the matched packages
         /// </summary>
         /// <param name="packages">The packages to filter</param>
@@ -209,6 +199,26 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
                     return classificationsMatch && productsMatch;
                 }
             });
+        }
+
+        /// <summary>
+        /// Get the identities of packages that match the criteria 
+        /// </summary>
+        /// <param name="packages">The packages to filter</param>
+        /// <returns>Matching packages' identities</returns>
+        public IEnumerable<IPackageIdentity> GetMatchingIdentities(IEnumerable<IPackage> packages)
+        {
+            return Apply(packages).Select(p => p.Id);
+        }
+
+        /// <summary>
+        /// Get the number of packages that match the criteria
+        /// </summary>
+        /// <param name="packages">The packages to filter</param>
+        /// <returns>The number of matching packages</returns>
+        public int GetCount(IEnumerable<IPackage> packages)
+        {
+            return Apply(packages).Count();
         }
     }
 }

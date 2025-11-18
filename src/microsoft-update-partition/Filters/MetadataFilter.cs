@@ -546,6 +546,38 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         {
             return Apply<MicrosoftUpdatePackage>(packages);
         }
+
+        /// <summary>
+        /// Get the identities of packages that match the criteria from <see cref="IMetadataSource"/> 
+        /// </summary>
+        /// <typeparam name="T">Package identity type to query. The type must inherit <see cref="MicrosoftUpdatePackageIdentity"/></typeparam>
+        /// <param name="packages">The packages to filter</param>
+        /// <returns>Matching packages' identities</returns>
+        public IEnumerable<T> GetMatchingIdentities<T>(IEnumerable<IPackage> packages) where T : MicrosoftUpdatePackageIdentity
+        {
+            if (TryGetStoreBackedFilter(packages, out var storeBacked))
+            {
+                var packageType = GetStoredPackageType(typeof(T));
+                return storeBacked
+                    .GetIdentitiesFromStore(CloneWithPackageType(packageType))
+                    .Cast<T>();
+            }
+
+            return Apply<MicrosoftUpdatePackage>(packages)
+                .Select(p => p.Id)
+                .Cast<T>();
+        }
+
+        /// <summary>
+        /// Get the identities of packages that match the criteria from <see cref="IMetadataSource"/> 
+        /// </summary>
+        /// <param name="packages">The packages to filter</param>
+        /// <returns>Matching packages' identities</returns>
+        public IEnumerable<IPackageIdentity> GetMatchingIdentities(IEnumerable<IPackage> packages)
+        {
+            return GetMatchingIdentities<MicrosoftUpdatePackageIdentity>(packages);
+        }
+
         /// <summary>
         /// Get the number of packages that match the criteria
         /// </summary>
@@ -563,3 +595,4 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         }
     }
 }
+
