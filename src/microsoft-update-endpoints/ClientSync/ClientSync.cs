@@ -162,21 +162,21 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         string GetCoreFragment(MicrosoftUpdatePackageIdentity updateIdentity)
         {
             using var xmlStream = MetadataSource.GetMetadata(updateIdentity);
-            using var xmlReader = new StreamReader(xmlStream, Encoding.Unicode);
+            using var xmlReader = new StreamReader(xmlStream, Encoding.UTF8);
             return UpdateXmlTransformer.GetCoreFragmentFromMetadataXml(xmlReader.ReadToEnd());
         }
 
         string GetExtendedFragment(MicrosoftUpdatePackageIdentity updateIdentity)
         {
             using var xmlStream = MetadataSource.GetMetadata(updateIdentity);
-            using var xmlReader = new StreamReader(xmlStream, Encoding.Unicode);
+            using var xmlReader = new StreamReader(xmlStream, Encoding.UTF8);
             return UpdateXmlTransformer.GetExtendedFragmentFromMetadataXml(xmlReader.ReadToEnd());
         }
 
         string[] GetLocalizedProperties(MicrosoftUpdatePackageIdentity updateIdentity, string[] languages)
         {
             using var xmlStream = MetadataSource.GetMetadata(updateIdentity);
-            using var xmlReader = new StreamReader(xmlStream, Encoding.Unicode);
+            using var xmlReader = new StreamReader(xmlStream, Encoding.UTF8);
             return UpdateXmlTransformer.GetLocalizedPropertiesFromMetadataXml(xmlReader.ReadToEnd(), languages);
         }
 

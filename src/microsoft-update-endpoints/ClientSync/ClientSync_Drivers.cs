@@ -78,7 +78,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                     if (GetDeployment(driverMatchResult.Driver.Id.Revision) is not null)
                     {
                         var identity = driverMatchResult.Driver.Id;
-                        var revision = driverMatchResult.Driver.Id.Revision;
+                        var revision = MetadataSource.GetPackageIndex(driverMatchResult.Driver.Id);
 
                         // Get core XML fragment for driver update
                         var coreXml = GetCoreFragment(identity);
