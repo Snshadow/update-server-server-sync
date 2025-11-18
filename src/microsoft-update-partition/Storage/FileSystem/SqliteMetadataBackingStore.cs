@@ -178,6 +178,8 @@ namespace Microsoft.PackageGraph.Storage.Local
                 PRIMARY KEY (revision_id, superseded_guid),
                 FOREIGN KEY (revision_id) REFERENCES identities(id)
             ) WITHOUT ROWID;
+            CREATE INDEX IF NOT EXISTS idx_bundled_guid_revision ON bundled(guid, revision);
+            CREATE INDEX IF NOT EXISTS idx_superseded_guid ON superseded(superseded_guid);
             """;
             createTableCommand.ExecuteNonQuery();
         }
