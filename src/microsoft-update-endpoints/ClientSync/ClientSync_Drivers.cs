@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {
-
     public partial class ClientSyncWebService
     {
         /// <summary>
@@ -23,8 +22,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns></returns>
         private Task<SyncInfo> DoDriversSync(Cookie cookie, SyncUpdateParameters parameters)
         {
-            MetadataSourceLock.EnterReadLock();
-
             if (MetadataSource is null)
             {
                 throw new System.ServiceModel.FaultException();
@@ -126,8 +123,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             }
 
             response.NewUpdates = driverUpdates.ToArray();
-
-            MetadataSourceLock.ExitReadLock();
 
             var (computerId, _) = ParseCookie(cookie);
 

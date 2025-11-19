@@ -25,8 +25,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             var now = DateTime.UtcNow;
 
-            MetadataSourceLock.EnterReadLock();
-
             if (MetadataSource is null)
             {
                 throw new FaultException();
@@ -87,8 +85,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             // response.OutOfScopeRevisionIDs = [];
             // response.DeployedOutOfScopeRevisionIds = [];
 
-            MetadataSourceLock.ExitReadLock();
-
             // Update last synchronization time for computer
             DeployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
 
@@ -104,9 +100,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 IdFilter = [id]
             };
 
-            // TODO implement GetIdList and use it instead
-            return filter.Apply<MicrosoftUpdatePackage>(MetadataSource)
-                .Select(i => i.Id)
+            return filter.GetMatchingIdentities<MicrosoftUpdatePackageIdentity>(MetadataSource)
                 .OrderByDescending(i => i.Revision)
                 .FirstOrDefault();
         }

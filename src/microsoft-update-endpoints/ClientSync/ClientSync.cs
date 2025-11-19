@@ -33,8 +33,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
         private Config ServiceConfiguration;
 
-        private readonly ReaderWriterLockSlim MetadataSourceLock = new();
-
         private const int MaxUpdatesInResponse = 50;
 
         private string _contentRoot;
@@ -90,16 +88,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="metadataSource">The source for updates metadata</param>
         public void SetPackageStore(IMetadataStore metadataSource)
         {
-            MetadataSourceLock.EnterWriteLock();
-
             MetadataSource = metadataSource;
-
             if (MetadataSource is null)
             {
                 DeployAndSyncStore = null;
             }
-
-            MetadataSourceLock.ExitWriteLock();
         }
 
         /// <summary>
@@ -193,8 +186,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>Extended update information response.</returns>
         public Task<ExtendedUpdateInfo> GetExtendedUpdateInfoAsync(Cookie cookie, int[] revisionIDs, XmlUpdateFragmentType[] infoTypes, string[] locales, string GeoId, string callerAttributes)
         {
-            MetadataSourceLock.EnterReadLock();
-
             if (MetadataSource is null)
             {
                 throw new FaultException();
@@ -259,8 +250,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             {
                 response.FileLocations = fileList.ToArray();
             }
-
-            MetadataSourceLock.ExitReadLock();
 
             return Task.FromResult(response);
         }

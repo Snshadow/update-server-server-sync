@@ -37,45 +37,49 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
                 ExcludedIdFilter = cachedGuids
             };
 
-            var newMicrosoftUpdatePackages = filter.Apply<MicrosoftUpdatePackage>(source);
-            var updatesWithPrerequisites = newMicrosoftUpdatePackages.Where(update => (update.Prerequisites?.Count ?? 0) > 0);
+            var newPackageIds = filter.GetMatchingIdentities<MicrosoftUpdatePackageIdentity>(source);
 
-            foreach (var updateWithPrerequisites in updatesWithPrerequisites)
+            foreach (var newPackageId in newPackageIds)
             {
-                var updateGuid = updateWithPrerequisites.Id.ID;
-                if (!graph.TryGetValue(updateGuid, out PrerequisiteGraphNode updateNode))
+                if (source.GetPackage(newPackageId) is MicrosoftUpdatePackage package)
                 {
-                    updateNode = new PrerequisiteGraphNode(updateGuid);
-                    graph.Add(updateGuid, updateNode);
-                }
+                    if (package.Prerequisites is { Count: > 0 } prerequisites)
+                    {
+                        var updateGuid = package.Id.ID;
+                        if (!graph.TryGetValue(updateGuid, out PrerequisiteGraphNode updateNode))
+                        {
+                            updateNode = new PrerequisiteGraphNode(updateGuid);
+                            graph.Add(updateGuid, updateNode);
+                        }
 
-                var prerequisites = updateWithPrerequisites.Prerequisites;
-                var flatListPrerequisites = prerequisites.SelectMany(p =>
-                {
-                    if (p is Simple simple)
-                    {
-                        return [simple.UpdateId];
-                    }
-                    else if (p is AtLeastOne atLeastOne)
-                    {
-                        return atLeastOne.Simple.Select(s => s.UpdateId);
-                    }
-                    else
-                    {
-                        throw new Exception("Unknown prerequisite type");
-                    }
-                });
+                        var flatListPrerequisites = prerequisites.SelectMany(p =>
+                        {
+                            if (p is Simple simple)
+                            {
+                                return [simple.UpdateId];
+                            }
+                            else if (p is AtLeastOne atLeastOne)
+                            {
+                                return atLeastOne.Simple.Select(s => s.UpdateId);
+                            }
+                            else
+                            {
+                                throw new Exception("Unknown prerequisite type");
+                            }
+                        });
 
-                foreach (var prerequisite in flatListPrerequisites)
-                {
-                    if (!graph.TryGetValue(prerequisite, out PrerequisiteGraphNode prerequisiteNode))
-                    {
-                        prerequisiteNode = new PrerequisiteGraphNode(prerequisite);
-                        graph.Add(prerequisite, prerequisiteNode);
-                    }
+                        foreach (var prerequisite in flatListPrerequisites)
+                        {
+                            if (!graph.TryGetValue(prerequisite, out PrerequisiteGraphNode prerequisiteNode))
+                            {
+                                prerequisiteNode = new PrerequisiteGraphNode(prerequisite);
+                                graph.Add(prerequisite, prerequisiteNode);
+                            }
 
-                    updateNode.Prerequisites.TryAdd(prerequisite, prerequisiteNode);
-                    prerequisiteNode.Dependents.TryAdd(updateGuid, updateNode);
+                            updateNode.Prerequisites.TryAdd(prerequisite, prerequisiteNode);
+                            prerequisiteNode.Dependents.TryAdd(updateGuid, updateNode);
+                        }
+                    }
                 }
             }
 
