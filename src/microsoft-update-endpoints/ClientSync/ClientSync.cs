@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
@@ -13,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.ServiceModel;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,6 +37,21 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
         private Config ServiceConfiguration;
 
+        private readonly IMemoryCache _memoryCache;
+        private readonly IDistributedCache _distributedCache;
+
+        private const string CacheKeyPrereqGraph = "PrerequisitesGraph";
+        private const string CacheKeyRootUpdates = "RootUpdates";
+        private const string CacheKeyNonLeafUpdates = "NonLeafUpdates";
+        private const string CacheKeyLeafUpdates = "LeafUpdates";
+        private const string CacheKeySoftwareLeafUpdates = "SoftwareLeafUpdates";
+
+        private readonly ReaderWriterLockSlim MetadataSourceLock = new();
+
+        private Timer _cacheRefreshTimer;
+
+        private int _activeSyncOperations;
+
         private const int MaxUpdatesInResponse = 50;
 
         private string _contentRoot;
@@ -51,8 +70,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <summary>
         /// Default constructor
         /// </summary>
-        public ClientSyncWebService()
+        public ClientSyncWebService(IMemoryCache memoryCache, IDistributedCache distributedCache)
         {
+            _memoryCache = memoryCache;
+            _distributedCache = distributedCache;
         }
 
         /// <summary>
@@ -88,10 +109,123 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="metadataSource">The source for updates metadata</param>
         public void SetPackageStore(IMetadataStore metadataSource)
         {
-            MetadataSource = metadataSource;
+            MetadataSourceLock.EnterWriteLock();
+            try
+            {
+                MetadataSource = metadataSource;
+                if (MetadataSource is null)
+                {
+                    DeployAndSyncStore = null;
+                    ClearCachedMetadataView();
+                }
+                else
+                {
+                    BuildCachedMetadataView();
+                    EnsureRefreshTimer();
+                }
+            }
+            finally
+            {
+                MetadataSourceLock.ExitWriteLock();
+            }
+        }
+
+        private void BuildCachedMetadataView()
+        {
             if (MetadataSource is null)
             {
-                DeployAndSyncStore = null;
+                return;
+            }
+
+            var slices = ComputeGraphSlices();
+
+            StoreGraphSlices(slices);
+        }
+
+        private void ClearCachedMetadataView()
+        {
+            _memoryCache.Remove(CacheKeyPrereqGraph);
+            _memoryCache.Remove(CacheKeyRootUpdates);
+            _memoryCache.Remove(CacheKeyNonLeafUpdates);
+            _memoryCache.Remove(CacheKeyLeafUpdates);
+            _memoryCache.Remove(CacheKeySoftwareLeafUpdates);
+
+            _distributedCache.Remove(CacheKeyRootUpdates);
+            _distributedCache.Remove(CacheKeyNonLeafUpdates);
+            _distributedCache.Remove(CacheKeyLeafUpdates);
+            _distributedCache.Remove(CacheKeySoftwareLeafUpdates);
+        }
+
+        private (PrerequisitesGraph Graph, List<Guid> Root, List<Guid> NonLeaf, List<Guid> Leaf, List<Guid> SoftwareLeaf) ComputeGraphSlices()
+        {
+            if (MetadataSource is null)
+            {
+                return (null, [], [], [], []);
+            }
+
+            var graph = PrerequisitesGraph.FromIndexedPackageSource(MetadataSource);
+
+            var rootUpdates = graph.GetRootUpdates().ToList();
+            var nonLeafUpdates = graph.GetNonLeafUpdates().ToList();
+            var leafUpdates = graph.GetLeafUpdates().ToList();
+
+            var leafSoftwareUpdates = MetadataSource
+                .OfType<SoftwareUpdate>()
+                .Where(u => u.IsSupersededBy is null || u.IsSupersededBy.Count == 0)
+                .GroupBy(u => u.Id.ID)
+                .Select(k => k.Key)
+                .ToHashSet();
+
+            var softwareLeafUpdates = leafUpdates.Where(leafSoftwareUpdates.Contains).ToList();
+
+            return (graph, rootUpdates, nonLeafUpdates, leafUpdates, softwareLeafUpdates);
+        }
+
+        private void StoreGraphSlices((PrerequisitesGraph Graph, List<Guid> Root, List<Guid> NonLeaf, List<Guid> Leaf, List<Guid> SoftwareLeaf) slices)
+        {
+            var cacheOptions = new MemoryCacheEntryOptions { Priority = CacheItemPriority.NeverRemove };
+
+            _memoryCache.Set(CacheKeyPrereqGraph, slices.Graph, cacheOptions);
+            _memoryCache.Set(CacheKeyRootUpdates, slices.Root, cacheOptions);
+            _memoryCache.Set(CacheKeyNonLeafUpdates, slices.NonLeaf, cacheOptions);
+            _memoryCache.Set(CacheKeyLeafUpdates, slices.Leaf, cacheOptions);
+            _memoryCache.Set(CacheKeySoftwareLeafUpdates, slices.SoftwareLeaf, cacheOptions);
+
+            PersistGuidList(CacheKeyRootUpdates, slices.Root);
+            PersistGuidList(CacheKeyNonLeafUpdates, slices.NonLeaf);
+            PersistGuidList(CacheKeyLeafUpdates, slices.Leaf);
+            PersistGuidList(CacheKeySoftwareLeafUpdates, slices.SoftwareLeaf);
+        }
+
+        private void EnsureRefreshTimer()
+        {
+            if (_cacheRefreshTimer is not null)
+            {
+                return;
+            }
+
+            _cacheRefreshTimer = new Timer(_ => RefreshCacheIfIdle(), state: null, dueTime: TimeSpan.FromMinutes(5), period: TimeSpan.FromMinutes(5));
+        }
+
+        private void RefreshCacheIfIdle()
+        {
+            if (MetadataSource is null)
+            {
+                return;
+            }
+
+            // Only refresh when no client sync is running
+            if (Interlocked.CompareExchange(ref _activeSyncOperations, 0, 0) == 0)
+            {
+                MetadataSourceLock.EnterWriteLock();
+                try
+                {
+                    BuildCachedMetadataView();
+                }
+                finally
+                {
+                    MetadataSourceLock.ExitWriteLock();
+                }
             }
         }
 
@@ -191,7 +325,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 throw new FaultException();
             }
 
-            List<MicrosoftUpdatePackage> requestedUpdates = new();
+            List<MicrosoftUpdatePackage> requestedUpdates = [];
             foreach (var requestedRevision in revisionIDs)
             {
                 requestedUpdates.Add(MetadataSource.GetPackage(requestedRevision) as MicrosoftUpdatePackage);
@@ -330,13 +464,100 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>SyncInfo containing updates applicable to the caller.</returns>
         public Task<SyncInfo> SyncUpdatesAsync(Cookie cookie, SyncUpdateParameters parameters)
         {
-            if (parameters.SkipSoftwareSync)
+            return RunSyncWithTracking(() =>
             {
-                return DoDriversSync(cookie, parameters);
-            }
-            else
-            {
+                if (parameters.SkipSoftwareSync)
+                {
+                    return DoDriversSync(cookie, parameters);
+                }
+
                 return DoSoftwareUpdateSync(cookie, parameters);
+            });
+        }
+
+        private async Task<SyncInfo> RunSyncWithTracking(Func<Task<SyncInfo>> syncOperation)
+        {
+            Interlocked.Increment(ref _activeSyncOperations);
+            try
+            {
+                return await syncOperation();
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _activeSyncOperations);
+            }
+        }
+
+        private List<Guid> GetCachedGuidSet(string key)
+        {
+            if (_memoryCache.TryGetValue(key, out List<Guid> cached))
+            {
+                return cached;
+            }
+
+            // Try disk-backed cache first
+            var fromDistributed = TryLoadGuidList(key);
+            if (fromDistributed.Count > 0)
+            {
+                return fromDistributed;
+            }
+
+            return _memoryCache.GetOrCreate(key, entry =>
+            {
+                MetadataSourceLock.EnterWriteLock();
+                try
+                {
+                    var slices = ComputeGraphSlices();
+                    StoreGraphSlices(slices);
+
+                    entry.SetPriority(CacheItemPriority.Normal);
+
+                    return key switch
+                    {
+                        CacheKeyRootUpdates => slices.Root,
+                        CacheKeyNonLeafUpdates => slices.NonLeaf,
+                        CacheKeyLeafUpdates => slices.Leaf,
+                        CacheKeySoftwareLeafUpdates => slices.SoftwareLeaf,
+                        _ => []
+                    };
+                }
+                finally
+                {
+                    MetadataSourceLock.ExitWriteLock();
+                }
+            })!;
+        }
+
+        private void PersistGuidList(string key, List<Guid> guidList)
+        {
+            try
+            {
+                var payload = JsonSerializer.SerializeToUtf8Bytes(guidList);
+                _distributedCache.Set(key, payload);
+            }
+            catch
+            {
+            }
+        }
+
+        private List<Guid> TryLoadGuidList(string key)
+        {
+            try
+            {
+                var bytes = _distributedCache.Get(key);
+                if (bytes is null)
+                {
+                    return [];
+                }
+                var guids = JsonSerializer.Deserialize<List<Guid>>(bytes) ?? [];
+
+                _memoryCache.Set(key, guids, new MemoryCacheEntryOptions { Priority = CacheItemPriority.Normal });
+
+                return guids;
+            }
+            catch
+            {
+                return [];
             }
         }
 

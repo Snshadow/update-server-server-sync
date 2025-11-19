@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
-using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
 using System.Collections.Generic;
@@ -25,70 +24,76 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             var now = DateTime.UtcNow;
 
-            if (MetadataSource is null)
+            MetadataSourceLock.EnterReadLock();
+            try
             {
-                throw new FaultException();
-            }
-
-            List<Guid> cachedGuids = [];
-
-            // Get list of installed non leaf updates; these are prerequisites that the client has installed.
-            // This list is used to check what updates are applicable to the client
-            // We will not send updates that already appear on this list
-            var installedNonLeafUpdatesGuids = GetInstalledNotLeafGuidsFromSyncParameters(parameters);
-            cachedGuids.AddRange(installedNonLeafUpdatesGuids);
-
-            // Other known updates to the client; we will not send any updates that are on this list
-            cachedGuids.AddRange(GetOtherCachedUpdateGuidsFromSyncParameters(parameters));
-
-            cachedGuids = cachedGuids.Distinct().ToList();
-
-            // Initialize the response
-            var response = new SyncInfo()
-            {
-                NewCookie = new Cookie()
+                if (MetadataSource is null)
                 {
-                    Expiration = now.AddDays(5),
-                    EncryptedData = cookie.EncryptedData
-                },
-                DriverSyncNotNeeded = "false"
-            };
+                    throw new FaultException();
+                }
 
-            var prereqGraph = PrerequisitesGraph.FromIndexedPackageSource(MetadataSource, cachedGuids);
+                List<Guid> cachedGuids = [];
 
-            // Add root updates first; if any new root updates were added, return the response to the client immediately
-            AddMissingRootUpdatesToSyncUpdatesResponse(prereqGraph, cachedGuids, response, out var rootUpdatesAdded);
-            if (!rootUpdatesAdded)
-            {
-                // No root updates were added; add non-leaf updates now
-                AddMissingNonLeafUpdatesToSyncUpdatesResponse(prereqGraph, cachedGuids, installedNonLeafUpdatesGuids, response, out var nonLeafUpdatesAdded);
-                if (!nonLeafUpdatesAdded)
+                // Get list of installed non leaf updates; these are prerequisites that the client has installed.
+                // This list is used to check what updates are applicable to the client
+                // We will not send updates that already appear on this list
+                var installedNonLeafUpdatesGuids = GetInstalledNotLeafGuidsFromSyncParameters(parameters);
+                cachedGuids.AddRange(installedNonLeafUpdatesGuids);
+
+                // Other known updates to the client; we will not send any updates that are on this list
+                cachedGuids.AddRange(GetOtherCachedUpdateGuidsFromSyncParameters(parameters));
+
+                cachedGuids = cachedGuids.Distinct().ToList();
+
+                // Initialize the response
+                var response = new SyncInfo()
                 {
-                    // No leaf updates were added; add leaf bundle updates now
-                    AddMissingBundleUpdatesToSyncUpdatesResponse(prereqGraph, cachedGuids, installedNonLeafUpdatesGuids, response, out var bundleUpdatesAdded);
-                    if (!bundleUpdatesAdded)
+                    NewCookie = new Cookie()
                     {
-                        // No bundles were added; finally add leaf software updates
-                        AddMissingSoftwareUpdatesToSyncUpdatesResponse(prereqGraph, cachedGuids, installedNonLeafUpdatesGuids, response, out var _);
+                        Expiration = now.AddDays(5),
+                        EncryptedData = cookie.EncryptedData
+                    },
+                    DriverSyncNotNeeded = "false"
+                };
+
+                // Add root updates first; if any new root updates were added, return the response to the client immediately
+                AddMissingRootUpdatesToSyncUpdatesResponse(cachedGuids, response, out var rootUpdatesAdded);
+                if (!rootUpdatesAdded)
+                {
+                    // No root updates were added; add non-leaf updates now
+                    AddMissingNonLeafUpdatesToSyncUpdatesResponse(cachedGuids, installedNonLeafUpdatesGuids, response, out var nonLeafUpdatesAdded);
+                    if (!nonLeafUpdatesAdded)
+                    {
+                        // No leaf updates were added; add leaf bundle updates now
+                        AddMissingBundleUpdatesToSyncUpdatesResponse(cachedGuids, installedNonLeafUpdatesGuids, response, out var bundleUpdatesAdded);
+                        if (!bundleUpdatesAdded)
+                        {
+                            // No bundles were added; finally add leaf software updates
+                            AddMissingSoftwareUpdatesToSyncUpdatesResponse(cachedGuids, installedNonLeafUpdatesGuids, response, out var _);
+                        }
                     }
                 }
+
+                var (computerId, _) = ParseCookie(cookie);
+                var computerSync = DeployAndSyncStore.GetComputerSync(computerId);
+
+                response.ChangedUpdates = GetChangedUpdates(
+                    cachedGuids,
+                    computerSync?.LastSyncTime ?? DateTime.MinValue)
+                    .ToArray();
+
+                // response.OutOfScopeRevisionIDs = [];
+                // response.DeployedOutOfScopeRevisionIds = [];
+
+                // Update last synchronization time for computer
+                DeployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
+
+                return Task.FromResult(response);
             }
-
-            var (computerId, _) = ParseCookie(cookie);
-            var computerSync = DeployAndSyncStore.GetComputerSync(computerId);
-
-            response.ChangedUpdates = GetChangedUpdates(
-                cachedGuids,
-                computerSync?.LastSyncTime ?? DateTime.MinValue)
-                .ToArray();
-
-            // response.OutOfScopeRevisionIDs = [];
-            // response.DeployedOutOfScopeRevisionIds = [];
-
-            // Update last synchronization time for computer
-            DeployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
-
-            return Task.FromResult(response);
+            finally
+            {
+                MetadataSourceLock.ExitReadLock();
+            }
         }
 
         private MicrosoftUpdatePackageIdentity GetLatestRevision(Guid id)
@@ -108,18 +113,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <summary>
         /// For a client request, gathers applicable root updates (detectoids, categories, etc.) that the client does not have yet
         /// </summary>
-        /// <param name="prereqGraph">Prerequisite graph</param>
         /// <param name="cachedGuids">List of known updates from the client</param>
         /// <param name="response">The response to append new updates to</param>
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
-        private void AddMissingRootUpdatesToSyncUpdatesResponse(PrerequisitesGraph prereqGraph, List<Guid> cachedGuids, SyncInfo response, out bool updatesAdded)
+        private void AddMissingRootUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, SyncInfo response, out bool updatesAdded)
         {
+            var rootUpdates = GetCachedGuidSet(CacheKeyRootUpdates);
+
             MetadataFilter filter = new()
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = prereqGraph
-                    .GetRootUpdates()
+                IdFilter = rootUpdates
                     .Except(cachedGuids) // Do not resend known updates
                     .ToList(),
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed 
@@ -144,19 +149,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <summary>
         /// For a client request, gathers applicable software updates that are not leafs in the prerequisite tree; 
         /// </summary>
-        /// <param name="prereqGraph">Prerequisite graph</param>
         /// <param name="cachedGuids">List of known updates from the client</param>
         /// <param name="installedNonLeaf">List of known updates leaf updates installed on the client</param>
         /// <param name="response">The response  to append new updates to</param>
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
-        private void AddMissingNonLeafUpdatesToSyncUpdatesResponse(PrerequisitesGraph prereqGraph, List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
+        private void AddMissingNonLeafUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
+            var nonLeafUpdates = GetCachedGuidSet(CacheKeyNonLeafUpdates);
+
             MetadataFilter filter = new()
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = prereqGraph
-                    .GetNonLeafUpdates()
+                IdFilter = nonLeafUpdates
                     .Except(cachedGuids) // Do not resend known updates
                     .ToList(),
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed
@@ -182,19 +187,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <summary>
         /// For a client request, gathers applicable leaf bundle updates that the client does not have yet
         /// </summary>
-        /// <param name="prereqGraph">Prerequisite graph</param>
         /// <param name="cachedGuids">List of known updates from the client</param>
         /// <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
         /// <param name="response">The response  to append new updates to</param>
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
-        private void AddMissingBundleUpdatesToSyncUpdatesResponse(PrerequisitesGraph prereqGraph, List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
+        private void AddMissingBundleUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
+            var leafUpdates = GetCachedGuidSet(CacheKeyLeafUpdates);
+
             MetadataFilter filter = new()
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = prereqGraph
-                    .GetLeafUpdates()
+                IdFilter = leafUpdates
                     .Except(cachedGuids) // Do not resend known updates
                     .ToList(),
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed
@@ -220,19 +225,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <summary>
         /// For a client sync request, gathers applicable software updates that the client does not have yet
         /// </summary>
-        /// <param name="prereqGraph">Prerequisite graph</param>
         /// <param name="cachedGuids">List of known updates from the client</param>
         /// <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
         /// <param name="response">The response  to append new updates to</param>
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
-        private void AddMissingSoftwareUpdatesToSyncUpdatesResponse(PrerequisitesGraph prereqGraph, List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
+        private void AddMissingSoftwareUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
+            var leafUpdates = GetCachedGuidSet(CacheKeyLeafUpdates);
+
             MetadataFilter filter = new()
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = prereqGraph
-                    .GetLeafUpdates() // Do not resend known updates
+                IdFilter = leafUpdates // Do not resend known updates
                     .Except(cachedGuids)
                     .ToList(),
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed

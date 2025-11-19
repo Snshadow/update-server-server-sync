@@ -1742,12 +1742,11 @@
             Models the prerequisite graph for all packages contained within a metadata store
             </summary>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites.PrerequisitesGraph.FromIndexedPackageSource(Microsoft.PackageGraph.Storage.IMetadataStore,System.Collections.Generic.List{System.Guid})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites.PrerequisitesGraph.FromIndexedPackageSource(Microsoft.PackageGraph.Storage.IMetadataStore)">
             <summary>
             Creates a prerequisite graph for all the packages contained in the specified store
             </summary>
             <param name="source">Package metadata store</param>
-            <param name="cachedGuids">Cached updates known by the client</param>
             <returns></returns>
             <exception cref="T:System.Exception">If an unknown prerequisite type is encountered</exception>
         </member>

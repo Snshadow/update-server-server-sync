@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.Storage;
 using System;
 using System.Collections.Generic;
@@ -24,61 +25,51 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
         /// Creates a prerequisite graph for all the packages contained in the specified store
         /// </summary>
         /// <param name="source">Package metadata store</param>
-        /// <param name="cachedGuids">Cached updates known by the client</param>
         /// <returns></returns>
         /// <exception cref="Exception">If an unknown prerequisite type is encountered</exception>
-        public static PrerequisitesGraph FromIndexedPackageSource(IMetadataStore source, List<Guid> cachedGuids)
+        public static PrerequisitesGraph FromIndexedPackageSource(IMetadataStore source)
         {
             Dictionary<Guid, PrerequisiteGraphNode> graph = [];
-            MetadataFilter filter = new()
-            {
-                IncludeBundled = true,
-                IncludeExpired = true,
-                ExcludedIdFilter = cachedGuids
-            };
 
-            var newPackageIds = filter.GetMatchingIdentities<MicrosoftUpdatePackageIdentity>(source);
+            var packages = source.OfType<MicrosoftUpdatePackage>();
 
-            foreach (var newPackageId in newPackageIds)
+            foreach (var package in packages)
             {
-                if (source.GetPackage(newPackageId) is MicrosoftUpdatePackage package)
+                if (package.Prerequisites is { Count: > 0 } prerequisites)
                 {
-                    if (package.Prerequisites is { Count: > 0 } prerequisites)
+                    var updateGuid = package.Id.ID;
+                    if (!graph.TryGetValue(updateGuid, out PrerequisiteGraphNode updateNode))
                     {
-                        var updateGuid = package.Id.ID;
-                        if (!graph.TryGetValue(updateGuid, out PrerequisiteGraphNode updateNode))
+                        updateNode = new PrerequisiteGraphNode(updateGuid);
+                        graph.Add(updateGuid, updateNode);
+                    }
+
+                    var flatListPrerequisites = prerequisites.SelectMany(p =>
+                    {
+                        if (p is Simple simple)
                         {
-                            updateNode = new PrerequisiteGraphNode(updateGuid);
-                            graph.Add(updateGuid, updateNode);
+                            return new List<Guid>() { simple.UpdateId };
+                        }
+                        else if (p is AtLeastOne atLeastOne)
+                        {
+                            return atLeastOne.Simple.Select(s => s.UpdateId);
+                        }
+                        else
+                        {
+                            throw new Exception("Unknown prerequisite type");
+                        }
+                    });
+
+                    foreach (var prerequisite in flatListPrerequisites)
+                    {
+                        if (!graph.TryGetValue(prerequisite, out PrerequisiteGraphNode prerequisiteNode))
+                        {
+                            prerequisiteNode = new PrerequisiteGraphNode(prerequisite);
+                            graph.Add(prerequisite, prerequisiteNode);
                         }
 
-                        var flatListPrerequisites = prerequisites.SelectMany(p =>
-                        {
-                            if (p is Simple simple)
-                            {
-                                return [simple.UpdateId];
-                            }
-                            else if (p is AtLeastOne atLeastOne)
-                            {
-                                return atLeastOne.Simple.Select(s => s.UpdateId);
-                            }
-                            else
-                            {
-                                throw new Exception("Unknown prerequisite type");
-                            }
-                        });
-
-                        foreach (var prerequisite in flatListPrerequisites)
-                        {
-                            if (!graph.TryGetValue(prerequisite, out PrerequisiteGraphNode prerequisiteNode))
-                            {
-                                prerequisiteNode = new PrerequisiteGraphNode(prerequisite);
-                                graph.Add(prerequisite, prerequisiteNode);
-                            }
-
-                            updateNode.Prerequisites.TryAdd(prerequisite, prerequisiteNode);
-                            prerequisiteNode.Dependents.TryAdd(updateGuid, updateNode);
-                        }
+                        updateNode.Prerequisites.TryAdd(prerequisite, prerequisiteNode);
+                        prerequisiteNode.Dependents.TryAdd(updateGuid, updateNode);
                     }
                 }
             }

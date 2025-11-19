@@ -3,6 +3,8 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -13,6 +15,7 @@ using Microsoft.PackageGraph.Storage.Local;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using Newtonsoft.Json;
 using SoapCore;
+using System.IO;
 using System.Reflection;
 using System.Text;
 
@@ -32,6 +35,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         readonly IContentStore ContentSource = null;
 
         readonly string ContentRoot;
+
+        readonly string CacheDatabasePath;
 
         /// <summary>
         /// Creates the update server startup using the specified configuration an update metadata store
@@ -65,6 +70,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
                 ContentRoot = config.GetValue<string>("content-http-root");
             }
+
+            CacheDatabasePath = config.GetValue<string>("client-sync-cache-path")
+                ?? Path.Combine(Path.GetTempPath(), "client-sync-cache");
         }
 
         /// <summary>
@@ -78,18 +86,27 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             // Enable SoapCore; this middleware provides translation services from WCF/SOAP to Asp.net
             services.AddSoapCore();
 
+            services.AddMemoryCache();
+            services.AddSingleton<IDistributedCache>(_ => new FileSystemDistributedCache(CacheDatabasePath));
+
             // Enable the upstream WCF services
-            var clientSyncService = new ClientSyncWebService();
-            clientSyncService.SetContentURLBase(ContentSource is null ? null : ContentRoot);
-            clientSyncService.SetServiceConfiguration(UpdateServiceConfiguration);
-            clientSyncService.SetPackageStore(MetadataSource);
-
-            if (MetadataSource is IDeploySyncStore dataStore)
+            services.AddSingleton(provider =>
             {
-                clientSyncService.SetDeploymentAndSyncStore(dataStore);
-            }
+                var memoryCache = provider.GetRequiredService<IMemoryCache>();
+                var distributedCache = provider.GetRequiredService<IDistributedCache>();
 
-            services.TryAddSingleton(clientSyncService);
+                var clientSyncService = new ClientSyncWebService(memoryCache, distributedCache);
+                clientSyncService.SetContentURLBase(ContentSource is null ? null : ContentRoot);
+                clientSyncService.SetServiceConfiguration(UpdateServiceConfiguration);
+                clientSyncService.SetPackageStore(MetadataSource);
+
+                if (MetadataSource is IDeploySyncStore dataStore)
+                {
+                    clientSyncService.SetDeploymentAndSyncStore(dataStore);
+                }
+
+                return clientSyncService;
+            });
             services.TryAddSingleton<SimpleAuthenticationWebService>();
             services.TryAddSingleton<ReportingWebService>();
 
