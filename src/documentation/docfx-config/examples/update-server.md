@@ -62,6 +62,16 @@ var host = new WebHostBuilder()
             { 
                 "content-http-root", $"http://{bindEndpoint}:{bindPort}/microsoftupdate/content" 
             },
+
+            // Optional: disk path for distributed cache used by ClientSync
+            { 
+                "client-sync-cache-path", Path.Combine(Path.GetTempPath(), "client-sync-cache") 
+            },
+
+            // Optional: background refresh cadence for cached metadata (minutes)
+            { 
+                "client-sync-refresh-minutes", "5" 
+            },
         };
 
         config.AddInMemoryCollection(configDictionary);

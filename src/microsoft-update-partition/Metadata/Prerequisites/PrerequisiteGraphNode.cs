@@ -15,8 +15,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
 
         public PrerequisiteGraphNode(Guid updateId)
         {
-            Dependents = new Dictionary<Guid, PrerequisiteGraphNode>();
-            Prerequisites = new Dictionary<Guid, PrerequisiteGraphNode>();
+            Dependents = [];
+            Prerequisites = [];
             UpdateId = updateId;
         }
     }

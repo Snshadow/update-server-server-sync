@@ -550,22 +550,20 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Get the identities of packages that match the criteria from <see cref="IMetadataSource"/> 
         /// </summary>
-        /// <typeparam name="T">Package identity type to query. The type must inherit <see cref="MicrosoftUpdatePackageIdentity"/></typeparam>
+        /// <typeparam name="T">Package identity type to get its identities. The type must inherit <see cref="MicrosoftUpdatePackage"/></typeparam>
         /// <param name="packages">The packages to filter</param>
         /// <returns>Matching packages' identities</returns>
-        public IEnumerable<T> GetMatchingIdentities<T>(IEnumerable<IPackage> packages) where T : MicrosoftUpdatePackageIdentity
+        public IEnumerable<IPackageIdentity> GetMatchingIdentities<T>(IEnumerable<IPackage> packages) where T : MicrosoftUpdatePackage
         {
             if (TryGetStoreBackedFilter(packages, out var storeBacked))
             {
                 var packageType = GetStoredPackageType(typeof(T));
                 return storeBacked
-                    .GetIdentitiesFromStore(CloneWithPackageType(packageType))
-                    .Cast<T>();
+                    .GetIdentitiesFromStore(CloneWithPackageType(packageType));
             }
 
             return Apply<MicrosoftUpdatePackage>(packages)
-                .Select(p => p.Id)
-                .Cast<T>();
+                .Select(p => p.Id);
         }
 
         /// <summary>
@@ -575,7 +573,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <returns>Matching packages' identities</returns>
         public IEnumerable<IPackageIdentity> GetMatchingIdentities(IEnumerable<IPackage> packages)
         {
-            return GetMatchingIdentities<MicrosoftUpdatePackageIdentity>(packages);
+            return GetMatchingIdentities<MicrosoftUpdatePackage>(packages);
         }
 
         /// <summary>

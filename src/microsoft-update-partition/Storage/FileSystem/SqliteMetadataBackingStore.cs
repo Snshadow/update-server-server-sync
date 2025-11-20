@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Data.Sqlite;
+using Microsoft.PackageGraph.MicrosoftUpdate;
 using Microsoft.PackageGraph.MicrosoftUpdate.Index;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
@@ -667,13 +668,14 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public IPackage GetPackage(IPackageIdentity packageIdentity)
         {
-            var metadataStream = GetMetadata(packageIdentity);
-            if (metadataStream == null)
+            if (packageIdentity is MicrosoftUpdatePackageIdentity updatePackageIdentity)
             {
-                return null;
+                var packageType = (StoredPackageType)GetPackageType(GetPackageIndex(packageIdentity));
+
+                return MicrosoftUpdatePackage.FromTypeAndStore(packageType, updatePackageIdentity, this, this);
             }
 
-            return MicrosoftUpdatePackage.FromStoredMetadataXml(metadataStream, this, this);
+            throw new InvalidDataException("Invalid update identity");
         }
 
         public IEnumerable<IPackageIdentity> GetPackageIdentities()
@@ -1205,6 +1207,25 @@ namespace Microsoft.PackageGraph.Storage.Local
             var hasExcludedProductFilter = metadataFilter.ExcludedProductFilter is { Count: > 0 };
             var hasExcludedClassificationFilter = metadataFilter.ExcludedClassificationFilter is { Count: > 0 };
             var requiresCategoryFiltering = hasProductFilter || hasClassificationFilter || hasExcludedProductFilter || hasExcludedClassificationFilter;
+            var hasIdFilter = metadataFilter.IdFilter is { Count: > 0 };
+            var hasExcludedIdFilter = metadataFilter.ExcludedIdFilter is { Count: > 0 };
+            var hasKbFilter = metadataFilter.KbArticleFilter is { Count: > 0 };
+            var hasExcludedKbFilter = metadataFilter.ExcludedKbArticleFilter is { Count: > 0 };
+
+            if (requiresCategoryFiltering || hasIdFilter || hasExcludedIdFilter || hasKbFilter || hasExcludedKbFilter)
+            {
+                PopulateFilterTable(
+                    command.Connection,
+                    metadataFilter,
+                    hasProductFilter,
+                    hasExcludedProductFilter,
+                    hasClassificationFilter,
+                    hasExcludedClassificationFilter,
+                    hasIdFilter,
+                    hasExcludedIdFilter,
+                    hasKbFilter,
+                    hasExcludedKbFilter);
+            }
 
             if (requiresCategoryFiltering)
             {
@@ -1212,6 +1233,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 INNER JOIN metadatas AS m ON i.id = m.revision_id
                 INNER JOIN json_each(m.categories) AS c
+                LEFT JOIN temp.filter_values AS fv ON fv.value = c.value
                 """);
 
                 if (countOnly)
@@ -1227,46 +1249,22 @@ namespace Microsoft.PackageGraph.Storage.Local
 
                 if (hasProductFilter)
                 {
-                    var productParams = metadataFilter.ProductFilter.Select((id, index) =>
-                    {
-                        var paramName = $"@product{index}";
-                        command.Parameters.Add(paramName, SqliteType.Text).Value = id;
-                        return paramName;
-                    }).ToList();
-                    groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", productParams)}) THEN 1 END) > 0");
+                    groupByBuilder.Append("\nAND count(CASE WHEN fv.kind = 'product' THEN 1 END) > 0");
                 }
 
                 if (hasExcludedProductFilter)
                 {
-                    var excludedProductParams = metadataFilter.ExcludedProductFilter.Select((id, index) =>
-                    {
-                        var paramName = $"@excluded_product{index}";
-                        command.Parameters.Add(paramName, SqliteType.Text).Value = id;
-                        return paramName;
-                    }).ToList();
-                    groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", excludedProductParams)}) THEN 1 END) = 0");
+                    groupByBuilder.Append("\nAND count(CASE WHEN fv.kind = 'excluded_product' THEN 1 END) = 0");
                 }
 
                 if (hasClassificationFilter)
                 {
-                    var classificationParams = metadataFilter.ClassificationFilter.Select((id, index) =>
-                    {
-                        var paramName = $"@classification{index}";
-                        command.Parameters.Add(paramName, SqliteType.Text).Value = id;
-                        return paramName;
-                    }).ToList();
-                    groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", classificationParams)}) THEN 1 END) > 0");
+                    groupByBuilder.Append("\nAND count(CASE WHEN fv.kind = 'classification' THEN 1 END) > 0");
                 }
 
                 if (hasExcludedClassificationFilter)
                 {
-                    var excludedClassificationParams = metadataFilter.ExcludedClassificationFilter.Select((id, index) =>
-                    {
-                        var paramName = $"@excluded_classification{index}";
-                        command.Parameters.Add(paramName, SqliteType.Text).Value = id;
-                        return paramName;
-                    }).ToList();
-                    groupByBuilder.Append($"\nAND count(CASE WHEN c.value COLLATE NOCASE IN ({string.Join(",", excludedClassificationParams)}) THEN 1 END) = 0");
+                    groupByBuilder.Append("\nAND count(CASE WHEN fv.kind = 'excluded_classification' THEN 1 END) = 0");
                 }
             }
 
@@ -1293,69 +1291,31 @@ namespace Microsoft.PackageGraph.Storage.Local
                 whereBuilder.Append("\nAND i.is_expired = 0");
             }
 
-            if (metadataFilter.IdFilter is { Count: > 0 })
+            if (hasIdFilter)
             {
-                var index = 0;
-                List<string> idParams = [];
-                foreach (var id in metadataFilter.IdFilter)
-                {
-                    var paramName = $"@id{index}";
-                    idParams.Add(paramName);
-                    command.Parameters.Add(paramName, SqliteType.Text).Value = id;
-                    index++;
-                }
-
-                whereBuilder.Append($"\nAND i.guid IN ({string.Join(",", idParams)})");
+                tableBuilder.Append("\nINNER JOIN temp.filter_values AS fv_id ON fv_id.kind = 'id' AND fv_id.value = i.guid");
             }
-            if (metadataFilter.ExcludedIdFilter is { Count: > 0 })
+            if (hasExcludedIdFilter)
             {
-                var index = 0;
-                List<string> excludedIdParams = [];
-                foreach (var id in metadataFilter.ExcludedIdFilter)
-                {
-                    var paramName = $"@excluded_id{index}";
-                    excludedIdParams.Add(paramName);
-                    command.Parameters.Add(paramName, SqliteType.Text).Value = id;
-                    index++;
-                }
-
-                whereBuilder.Append($"\nAND i.guid NOT IN ({string.Join(",", excludedIdParams)})");
+                tableBuilder.Append("\nLEFT JOIN temp.filter_values AS fv_exid ON fv_exid.kind = 'excluded_id' AND fv_exid.value = i.guid");
+                whereBuilder.Append("\nAND fv_exid.value IS NULL");
             }
 
-            if (metadataFilter.KbArticleFilter is { Count: > 0 } ||
-                metadataFilter.ExcludedKbArticleFilter is { Count: > 0 } ||
+            if (hasKbFilter ||
+                hasExcludedKbFilter ||
                 metadataFilter.SortOrder.KbArticle != SortOrder.None)
             {
                 tableBuilder.Append("\nINNER JOIN software_informations AS si ON si.revision_id = i.id");
 
-                if (metadataFilter.KbArticleFilter is { Count: > 0 })
+                if (hasKbFilter)
                 {
-                    var index = 0;
-                    List<string> kbParams = [];
-                    foreach (var kb in metadataFilter.KbArticleFilter)
-                    {
-                        var paramName = $"@kb{index}";
-                        kbParams.Add(paramName);
-                        command.Parameters.Add(paramName, SqliteType.Text).Value = kb;
-                        index++;
-                    }
-
-                    whereBuilder.Append($"\nAND si.kb_article_id IN ({string.Join(",", kbParams)})");
+                    tableBuilder.Append("\nINNER JOIN temp.filter_values AS fv_kb ON fv_kb.kind = 'kb' AND fv_kb.value = si.kb_article_id");
                 }
 
-                if (metadataFilter.ExcludedKbArticleFilter is { Count: > 0 })
+                if (hasExcludedKbFilter)
                 {
-                    var index = 0;
-                    List<string> excludedKbParams = [];
-                    foreach (var kb in metadataFilter.ExcludedKbArticleFilter)
-                    {
-                        var paramName = $"@excluded_kb{index}";
-                        excludedKbParams.Add(paramName);
-                        command.Parameters.Add(paramName, SqliteType.Text).Value = kb;
-                        index++;
-                    }
-
-                    whereBuilder.Append($"\nAND si.kb_article_id NOT IN ({string.Join(",", excludedKbParams)})");
+                    tableBuilder.Append("\nLEFT JOIN temp.filter_values AS fv_exkb ON fv_exkb.kind = 'excluded_kb' AND fv_exkb.value = si.kb_article_id");
+                    whereBuilder.Append("\nAND fv_exkb.value IS NULL");
                 }
             }
 
@@ -1440,6 +1400,93 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
 
             command.CommandText = queryBuilder.ToString();
+        }
+
+        private static void PopulateFilterTable(
+            SqliteConnection connection,
+            MetadataFilter metadataFilter,
+            bool hasProductFilter,
+            bool hasExcludedProductFilter,
+            bool hasClassificationFilter,
+            bool hasExcludedClassificationFilter,
+            bool hasIdFilter,
+            bool hasExcludedIdFilter,
+            bool hasKbFilter,
+            bool hasExcludedKbFilter)
+        {
+            ArgumentNullException.ThrowIfNull(connection);
+
+            using (var tempCommand = connection.CreateCommand())
+            {
+                tempCommand.CommandText = """
+                DROP TABLE IF EXISTS temp.filter_values;
+                CREATE TEMP TABLE filter_values(
+                    kind TEXT,
+                    value TEXT COLLATE NOCASE,
+                    PRIMARY KEY(kind, value)
+                ) WITHOUT ROWID;
+                """;
+                tempCommand.ExecuteNonQuery();
+            }
+
+            using var transaction = connection.BeginTransaction();
+            using var insertCmd = connection.CreateCommand();
+            insertCmd.Transaction = transaction;
+            insertCmd.CommandText = "INSERT OR IGNORE INTO temp.filter_values(kind, value) VALUES (@kind, @value)";
+            var kindParam = insertCmd.Parameters.Add("@kind", SqliteType.Text);
+            var valueParam = insertCmd.Parameters.Add("@value", SqliteType.Text);
+
+            void AddValues<T>(string kind, IEnumerable<T> values)
+            {
+                kindParam.Value = kind;
+                foreach (var value in values)
+                {
+                    valueParam.Value = value;
+                    insertCmd.ExecuteNonQuery();
+                }
+            }
+
+            if (hasProductFilter)
+            {
+                AddValues("product", metadataFilter.ProductFilter);
+            }
+
+            if (hasExcludedProductFilter)
+            {
+                AddValues("excluded_product", metadataFilter.ExcludedProductFilter);
+            }
+
+            if (hasClassificationFilter)
+            {
+                AddValues("classification", metadataFilter.ClassificationFilter);
+            }
+
+            if (hasExcludedClassificationFilter)
+            {
+                AddValues("excluded_classification", metadataFilter.ExcludedClassificationFilter);
+            }
+
+            if (hasIdFilter)
+            {
+                AddValues("id", metadataFilter.IdFilter);
+            }
+
+            if (hasExcludedIdFilter)
+            {
+                AddValues("excluded_id", metadataFilter.ExcludedIdFilter);
+            }
+
+            if (hasKbFilter)
+            {
+                AddValues("kb", metadataFilter.KbArticleFilter);
+            }
+
+            if (hasExcludedKbFilter)
+            {
+                AddValues("excluded_kb", metadataFilter.ExcludedKbArticleFilter);
+            }
+
+            transaction.Commit();
         }
 
         private List<IPackageIdentity> GetPackageIdentities(IMetadataFilter filter)

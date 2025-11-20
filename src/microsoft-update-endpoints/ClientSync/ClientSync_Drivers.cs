@@ -45,7 +45,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 Truncated = false
             };
 
-            List<Guid> computerHardwareIds = parameters.ComputerSpec.HardwareIDs?.ToList() ?? new();
+            List<Guid> computerHardwareIds = parameters.ComputerSpec?.HardwareIDs?.ToList() ?? [];
 
             List<UpdateInfo> driverUpdates = new();
 
@@ -127,7 +127,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             var (computerId, _) = ParseCookie(cookie);
 
             // Update last synchronization time for computer
-            DeployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
+            _deployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
 
             return Task.FromResult(response);
         }

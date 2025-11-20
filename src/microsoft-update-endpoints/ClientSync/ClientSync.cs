@@ -33,9 +33,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// </summary>
         public IMetadataStore MetadataSource { get; private set; }
 
-        private IDeploySyncStore DeployAndSyncStore;
+        private IDeploySyncStore _deployAndSyncStore;
 
-        private Config ServiceConfiguration;
+        private Config _serviceConfiguration;
 
         private readonly IMemoryCache _memoryCache;
         private readonly IDistributedCache _distributedCache;
@@ -46,9 +46,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         private const string CacheKeyLeafUpdates = "LeafUpdates";
         private const string CacheKeySoftwareLeafUpdates = "SoftwareLeafUpdates";
 
-        private readonly ReaderWriterLockSlim MetadataSourceLock = new();
+        private readonly ReaderWriterLockSlim _metadataSourceLock = new();
 
         private Timer _cacheRefreshTimer;
+        private TimeSpan _cacheRefreshPeriod;
 
         private int _activeSyncOperations;
 
@@ -91,7 +92,24 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="serviceConfiguration">Service configuration</param>
         public void SetServiceConfiguration(Config serviceConfiguration)
         {
-            ServiceConfiguration = serviceConfiguration;
+            _serviceConfiguration = serviceConfiguration;
+        }
+
+        /// <summary>
+        /// Sets the background cache refresh period
+        /// </summary>
+        /// <param name="refreshPeriod">Desired refresh period. Defaults to 5 minutes if non-positive.</param>
+        public void SetCacheRefreshPeriod(TimeSpan refreshPeriod)
+        {
+            if (refreshPeriod <= TimeSpan.Zero)
+            {
+                refreshPeriod = TimeSpan.FromMinutes(5);
+            }
+
+            _cacheRefreshPeriod = refreshPeriod;
+
+            // If timer already exists, update its period
+            _cacheRefreshTimer?.Change(_cacheRefreshPeriod, _cacheRefreshPeriod);
         }
 
         /// <summary>
@@ -100,7 +118,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="dataStore">The source for deployment and synchronization data</param>
         public void SetDeploymentAndSyncStore(IDeploySyncStore dataStore)
         {
-            DeployAndSyncStore = dataStore;
+            _deployAndSyncStore = dataStore;
         }
 
         /// <summary>
@@ -109,13 +127,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="metadataSource">The source for updates metadata</param>
         public void SetPackageStore(IMetadataStore metadataSource)
         {
-            MetadataSourceLock.EnterWriteLock();
+            _metadataSourceLock.EnterWriteLock();
             try
             {
                 MetadataSource = metadataSource;
                 if (MetadataSource is null)
                 {
-                    DeployAndSyncStore = null;
+                    _deployAndSyncStore = null;
                     ClearCachedMetadataView();
                 }
                 else
@@ -126,7 +144,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             }
             finally
             {
-                MetadataSourceLock.ExitWriteLock();
+                _metadataSourceLock.ExitWriteLock();
             }
         }
 
@@ -169,32 +187,66 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             var nonLeafUpdates = graph.GetNonLeafUpdates().ToList();
             var leafUpdates = graph.GetLeafUpdates().ToList();
 
-            var leafSoftwareUpdates = MetadataSource
-                .OfType<SoftwareUpdate>()
-                .Where(u => u.IsSupersededBy is null || u.IsSupersededBy.Count == 0)
-                .GroupBy(u => u.Id.ID)
-                .Select(k => k.Key)
-                .ToHashSet();
-
-            var softwareLeafUpdates = leafUpdates.Where(leafSoftwareUpdates.Contains).ToList();
+            MetadataFilter filter = new()
+            {
+                IncludeExpired = true,
+                IncludeBundled = true
+            };
+            var softwareLeafUpdates = filter.GetMatchingIdentities<SoftwareUpdate>(MetadataSource)
+                .Cast<MicrosoftUpdatePackageIdentity>()
+                .Select(i => i.ID)
+                .Intersect(leafUpdates)
+                .ToList();
 
             return (graph, rootUpdates, nonLeafUpdates, leafUpdates, softwareLeafUpdates);
         }
 
         private void StoreGraphSlices((PrerequisitesGraph Graph, List<Guid> Root, List<Guid> NonLeaf, List<Guid> Leaf, List<Guid> SoftwareLeaf) slices)
         {
-            var cacheOptions = new MemoryCacheEntryOptions { Priority = CacheItemPriority.NeverRemove };
-
-            _memoryCache.Set(CacheKeyPrereqGraph, slices.Graph, cacheOptions);
-            _memoryCache.Set(CacheKeyRootUpdates, slices.Root, cacheOptions);
-            _memoryCache.Set(CacheKeyNonLeafUpdates, slices.NonLeaf, cacheOptions);
-            _memoryCache.Set(CacheKeyLeafUpdates, slices.Leaf, cacheOptions);
-            _memoryCache.Set(CacheKeySoftwareLeafUpdates, slices.SoftwareLeaf, cacheOptions);
+            var graphSize = EstimateGraphSizeFromSlices(slices.Root, slices.NonLeaf, slices.Leaf);
+            _memoryCache.Set(CacheKeyPrereqGraph, slices.Graph, CreateSizedEntryOptions(slices.Graph, CacheItemPriority.NeverRemove, graphSize));
 
             PersistGuidList(CacheKeyRootUpdates, slices.Root);
             PersistGuidList(CacheKeyNonLeafUpdates, slices.NonLeaf);
             PersistGuidList(CacheKeyLeafUpdates, slices.Leaf);
             PersistGuidList(CacheKeySoftwareLeafUpdates, slices.SoftwareLeaf);
+        }
+
+        private static MemoryCacheEntryOptions CreateSizedEntryOptions(object value, CacheItemPriority priority, long? sizeHint = null)
+        {
+            var options = new MemoryCacheEntryOptions
+            {
+                Priority = priority
+            };
+
+            options.SetSize(sizeHint ?? EstimateCacheEntrySize(value));
+
+            return options;
+        }
+
+        private static long EstimateCacheEntrySize(object value) =>
+            value switch
+            {
+                List<Guid> guids => Math.Max(guids.Count * 16L + 64, 1),
+                // Graph sizing should be passed explicitly via sizeHint to avoid extra traversal
+                PrerequisitesGraph => 1,
+                byte[] bytes => Math.Max(bytes.Length, 1),
+                _ => 1
+            };
+
+        private static long EstimateGraphSizeFromSlices(List<Guid> root, List<Guid> nonLeaf, List<Guid> leaf)
+        {
+            var uniqueNodes = new HashSet<Guid>(root ?? []);
+            if (nonLeaf is not null)
+            {
+                uniqueNodes.UnionWith(nonLeaf);
+            }
+            if (leaf is not null)
+            {
+                uniqueNodes.UnionWith(leaf);
+            }
+
+            return Math.Max(uniqueNodes.Count * 256L, 1);
         }
 
         private void EnsureRefreshTimer()
@@ -204,7 +256,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 return;
             }
 
-            _cacheRefreshTimer = new Timer(_ => RefreshCacheIfIdle(), state: null, dueTime: TimeSpan.FromMinutes(5), period: TimeSpan.FromMinutes(5));
+            _cacheRefreshTimer = new Timer(_ => RefreshCacheIfIdle(), state: null, dueTime: _cacheRefreshPeriod, period: _cacheRefreshPeriod);
         }
 
         private void RefreshCacheIfIdle()
@@ -217,14 +269,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             // Only refresh when no client sync is running
             if (Interlocked.CompareExchange(ref _activeSyncOperations, 0, 0) == 0)
             {
-                MetadataSourceLock.EnterWriteLock();
+                _metadataSourceLock.EnterWriteLock();
                 try
                 {
                     BuildCachedMetadataView();
                 }
                 finally
                 {
-                    MetadataSourceLock.ExitWriteLock();
+                    _metadataSourceLock.ExitWriteLock();
                 }
             }
         }
@@ -236,7 +288,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>The server configuration to be sent to a Windows client</returns>
         public Task<Config> GetConfig2Async(ClientConfiguration clientConfiguration)
         {
-            return Task.FromResult(ServiceConfiguration);
+            return Task.FromResult(_serviceConfiguration);
         }
 
         /// <summary>
@@ -246,7 +298,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>The server configuration to be sent to a Windows client</returns>
         public Task<Config> GetConfigAsync(string protocolVersion)
         {
-            return Task.FromResult(ServiceConfiguration);
+            return Task.FromResult(_serviceConfiguration);
         }
 
         /// <summary>
@@ -502,30 +554,25 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 return fromDistributed;
             }
 
-            return _memoryCache.GetOrCreate(key, entry =>
+            _metadataSourceLock.EnterWriteLock();
+            try
             {
-                MetadataSourceLock.EnterWriteLock();
-                try
-                {
-                    var slices = ComputeGraphSlices();
-                    StoreGraphSlices(slices);
+                var slices = ComputeGraphSlices();
+                StoreGraphSlices(slices);
 
-                    entry.SetPriority(CacheItemPriority.Normal);
-
-                    return key switch
-                    {
-                        CacheKeyRootUpdates => slices.Root,
-                        CacheKeyNonLeafUpdates => slices.NonLeaf,
-                        CacheKeyLeafUpdates => slices.Leaf,
-                        CacheKeySoftwareLeafUpdates => slices.SoftwareLeaf,
-                        _ => []
-                    };
-                }
-                finally
+                return key switch
                 {
-                    MetadataSourceLock.ExitWriteLock();
-                }
-            })!;
+                    CacheKeyRootUpdates => slices.Root,
+                    CacheKeyNonLeafUpdates => slices.NonLeaf,
+                    CacheKeyLeafUpdates => slices.Leaf,
+                    CacheKeySoftwareLeafUpdates => slices.SoftwareLeaf,
+                    _ => []
+                };
+            }
+            finally
+            {
+                _metadataSourceLock.ExitWriteLock();
+            }
         }
 
         private void PersistGuidList(string key, List<Guid> guidList)
@@ -549,11 +596,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 {
                     return [];
                 }
-                var guids = JsonSerializer.Deserialize<List<Guid>>(bytes) ?? [];
-
-                _memoryCache.Set(key, guids, new MemoryCacheEntryOptions { Priority = CacheItemPriority.Normal });
-
-                return guids;
+                return JsonSerializer.Deserialize<List<Guid>>(bytes) ?? [];
             }
             catch
             {
@@ -582,7 +625,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
         private IDeployment GetDeployment(int revisionId)
         {
-            return DeployAndSyncStore.GetDeployment(revisionId);
+            return _deployAndSyncStore.GetDeployment(revisionId);
         }
 
         /// <summary>
@@ -618,7 +661,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         }
 
         /// <summary>
-        /// Extract list of other known updates from the client and maps them to a  GUID
+        /// Extract list of other known updates from the client and maps them to a GUID
         /// </summary>
         /// <param name="parameters">Sync parameters</param>
         /// <returns>List of update GUIDs</returns>

@@ -26,6 +26,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             var contentPath = options.ContentSourcePath;
             var bindEndpoint = options.Endpoint;
             var bindPort = options.Port;
+            var cacheDatabasePath = Path.Combine(Path.GetTempPath(), "client-sync-cache");
 
             var host = Host.CreateDefaultBuilder()
                 .ConfigureLogging((hostingContext, logging) =>
@@ -49,6 +50,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                         // This path match with the path used in ASP.NETCore to serve content
                         // In this case, we use the sample MicrosoftUpdateContentController, which serves content from /microsoftupdate/content
                         { "content-http-root", $"http://{bindEndpoint}:{bindPort}/microsoftupdate/content" },
+                        // Disk path for the distributed cache used by ClientSync
+                        { "client-sync-cache-path", cacheDatabasePath },
+                        // Background refresh period for cached metadata (minutes)
+                        { "client-sync-refresh-minutes", "5" },
                     };
 
                     config.AddInMemoryCollection(configDictionary);

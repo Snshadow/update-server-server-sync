@@ -43,6 +43,12 @@
             </summary>
             <param name="serviceConfiguration">Service configuration</param>
         </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.SetCacheRefreshPeriod(System.TimeSpan)">
+            <summary>
+            Sets the background cache refresh period
+            </summary>
+            <param name="refreshPeriod">Desired refresh period. Defaults to 5 minutes if non-positive.</param>
+        </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.SetDeploymentAndSyncStore(Microsoft.PackageGraph.Storage.IDeploySyncStore)">
             <summary>
             Sets the source of deployment and synchronization
@@ -179,7 +185,7 @@
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.GetOtherCachedUpdateGuidsFromSyncParameters(Microsoft.UpdateServices.WebServices.ClientSync.SyncUpdateParameters)">
             <summary>
-            Extract list of other known updates from the client and maps them to a  GUID
+            Extract list of other known updates from the client and maps them to a GUID
             </summary>
             <param name="parameters">Sync parameters</param>
             <returns>List of update GUIDs</returns>

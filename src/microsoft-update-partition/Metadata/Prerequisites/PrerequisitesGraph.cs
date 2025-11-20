@@ -48,7 +48,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
                     {
                         if (p is Simple simple)
                         {
-                            return new List<Guid>() { simple.UpdateId };
+                            return [simple.UpdateId];
                         }
                         else if (p is AtLeastOne atLeastOne)
                         {

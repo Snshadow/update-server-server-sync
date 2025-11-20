@@ -15,6 +15,7 @@ using Microsoft.PackageGraph.Storage.Local;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using Newtonsoft.Json;
 using SoapCore;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -37,6 +38,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         readonly string ContentRoot;
 
         readonly string CacheDatabasePath;
+
+        readonly TimeSpan CacheRefreshPeriod;
 
         /// <summary>
         /// Creates the update server startup using the specified configuration an update metadata store
@@ -73,6 +76,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             CacheDatabasePath = config.GetValue<string>("client-sync-cache-path")
                 ?? Path.Combine(Path.GetTempPath(), "client-sync-cache");
+
+            var refreshMinutes = config.GetValue<int?>("client-sync-refresh-minutes") ?? 5;
+            if (refreshMinutes <= 0)
+            {
+                refreshMinutes = 5;
+            }
+            CacheRefreshPeriod = TimeSpan.FromMinutes(refreshMinutes);
         }
 
         /// <summary>
@@ -86,7 +96,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             // Enable SoapCore; this middleware provides translation services from WCF/SOAP to Asp.net
             services.AddSoapCore();
 
-            services.AddMemoryCache();
+            services.AddMemoryCache(options =>
+            {
+                options.SizeLimit = 1L * 1024 * 1024 * 1024; // 1 GB
+            });
             services.AddSingleton<IDistributedCache>(_ => new FileSystemDistributedCache(CacheDatabasePath));
 
             // Enable the upstream WCF services
@@ -98,6 +111,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 var clientSyncService = new ClientSyncWebService(memoryCache, distributedCache);
                 clientSyncService.SetContentURLBase(ContentSource is null ? null : ContentRoot);
                 clientSyncService.SetServiceConfiguration(UpdateServiceConfiguration);
+                clientSyncService.SetCacheRefreshPeriod(CacheRefreshPeriod);
                 clientSyncService.SetPackageStore(MetadataSource);
 
                 if (MetadataSource is IDeploySyncStore dataStore)

@@ -24,7 +24,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             var now = DateTime.UtcNow;
 
-            MetadataSourceLock.EnterReadLock();
+            _metadataSourceLock.EnterReadLock();
             try
             {
                 if (MetadataSource is null)
@@ -75,7 +75,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 }
 
                 var (computerId, _) = ParseCookie(cookie);
-                var computerSync = DeployAndSyncStore.GetComputerSync(computerId);
+                var computerSync = _deployAndSyncStore.GetComputerSync(computerId);
 
                 response.ChangedUpdates = GetChangedUpdates(
                     cachedGuids,
@@ -86,13 +86,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 // response.DeployedOutOfScopeRevisionIds = [];
 
                 // Update last synchronization time for computer
-                DeployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
+                _deployAndSyncStore.UpdateComputerSync(computerId, DateTime.UtcNow);
 
                 return Task.FromResult(response);
             }
             finally
             {
-                MetadataSourceLock.ExitReadLock();
+                _metadataSourceLock.ExitReadLock();
             }
         }
 
@@ -105,7 +105,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 IdFilter = [id]
             };
 
-            return filter.GetMatchingIdentities<MicrosoftUpdatePackageIdentity>(MetadataSource)
+            return filter.GetMatchingIdentities<MicrosoftUpdatePackage>(MetadataSource)
+                .Cast<MicrosoftUpdatePackageIdentity>()
                 .OrderByDescending(i => i.Revision)
                 .FirstOrDefault();
         }
@@ -118,15 +119,21 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingRootUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, SyncInfo response, out bool updatesAdded)
         {
-            var rootUpdates = GetCachedGuidSet(CacheKeyRootUpdates);
+            var rootUpdatesIds = GetCachedGuidSet(CacheKeyRootUpdates)
+                .Except(cachedGuids) // Do not search for known updates
+                .ToList();
+
+            if (rootUpdatesIds.Count == 0)
+            {
+                updatesAdded = false;
+                return;
+            }
 
             MetadataFilter filter = new()
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = rootUpdates
-                    .Except(cachedGuids) // Do not resend known updates
-                    .ToList(),
+                IdFilter = rootUpdatesIds,
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed 
             };
 
@@ -155,15 +162,21 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingNonLeafUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
-            var nonLeafUpdates = GetCachedGuidSet(CacheKeyNonLeafUpdates);
+            var nonLeafUpdateIds = GetCachedGuidSet(CacheKeyNonLeafUpdates)
+                .Except(cachedGuids) // Do not search for known updates
+                .ToList();
+
+            if (nonLeafUpdateIds.Count == 0)
+            {
+                updatesAdded = false;
+                return;
+            }
 
             MetadataFilter filter = new()
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = nonLeafUpdates
-                    .Except(cachedGuids) // Do not resend known updates
-                    .ToList(),
+                IdFilter = nonLeafUpdateIds,
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed
             };
 
@@ -193,15 +206,21 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingBundleUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
-            var leafUpdates = GetCachedGuidSet(CacheKeyLeafUpdates);
+            var leafUpdateIds = GetCachedGuidSet(CacheKeySoftwareLeafUpdates)
+                .Except(cachedGuids) // Do not search for known updates
+                .ToList();
+
+            if (leafUpdateIds.Count == 0)
+            {
+                updatesAdded = false;
+                return;
+            }
 
             MetadataFilter filter = new()
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = leafUpdates
-                    .Except(cachedGuids) // Do not resend known updates
-                    .ToList(),
+                IdFilter = leafUpdateIds,
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed
             };
 
@@ -231,15 +250,21 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingSoftwareUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
-            var leafUpdates = GetCachedGuidSet(CacheKeyLeafUpdates);
+            var leafUpdateIds = GetCachedGuidSet(CacheKeySoftwareLeafUpdates)
+                .Except(cachedGuids) // Do not search for known updates
+                .ToList();
+
+            if (leafUpdateIds.Count == 0)
+            {
+                updatesAdded = false;
+                return;
+            }
 
             MetadataFilter filter = new()
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = leafUpdates // Do not resend known updates
-                    .Except(cachedGuids)
-                    .ToList(),
+                IdFilter = leafUpdateIds,
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed
             };
 
@@ -248,14 +273,10 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 .Where(u => u.IsApplicable(installedNonLeaf) && ((u.BundledWithUpdates?.Count ?? 0) == 0)) // Remove not applicable and bundles
                 .ToList();
 
-            // Remove all null updates that might have slipped past the initial queries
-            allMissingApplicableUpdates.RemoveAll(u => u is null);
-
-            response.Truncated = allMissingApplicableUpdates.Count > MaxUpdatesInResponse;
-
             if (allMissingApplicableUpdates.Count > 0)
             {
                 response.NewUpdates = CreateUpdateInfoListFromSoftwareUpdate(allMissingApplicableUpdates).ToArray();
+                response.Truncated = true;
                 updatesAdded = true;
             }
             else
@@ -278,15 +299,17 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             for (int i = 0; i < returnListLength; i++)
             {
+                var update = softwareUpdates[i];
+                var identity = update.Id;
+
                 // Get the update index; it will be sent to the client
-                var revision = MetadataSource.GetPackageIndex(softwareUpdates[i].Id);
+                var revision = MetadataSource.GetPackageIndex(identity);
 
                 // Generate the core XML fragment
-                var identity = softwareUpdates[i].Id;
                 var coreXml = GetCoreFragment(identity);
 
-                var isBundle = softwareUpdates[i].BundledUpdates is { Count: > 0 };
-                var isBundled = softwareUpdates[i].BundledWithUpdates is { Count: > 0 };
+                var isBundle = update.BundledUpdates is { Count: > 0 };
+                var isBundled = update.BundledWithUpdates is { Count: > 0 };
 
                 var deploymentData = GetDeployment(revision);
 
@@ -332,8 +355,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             for (int i = 0; i < returnListLength; i++)
             {
-                var revision = MetadataSource.GetPackageIndex(nonLeafUpdates[i].Id);
-                var identity = nonLeafUpdates[i].Id;
+                var update = nonLeafUpdates[i];
+                var identity = update.Id;
+                var revision = MetadataSource.GetPackageIndex(identity);
 
                 // Generate the core XML fragment
                 var coreXml = GetCoreFragment(identity);
@@ -349,7 +373,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                         AutoSelect = "0",
                         SupersedenceBehavior = "0",
                         IsAssigned = true,
-                        LastChangeTime = "2019-08-06"
+                        LastChangeTime = update.CreationDate.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo)
                     },
                     IsLeaf = false,
                     ID = revision,
