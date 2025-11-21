@@ -19,6 +19,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {
@@ -174,11 +175,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             _distributedCache.Remove(CacheKeySoftwareLeafUpdates);
         }
 
-        private (PrerequisitesGraph Graph, List<Guid> Root, List<Guid> NonLeaf, List<Guid> Leaf, List<Guid> SoftwareLeaf) ComputeGraphSlices()
+        private (List<Guid> Root, List<Guid> NonLeaf, List<Guid> Leaf, List<Guid> SoftwareLeaf) ComputeGraphSlices()
         {
             if (MetadataSource is null)
             {
-                return (null, [], [], [], []);
+                return ([], [], [], []);
             }
 
             var graph = PrerequisitesGraph.FromIndexedPackageSource(MetadataSource);
@@ -198,13 +199,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 .Intersect(leafUpdates)
                 .ToList();
 
-            return (graph, rootUpdates, nonLeafUpdates, leafUpdates, softwareLeafUpdates);
+            return (rootUpdates, nonLeafUpdates, leafUpdates, softwareLeafUpdates);
         }
 
-        private void StoreGraphSlices((PrerequisitesGraph Graph, List<Guid> Root, List<Guid> NonLeaf, List<Guid> Leaf, List<Guid> SoftwareLeaf) slices)
+        private void StoreGraphSlices((List<Guid> Root, List<Guid> NonLeaf, List<Guid> Leaf, List<Guid> SoftwareLeaf) slices)
         {
-            var graphSize = EstimateGraphSizeFromSlices(slices.Root, slices.NonLeaf, slices.Leaf);
-            _memoryCache.Set(CacheKeyPrereqGraph, slices.Graph, CreateSizedEntryOptions(slices.Graph, CacheItemPriority.NeverRemove, graphSize));
+            CacheGuidListInMemory(CacheKeyRootUpdates, slices.Root);
+            CacheGuidListInMemory(CacheKeyNonLeafUpdates, slices.NonLeaf);
+            CacheGuidListInMemory(CacheKeyLeafUpdates, slices.Leaf);
+            CacheGuidListInMemory(CacheKeySoftwareLeafUpdates, slices.SoftwareLeaf);
 
             PersistGuidList(CacheKeyRootUpdates, slices.Root);
             PersistGuidList(CacheKeyNonLeafUpdates, slices.NonLeaf);
@@ -212,42 +215,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             PersistGuidList(CacheKeySoftwareLeafUpdates, slices.SoftwareLeaf);
         }
 
-        private static MemoryCacheEntryOptions CreateSizedEntryOptions(object value, CacheItemPriority priority, long? sizeHint = null)
+        private static MemoryCacheEntryOptions CreateSizedEntryOptions(object value, CacheItemPriority priority, long sizeHint = 0) => new()
         {
-            var options = new MemoryCacheEntryOptions
-            {
-                Priority = priority
-            };
-
-            options.SetSize(sizeHint ?? EstimateCacheEntrySize(value));
-
-            return options;
-        }
+            Priority = priority,
+            Size = sizeHint > 0 ? sizeHint : EstimateCacheEntrySize(value)
+        };
 
         private static long EstimateCacheEntrySize(object value) =>
             value switch
             {
                 List<Guid> guids => Math.Max(guids.Count * 16L + 64, 1),
-                // Graph sizing should be passed explicitly via sizeHint to avoid extra traversal
-                PrerequisitesGraph => 1,
                 byte[] bytes => Math.Max(bytes.Length, 1),
                 _ => 1
             };
-
-        private static long EstimateGraphSizeFromSlices(List<Guid> root, List<Guid> nonLeaf, List<Guid> leaf)
-        {
-            var uniqueNodes = new HashSet<Guid>(root ?? []);
-            if (nonLeaf is not null)
-            {
-                uniqueNodes.UnionWith(nonLeaf);
-            }
-            if (leaf is not null)
-            {
-                uniqueNodes.UnionWith(leaf);
-            }
-
-            return Math.Max(uniqueNodes.Count * 256L, 1);
-        }
 
         private void EnsureRefreshTimer()
         {
@@ -540,6 +520,16 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             }
         }
 
+        private void CacheGuidListInMemory(string key, List<Guid> guidList)
+        {
+            if (guidList is null)
+            {
+                return;
+            }
+
+            _memoryCache.Set(key, guidList, CreateSizedEntryOptions(guidList, CacheItemPriority.High));
+        }
+
         private List<Guid> GetCachedGuidSet(string key)
         {
             if (_memoryCache.TryGetValue(key, out List<Guid> cached))
@@ -551,6 +541,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             var fromDistributed = TryLoadGuidList(key);
             if (fromDistributed.Count > 0)
             {
+                CacheGuidListInMemory(key, fromDistributed);
                 return fromDistributed;
             }
 

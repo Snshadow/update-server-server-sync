@@ -52,6 +52,8 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                         { "content-http-root", $"http://{bindEndpoint}:{bindPort}/microsoftupdate/content" },
                         // Disk path for the distributed cache used by ClientSync
                         { "client-sync-cache-path", cacheDatabasePath },
+                        // Max size (bytes) of the in-memory cache
+                        { "client-sync-cache-size-bytes", "2147483648" }, // 2GB
                         // Background refresh period for cached metadata (minutes)
                         { "client-sync-refresh-minutes", "5" },
                     };

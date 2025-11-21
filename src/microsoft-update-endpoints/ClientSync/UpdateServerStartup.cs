@@ -41,6 +41,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
         readonly TimeSpan CacheRefreshPeriod;
 
+        readonly long MemoryCacheSizeLimit;
+
         /// <summary>
         /// Creates the update server startup using the specified configuration an update metadata store
         /// </summary>
@@ -53,7 +55,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// 
         /// <para>Can contain a string entry "content-path" with the path to the content store to use if serving update content</para>
         /// </param>
-        /// <exception cref="System.Exception">If the content store specified in the configuration cannot be opened</exception>
+        /// <exception cref="Exception">If the content store specified in the configuration cannot be opened</exception>
         public UpdateServerStartup(IConfiguration config)
         {
             var metadataPath = config.GetValue<string>("metadata-path");
@@ -68,7 +70,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 ContentSource = new FileSystemContentStore(contentPath);
                 if (ContentSource is null)
                 {
-                    throw new System.Exception($"Cannot open updates content source from path {contentPath}");
+                    throw new Exception($"Cannot open updates content source from path {contentPath}");
                 }
 
                 ContentRoot = config.GetValue<string>("content-http-root");
@@ -83,6 +85,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 refreshMinutes = 5;
             }
             CacheRefreshPeriod = TimeSpan.FromMinutes(refreshMinutes);
+
+            MemoryCacheSizeLimit = config.GetValue<long?>("client-sync-cache-size-bytes") ?? 2147483648; // 2GB
+            if (MemoryCacheSizeLimit <= 0)
+            {
+                MemoryCacheSizeLimit = 2147483648;
+            }
         }
 
         /// <summary>
@@ -98,7 +106,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             services.AddMemoryCache(options =>
             {
-                options.SizeLimit = 1L * 1024 * 1024 * 1024; // 1 GB
+                options.SizeLimit = MemoryCacheSizeLimit;
             });
             services.AddSingleton<IDistributedCache>(_ => new FileSystemDistributedCache(CacheDatabasePath));
 

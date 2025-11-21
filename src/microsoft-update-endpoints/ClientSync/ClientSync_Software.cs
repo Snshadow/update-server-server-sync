@@ -119,11 +119,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingRootUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, SyncInfo response, out bool updatesAdded)
         {
-            var rootUpdatesIds = GetCachedGuidSet(CacheKeyRootUpdates)
+            var missingRootIds = GetCachedGuidSet(CacheKeyRootUpdates)
                 .Except(cachedGuids) // Do not search for known updates
                 .ToList();
 
-            if (rootUpdatesIds.Count == 0)
+            if (missingRootIds.Count == 0)
             {
                 updatesAdded = false;
                 return;
@@ -133,7 +133,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = rootUpdatesIds,
+                IdFilter = missingRootIds,
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed 
             };
 
@@ -162,11 +162,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingNonLeafUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
-            var nonLeafUpdateIds = GetCachedGuidSet(CacheKeyNonLeafUpdates)
+            var missingNonLeafIds = GetCachedGuidSet(CacheKeyNonLeafUpdates)
                 .Except(cachedGuids) // Do not search for known updates
                 .ToList();
 
-            if (nonLeafUpdateIds.Count == 0)
+            if (missingNonLeafIds.Count == 0)
             {
                 updatesAdded = false;
                 return;
@@ -176,13 +176,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = nonLeafUpdateIds,
-                FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed
+                IdFilter = missingNonLeafIds
             };
 
             var missingNonLeafs = filter.Apply(MetadataSource)
                 .Cast<MicrosoftUpdatePackage>()
-                .Where(u => u.IsApplicable(installedNonLeaf))    // Eliminate not applicable updates
+                .Where(u => u.IsApplicable(installedNonLeaf)) // Eliminate not applicable updates
+                .Take(MaxUpdatesInResponse) // Only take the maximum number of updates allowed
                 .ToList();
 
             if (missingNonLeafs.Count > 0)
@@ -206,11 +206,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingBundleUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
-            var leafUpdateIds = GetCachedGuidSet(CacheKeySoftwareLeafUpdates)
+            var missingBundleIds = GetCachedGuidSet(CacheKeySoftwareLeafUpdates)
                 .Except(cachedGuids) // Do not search for known updates
                 .ToList();
 
-            if (leafUpdateIds.Count == 0)
+            if (missingBundleIds.Count == 0)
             {
                 updatesAdded = false;
                 return;
@@ -220,13 +220,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = leafUpdateIds,
-                FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed
+                IdFilter = missingBundleIds
             };
 
             var allMissingBundles = filter.Apply(MetadataSource)
                 .OfType<SoftwareUpdate>()          // Select the software update by identity
                 .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates?.Count ?? 0) > 0) // Remove not applicable and not bundles
+                .Take(MaxUpdatesInResponse) // Only take the maximum number of updates allowed
                 .ToList();
 
             if (allMissingBundles.Count > 0)
@@ -250,11 +250,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingSoftwareUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
-            var leafUpdateIds = GetCachedGuidSet(CacheKeySoftwareLeafUpdates)
+            var missingAppliableUpdatesIds = GetCachedGuidSet(CacheKeySoftwareLeafUpdates)
                 .Except(cachedGuids) // Do not search for known updates
                 .ToList();
 
-            if (leafUpdateIds.Count == 0)
+            if (missingAppliableUpdatesIds.Count == 0)
             {
                 updatesAdded = false;
                 return;
@@ -264,13 +264,13 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             {
                 IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = leafUpdateIds,
-                FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed
+                IdFilter = missingAppliableUpdatesIds,
             };
 
             var allMissingApplicableUpdates = filter.Apply(MetadataSource)
                 .OfType<SoftwareUpdate>()
-                .Where(u => u.IsApplicable(installedNonLeaf) && ((u.BundledWithUpdates?.Count ?? 0) == 0)) // Remove not applicable and bundles
+                .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates?.Count ?? 0) == 0) // Remove not applicable and bundles
+                .Take(MaxUpdatesInResponse) // Only take the maximum number of updates allowed
                 .ToList();
 
             if (allMissingApplicableUpdates.Count > 0)

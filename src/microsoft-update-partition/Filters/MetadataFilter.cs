@@ -259,7 +259,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Returns driver updates that do not match this hardware ID
         /// </summary>
-        /// <value>Hardware id string to exclude</value>
+        /// <value>Excluded hardware id string</value>
         public string ExcludedHardwareIdFilter;
 
         /// <summary>
@@ -271,7 +271,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Returns only updates that do not target this computer hardware ID
         /// </summary>
-        /// <value>Computer hardware ID (GUID) to exclude</value>
+        /// <value>Excluded computer hardware ID (GUID)</value>
         public Guid ExcludedComputerHardwareIdFilter;
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Get or set the KB article exclusion filter
         /// </summary>
-        /// <value>List of KB article ids to exclude - numbers only</value>
+        /// <value>List of excluded KB article ids - numbers only</value>
         public List<string> ExcludedKbArticleFilter;
 
         /// <summary>

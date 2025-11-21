@@ -88,13 +88,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.Content
                 {
                     ContentLogger.LogInformation("Requested {fileName}, range {from} -> {to}", fileName, typedHeaders.Range.Ranges.First().From, typedHeaders.Range.Ranges.First().To);
                 }
-                else
+                else if (ContentLogger.IsEnabled(LogLevel.Information))
                 {
-                    if (ContentLogger.IsEnabled(LogLevel.Information))
-                    {
-                        ContentLogger.LogInformation("Requested {fileName}, no ranges", fileName);
-                    }
+                    ContentLogger.LogInformation("Requested {fileName}, no ranges", fileName);
                 }
+
                 return new FileStreamResult(ContentStore.Get(parsedContentHash), "application/octet-stream")
                 {
                     FileDownloadName = fileName,

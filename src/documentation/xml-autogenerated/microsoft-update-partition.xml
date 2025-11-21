@@ -191,7 +191,7 @@
             <summary>
             Returns driver updates that do not match this hardware ID
             </summary>
-            <value>Hardware id string to exclude</value>
+            <value>Excluded hardware id string</value>
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ComputerHardwareIdFilter">
             <summary>
@@ -203,7 +203,7 @@
             <summary>
             Returns only updates that do not target this computer hardware ID
             </summary>
-            <value>Computer hardware ID (GUID) to exclude</value>
+            <value>Excluded computer hardware ID (GUID)</value>
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.KbArticleFilter">
             <summary>
@@ -215,7 +215,7 @@
             <summary>
             Get or set the KB article exclusion filter
             </summary>
-            <value>List of KB article ids to exclude - numbers only</value>
+            <value>List of excluded KB article ids - numbers only</value>
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.SortOrder">
             <summary>
@@ -259,7 +259,7 @@
             <summary>
             Get the identities of packages that match the criteria from <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> 
             </summary>
-            <typeparam name="T">Package identity type to query. The type must inherit <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackageIdentity"/></typeparam>
+            <typeparam name="T">Package identity type to get its identities. The type must inherit <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/></typeparam>
             <param name="packages">The packages to filter</param>
             <returns>Matching packages' identities</returns>
         </member>

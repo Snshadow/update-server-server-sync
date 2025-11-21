@@ -680,8 +680,6 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         public IEnumerable<IPackageIdentity> GetPackageIdentities()
         {
-            var identities = new List<IPackageIdentity>();
-
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT guid, revision FROM identities";
@@ -691,10 +689,9 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 var guid = reader.GetGuid(0);
                 var revision = reader.GetInt32(1);
-                identities.Add(new MicrosoftUpdatePackageIdentity(guid, revision));
-            }
 
-            return identities;
+                yield return new MicrosoftUpdatePackageIdentity(guid, revision);
+            }
         }
 
         public int GetPackageIndex(IPackageIdentity packageIdentity)
@@ -1491,6 +1488,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         private List<IPackageIdentity> GetPackageIdentities(IMetadataFilter filter)
         {
+            // TODO yield objects instead
             if (filter is not MetadataFilter metadataFilter)
             {
                 return GetPackageIdentities().ToList();
