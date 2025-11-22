@@ -118,7 +118,6 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 var filter = new MetadataFilter()
                 {
                     IdFilter = [id],
-                    IncludeBundled = true,
                     IncludeExpired = true,
                 };
 

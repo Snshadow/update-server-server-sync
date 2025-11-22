@@ -31,6 +31,25 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
     }
 
     /// <summary>
+    /// Update bundle filter
+    /// </summary>
+    public enum BundleType : byte
+    {
+        /// <summary>
+        /// Get all updates
+        /// </summary>
+        All,
+        /// <summary>
+        /// Get updates that are not bundled by other updates
+        /// </summary>
+        NotBundled,
+        /// <summary>
+        /// Get updates bundled by other updates
+        /// </summary>
+        IsBundled
+    }
+
+    /// <summary>
     /// Sorting orders of the filtered Microsoft updates based on the metadata
     /// </summary>
     public readonly struct MetadataSortOrder
@@ -128,8 +147,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 TitleFilter = TitleFilter,
                 ExcludedTitleFilter = ExcludedTitleFilter,
                 SkipSuperseded = SkipSuperseded,
-                IncludeBundled = IncludeBundled,
                 IncludeExpired = IncludeExpired,
+                BundleFilter = BundleFilter,
                 FirstX = FirstX,
                 AfterX = AfterX,
                 HardwareIdFilter = HardwareIdFilter,
@@ -227,16 +246,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public bool SkipSuperseded;
 
         /// <summary>
-        /// Get or set whether to include updates bundled by other updates
-        /// </summary>
-        /// <value>True to include bundled updates, false otherwise</value>
-        public bool IncludeBundled;
-
-        /// <summary>
         /// Get or set whether to include expired updates
         /// </summary>
         /// <value>True to include expired updates, false otherwise</value>
         public bool IncludeExpired;
+
+        /// <summary>
+        /// Get or set the filter to include or exclude bundled updates
+        /// </summary>
+        public BundleType BundleFilter;
 
         /// <summary>
         /// Returns up to Xth results
@@ -508,11 +526,17 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     (softwareUpdate.IsSupersededBy?.Count ?? 0) == 0);
             }
 
-            if (!IncludeBundled)
+            if (BundleFilter == BundleType.NotBundled)
             {
                 filteredUpdates = filteredUpdates
                     .Where(u => u is not SoftwareUpdate softwareUpdate ||
                     (softwareUpdate.BundledWithUpdates?.Count ?? 0) == 0);
+            }
+            else if (BundleFilter == BundleType.IsBundled)
+            {
+                filteredUpdates = filteredUpdates
+                    .Where(u => u is not SoftwareUpdate softwareUpdate ||
+                    (softwareUpdate.BundledWithUpdates?.Count ?? 0) > 0);
             }
 
             if (!IncludeExpired)

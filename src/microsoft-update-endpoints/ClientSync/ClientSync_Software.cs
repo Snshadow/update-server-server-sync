@@ -100,7 +100,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             MetadataFilter filter = new()
             {
-                IncludeBundled = true,
                 IncludeExpired = true,
                 IdFilter = [id]
             };
@@ -131,7 +130,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataFilter filter = new()
             {
-                IncludeBundled = true,
                 IncludeExpired = true,
                 IdFilter = missingRootIds,
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed 
@@ -174,7 +172,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataFilter filter = new()
             {
-                IncludeBundled = true,
                 IncludeExpired = true,
                 IdFilter = missingNonLeafIds
             };
@@ -218,14 +215,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataFilter filter = new()
             {
-                IncludeBundled = true,
                 IncludeExpired = true,
-                IdFilter = missingBundleIds
+                IdFilter = missingBundleIds,
+                BundleFilter = BundleType.IsBundled // Get bundles
             };
 
             var allMissingBundles = filter.Apply(MetadataSource)
-                .OfType<SoftwareUpdate>()          // Select the software update by identity
-                .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates?.Count ?? 0) > 0) // Remove not applicable and not bundles
+                .OfType<SoftwareUpdate>() // Select the software update by identity
+                .Where(u => u.IsApplicable(installedNonLeaf)) // Remove not applicable
                 .Take(MaxUpdatesInResponse) // Only take the maximum number of updates allowed
                 .ToList();
 
@@ -262,14 +259,14 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataFilter filter = new()
             {
-                IncludeBundled = true,
                 IncludeExpired = true,
                 IdFilter = missingAppliableUpdatesIds,
+                BundleFilter = BundleType.NotBundled //Exclude bundles
             };
 
             var allMissingApplicableUpdates = filter.Apply(MetadataSource)
                 .OfType<SoftwareUpdate>()
-                .Where(u => u.IsApplicable(installedNonLeaf) && (u.BundledWithUpdates?.Count ?? 0) == 0) // Remove not applicable and bundles
+                .Where(u => u.IsApplicable(installedNonLeaf)) // Remove not applicable
                 .Take(MaxUpdatesInResponse) // Only take the maximum number of updates allowed
                 .ToList();
 

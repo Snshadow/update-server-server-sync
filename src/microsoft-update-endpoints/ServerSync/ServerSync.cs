@@ -168,7 +168,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                 {
                     MetadataFilter filter = new()
                     {
-                        IncludeBundled = true,
                         IncludeExpired = true
                     };
                     if (request.Body.filter.Categories != null)

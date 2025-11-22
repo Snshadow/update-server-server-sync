@@ -19,7 +19,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Runtime.InteropServices;
 
 namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 {
@@ -191,7 +190,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             MetadataFilter filter = new()
             {
                 IncludeExpired = true,
-                IncludeBundled = true
             };
             var softwareLeafUpdates = filter.GetMatchingIdentities<SoftwareUpdate>(MetadataSource)
                 .Cast<MicrosoftUpdatePackageIdentity>()

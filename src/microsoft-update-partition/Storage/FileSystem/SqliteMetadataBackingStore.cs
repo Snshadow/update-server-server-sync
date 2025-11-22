@@ -1316,14 +1316,14 @@ namespace Microsoft.PackageGraph.Storage.Local
                 }
             }
 
-            if (!metadataFilter.IncludeBundled)
+            switch (metadataFilter.BundleFilter)
             {
-                whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM bundled as b WHERE b.guid = i.guid AND b.revision = i.revision)");
-            }
-
-            if (metadataFilter.SkipSuperseded)
-            {
-                whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM superseded AS sup WHERE sup.superseded_guid = i.guid)");
+                case BundleType.NotBundled:
+                    whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM bundled as b WHERE b.guid = i.guid AND b.revision = i.revision)");
+                    break;
+                case BundleType.IsBundled:
+                    whereBuilder.Append("\nAND EXISTS (SELECT 1 FROM superseded AS sup WHERE sup.superseded_guid = i.guid)");
+                    break;
             }
 
             if (countOnly)

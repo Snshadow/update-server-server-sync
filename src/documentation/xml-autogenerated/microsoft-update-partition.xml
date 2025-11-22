@@ -53,6 +53,26 @@
             Sort by descending order
             </summary>
         </member>
+        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.BundleType">
+            <summary>
+            Update bundle filter
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.BundleType.All">
+            <summary>
+            Get all updates
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.BundleType.NotBundled">
+            <summary>
+            Get updates that are not bundled by other updates
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.BundleType.IsBundled">
+            <summary>
+            Get updates bundled by other updates
+            </summary>
+        </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataSortOrder">
             <summary>
             Sorting orders of the filtered Microsoft updates based on the metadata
@@ -157,17 +177,16 @@
             </summary>
             <value>True to skip superseded updates, false otherwise</value>
         </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IncludeBundled">
-            <summary>
-            Get or set whether to include updates bundled by other updates
-            </summary>
-            <value>True to include bundled updates, false otherwise</value>
-        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IncludeExpired">
             <summary>
             Get or set whether to include expired updates
             </summary>
             <value>True to include expired updates, false otherwise</value>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.BundleFilter">
+            <summary>
+            Get or set the filter to include or exclude bundled updates
+            </summary>
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.FirstX">
             <summary>
