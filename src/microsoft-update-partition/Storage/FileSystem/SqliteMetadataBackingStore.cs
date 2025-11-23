@@ -1129,7 +1129,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             var progressArgs = new PackageStoreEventArgs()
             {
-                Total = packageEntries.Count,
+                Total = packageEntries.Count(),
                 Current = 0
             };
             MetadataCopyProgress?.Invoke(this, progressArgs);
@@ -1486,12 +1486,16 @@ namespace Microsoft.PackageGraph.Storage.Local
             transaction.Commit();
         }
 
-        private List<IPackageIdentity> GetPackageIdentities(IMetadataFilter filter)
+        private IEnumerable<IPackageIdentity> GetPackageIdentities(IMetadataFilter filter)
         {
-            // TODO yield objects instead
             if (filter is not MetadataFilter metadataFilter)
             {
-                return GetPackageIdentities().ToList();
+                foreach (var identity in GetPackageIdentities())
+                {
+                    yield return identity;
+                }
+
+                yield break;
             }
 
             List<IPackageIdentity> identities = [];
@@ -1522,15 +1526,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             BuildFilterQuery(metadataFilter, command, false);
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                var guid = reader.GetGuid(0);
-                var revision = reader.GetInt32(1);
-
-                identities.Add(new MicrosoftUpdatePackageIdentity(guid, revision));
-            }
-
+            // TODO remove this by materializing driver metadata indexes
             var requiresDriverFiltering = metadataFilter switch
             {
                 { HardwareIdFilter: not null and { Length: > 0 } } => true,
@@ -1540,74 +1536,94 @@ namespace Microsoft.PackageGraph.Storage.Local
                 _ => false
             };
 
-            // TODO push the post-filter limit into SQL by materializing driver metadata indexes.
-            if (requiresDriverFiltering)
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                List<IPackageIdentity> driverMatches = [];
-                foreach (var identity in identities)
+                var guid = reader.GetGuid(0);
+                var revision = reader.GetInt32(1);
+
+                if (requiresDriverFiltering)
                 {
-                    var package = GetCachedPackage(identity);
-                    if (package is not DriverUpdate driverUpdate)
-                    {
-                        continue;
-                    }
-
-                    var metadata = driverUpdate.GetDriverMetadata();
-                    if (!string.IsNullOrEmpty(metadataFilter.HardwareIdFilter))
-                    {
-                        var hardwareMatch = metadata.Any(md =>
-                            md.HardwareId.Equals(metadataFilter.HardwareIdFilter, StringComparison.OrdinalIgnoreCase));
-                        if (!hardwareMatch)
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(metadataFilter.ExcludedHardwareIdFilter))
-                    {
-                        var excludedHardwareMatch = metadata.Any(md =>
-                            md.HardwareId.Equals(metadataFilter.ExcludedHardwareIdFilter, StringComparison.OrdinalIgnoreCase));
-                        if (excludedHardwareMatch)
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (metadataFilter.ComputerHardwareIdFilter != Guid.Empty)
-                    {
-                        var computerMatch = metadata.Any(md =>
-                            md.DistributionComputerHardwareId.Contains(metadataFilter.ComputerHardwareIdFilter));
-                        if (!computerMatch)
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (metadataFilter.ExcludedComputerHardwareIdFilter != Guid.Empty)
-                    {
-                        var excludedComputerMatch = metadata.Any(md =>
-                            md.DistributionComputerHardwareId.Contains(metadataFilter.ExcludedComputerHardwareIdFilter));
-                        if (excludedComputerMatch)
-                        {
-                            continue;
-                        }
-                    }
-
-                    driverMatches.Add(identity);
+                    identities.Add(new MicrosoftUpdatePackageIdentity(guid, revision));
                 }
-
-                if (metadataFilter.AfterX > 0)
+                else
                 {
-                    identities = driverMatches.Skip(metadataFilter.AfterX).ToList();
-                }
-
-                if (metadataFilter.FirstX > 0 && identities.Count > metadataFilter.FirstX)
-                {
-                    identities = driverMatches.Take(metadataFilter.FirstX).ToList();
+                    yield return new MicrosoftUpdatePackageIdentity(guid, revision);
                 }
             }
 
-            return identities;
+            if (!requiresDriverFiltering)
+            {
+                yield break;
+            }
+
+            List<IPackageIdentity> driverMatches = [];
+            foreach (var identity in identities)
+            {
+                var package = GetCachedPackage(identity);
+                if (package is not DriverUpdate driverUpdate)
+                {
+                    continue;
+                }
+
+                var metadata = driverUpdate.GetDriverMetadata();
+                if (!string.IsNullOrEmpty(metadataFilter.HardwareIdFilter))
+                {
+                    var hardwareMatch = metadata.Any(md =>
+                        md.HardwareId.Equals(metadataFilter.HardwareIdFilter, StringComparison.OrdinalIgnoreCase));
+                    if (!hardwareMatch)
+                    {
+                        continue;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(metadataFilter.ExcludedHardwareIdFilter))
+                {
+                    var excludedHardwareMatch = metadata.Any(md =>
+                        md.HardwareId.Equals(metadataFilter.ExcludedHardwareIdFilter, StringComparison.OrdinalIgnoreCase));
+                    if (excludedHardwareMatch)
+                    {
+                        continue;
+                    }
+                }
+
+                if (metadataFilter.ComputerHardwareIdFilter != Guid.Empty)
+                {
+                    var computerMatch = metadata.Any(md =>
+                        md.DistributionComputerHardwareId.Contains(metadataFilter.ComputerHardwareIdFilter));
+                    if (!computerMatch)
+                    {
+                        continue;
+                    }
+                }
+
+                if (metadataFilter.ExcludedComputerHardwareIdFilter != Guid.Empty)
+                {
+                    var excludedComputerMatch = metadata.Any(md =>
+                        md.DistributionComputerHardwareId.Contains(metadataFilter.ExcludedComputerHardwareIdFilter));
+                    if (excludedComputerMatch)
+                    {
+                        continue;
+                    }
+                }
+
+                driverMatches.Add(identity);
+            }
+
+            if (metadataFilter.AfterX > 0)
+            {
+                identities = driverMatches.Skip(metadataFilter.AfterX).ToList();
+            }
+
+            if (metadataFilter.FirstX > 0 && identities.Count > metadataFilter.FirstX)
+            {
+                identities = driverMatches.Take(metadataFilter.FirstX).ToList();
+            }
+
+            foreach (var identity in identities)
+            {
+                yield return identity;
+            }
         }
     }
 }

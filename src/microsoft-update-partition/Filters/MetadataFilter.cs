@@ -526,17 +526,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     (softwareUpdate.IsSupersededBy?.Count ?? 0) == 0);
             }
 
-            if (BundleFilter == BundleType.NotBundled)
+            switch (BundleFilter)
             {
-                filteredUpdates = filteredUpdates
-                    .Where(u => u is not SoftwareUpdate softwareUpdate ||
-                    (softwareUpdate.BundledWithUpdates?.Count ?? 0) == 0);
-            }
-            else if (BundleFilter == BundleType.IsBundled)
-            {
-                filteredUpdates = filteredUpdates
-                    .Where(u => u is not SoftwareUpdate softwareUpdate ||
-                    (softwareUpdate.BundledWithUpdates?.Count ?? 0) > 0);
+                case BundleType.NotBundled:
+                    filteredUpdates = filteredUpdates
+                        .Where(u => u is not SoftwareUpdate softwareUpdate ||
+                        (softwareUpdate.BundledWithUpdates?.Count ?? 0) == 0);
+                    break;
+                case BundleType.IsBundled:
+                    filteredUpdates = filteredUpdates
+                        .Where(u => u is not SoftwareUpdate softwareUpdate ||
+                        (softwareUpdate.BundledWithUpdates?.Count ?? 0) > 0);
+                    break;
             }
 
             if (!IncludeExpired)
