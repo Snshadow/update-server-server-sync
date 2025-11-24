@@ -403,25 +403,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     .Cast<T>();
             }
 
-            var updates = packages.OfType<T>();
-
-            IEnumerable<T> filteredUpdates;
-
-            if (!string.IsNullOrEmpty(HardwareIdFilter) ||
-                !string.IsNullOrEmpty(ExcludedHardwareIdFilter) ||
-                ComputerHardwareIdFilter != Guid.Empty ||
-                ExcludedComputerHardwareIdFilter != Guid.Empty)
-            {
-                filteredUpdates = updates.Where(u => u is DriverUpdate);
-            }
-            else if (KbArticleFilter is { Count: > 0 } || ExcludedKbArticleFilter is { Count: > 0 })
-            {
-                filteredUpdates = updates.Where(u => u is SoftwareUpdate);
-            }
-            else
-            {
-                filteredUpdates = updates;
-            }
+            var filteredUpdates = packages.OfType<T>();
 
             if (!string.IsNullOrEmpty(HardwareIdFilter))
             {
@@ -482,7 +464,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
             if (KbArticleFilter is { Count: > 0 })
             {
                 var kbLookup = KbArticleFilter.ToHashSet();
-                filteredUpdates = filteredUpdates.OfType<SoftwareUpdate>().Where(u => kbLookup.Contains(u.KBArticleId)).Cast<T>();
+                filteredUpdates = filteredUpdates.Where(u =>
+                    u is SoftwareUpdate softwareUpdate &&
+                    kbLookup.Contains(softwareUpdate.KBArticleId));
             }
 
             if (ExcludedKbArticleFilter is { Count: > 0 })

@@ -10,6 +10,7 @@ using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.UpdateServices.WebServices.ClientSync;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -40,18 +41,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         private readonly IMemoryCache _memoryCache;
         private readonly IDistributedCache _distributedCache;
 
-        private const string CacheKeyPrereqGraph = "PrerequisitesGraph";
         private const string CacheKeyRootUpdates = "RootUpdates";
         private const string CacheKeyNonLeafUpdates = "NonLeafUpdates";
         private const string CacheKeyLeafUpdates = "LeafUpdates";
         private const string CacheKeySoftwareLeafUpdates = "SoftwareLeafUpdates";
 
         private readonly ReaderWriterLockSlim _metadataSourceLock = new();
+        private readonly ConcurrentDictionary<string, DateTime> _activeSyncSessions = new();
+
+        private static readonly TimeSpan _activeSyncSessionTimeout = TimeSpan.FromMinutes(10);
 
         private Timer _cacheRefreshTimer;
         private TimeSpan _cacheRefreshPeriod;
-
-        private int _activeSyncOperations;
 
         private const int MaxUpdatesInResponse = 50;
 
@@ -162,7 +163,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
         private void ClearCachedMetadataView()
         {
-            _memoryCache.Remove(CacheKeyPrereqGraph);
             _memoryCache.Remove(CacheKeyRootUpdates);
             _memoryCache.Remove(CacheKeyNonLeafUpdates);
             _memoryCache.Remove(CacheKeyLeafUpdates);
@@ -234,7 +234,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 return;
             }
 
-            _cacheRefreshTimer = new Timer(_ => RefreshCacheIfIdle(), state: null, dueTime: _cacheRefreshPeriod, period: _cacheRefreshPeriod);
+            _cacheRefreshTimer = new Timer(_ => RefreshCacheIfIdle(), null, _cacheRefreshPeriod, _cacheRefreshPeriod);
         }
 
         private void RefreshCacheIfIdle()
@@ -244,17 +244,32 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 return;
             }
 
-            // Only refresh when no client sync is running
-            if (Interlocked.CompareExchange(ref _activeSyncOperations, 0, 0) == 0)
+            CleanupStaleSyncSessions();
+
+            if (_activeSyncSessions.IsEmpty)
             {
+                var slices = ComputeGraphSlices();
                 _metadataSourceLock.EnterWriteLock();
                 try
                 {
-                    BuildCachedMetadataView();
+                    StoreGraphSlices(slices);
                 }
                 finally
                 {
                     _metadataSourceLock.ExitWriteLock();
+                }
+            }
+        }
+
+        private void CleanupStaleSyncSessions()
+        {
+            var utcNow = DateTime.UtcNow;
+
+            foreach (var session in _activeSyncSessions)
+            {
+                if (utcNow - session.Value > _activeSyncSessionTimeout)
+                {
+                    _activeSyncSessions.TryRemove(session.Key, out _);
                 }
             }
         }
@@ -494,28 +509,12 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// <returns>SyncInfo containing updates applicable to the caller.</returns>
         public Task<SyncInfo> SyncUpdatesAsync(Cookie cookie, SyncUpdateParameters parameters)
         {
-            return RunSyncWithTracking(() =>
+            if (parameters.SkipSoftwareSync)
             {
-                if (parameters.SkipSoftwareSync)
-                {
-                    return DoDriversSync(cookie, parameters);
-                }
-
-                return DoSoftwareUpdateSync(cookie, parameters);
-            });
-        }
-
-        private async Task<SyncInfo> RunSyncWithTracking(Func<Task<SyncInfo>> syncOperation)
-        {
-            Interlocked.Increment(ref _activeSyncOperations);
-            try
-            {
-                return await syncOperation();
+                return DoDriversSync(cookie, parameters);
             }
-            finally
-            {
-                Interlocked.Decrement(ref _activeSyncOperations);
-            }
+
+            return DoSoftwareUpdateSync(cookie, parameters);
         }
 
         private void CacheGuidListInMemory(string key, List<Guid> guidList)

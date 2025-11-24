@@ -1288,6 +1288,11 @@ namespace Microsoft.PackageGraph.Storage.Local
                 whereBuilder.Append("\nAND i.is_expired = 0");
             }
 
+            if (metadataFilter.SkipSuperseded)
+            {
+                whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM superseded AS sup WHERE sup.superseded_guid = i.guid)");
+            }
+
             if (hasIdFilter)
             {
                 tableBuilder.Append("\nINNER JOIN temp.filter_values AS fv_id ON fv_id.kind = 'id' AND fv_id.value = i.guid");
@@ -1322,7 +1327,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                     whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM bundled as b WHERE b.guid = i.guid AND b.revision = i.revision)");
                     break;
                 case BundleType.IsBundled:
-                    whereBuilder.Append("\nAND EXISTS (SELECT 1 FROM superseded AS sup WHERE sup.superseded_guid = i.guid)");
+                    whereBuilder.Append("\nAND EXISTS (SELECT 1 FROM bundled as b WHERE b.guid = i.guid AND b.revision = i.revision)");
                     break;
             }
 

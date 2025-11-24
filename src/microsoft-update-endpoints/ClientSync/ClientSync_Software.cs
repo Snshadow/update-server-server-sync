@@ -23,6 +23,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         private Task<SyncInfo> DoSoftwareUpdateSync(Cookie cookie, SyncUpdateParameters parameters)
         {
             var now = DateTime.UtcNow;
+            var (computerId, _) = ParseCookie(cookie);
+
+            _activeSyncSessions[computerId] = now;
 
             _metadataSourceLock.EnterReadLock();
             try
@@ -57,24 +60,28 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 };
 
                 // Add root updates first; if any new root updates were added, return the response to the client immediately
-                AddMissingRootUpdatesToSyncUpdatesResponse(cachedGuids, response, out var rootUpdatesAdded);
-                if (!rootUpdatesAdded)
+                AddMissingRootUpdatesToSyncUpdatesResponse(cachedGuids, response, out var updatesAdded);
+                if (!updatesAdded)
                 {
                     // No root updates were added; add non-leaf updates now
-                    AddMissingNonLeafUpdatesToSyncUpdatesResponse(cachedGuids, installedNonLeafUpdatesGuids, response, out var nonLeafUpdatesAdded);
-                    if (!nonLeafUpdatesAdded)
+                    AddMissingNonLeafUpdatesToSyncUpdatesResponse(cachedGuids, installedNonLeafUpdatesGuids, response, out updatesAdded);
+                    if (!updatesAdded)
                     {
                         // No leaf updates were added; add leaf bundle updates now
-                        AddMissingBundleUpdatesToSyncUpdatesResponse(cachedGuids, installedNonLeafUpdatesGuids, response, out var bundleUpdatesAdded);
-                        if (!bundleUpdatesAdded)
+                        AddMissingBundleUpdatesToSyncUpdatesResponse(cachedGuids, installedNonLeafUpdatesGuids, response, out updatesAdded);
+                        if (!updatesAdded)
                         {
                             // No bundles were added; finally add leaf software updates
-                            AddMissingSoftwareUpdatesToSyncUpdatesResponse(cachedGuids, installedNonLeafUpdatesGuids, response, out var _);
+                            AddMissingSoftwareUpdatesToSyncUpdatesResponse(cachedGuids, installedNonLeafUpdatesGuids, response, out updatesAdded);
                         }
                     }
                 }
 
-                var (computerId, _) = ParseCookie(cookie);
+                if (!updatesAdded)
+                {
+                    _activeSyncSessions.TryRemove(computerId, out _);
+                }
+
                 var computerSync = _deployAndSyncStore.GetComputerSync(computerId);
 
                 response.ChangedUpdates = GetChangedUpdates(
@@ -93,6 +100,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             finally
             {
                 _metadataSourceLock.ExitReadLock();
+                _activeSyncSessions.TryRemove(computerId, out _);
             }
         }
 
@@ -135,8 +143,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed 
             };
 
-            var missingRootUpdates = filter.Apply(MetadataSource)
-                .Cast<MicrosoftUpdatePackage>()
+            var missingRootUpdates = filter.Apply<MicrosoftUpdatePackage>(MetadataSource)
                 .ToList();
 
             if (missingRootUpdates.Count > 0)
@@ -176,8 +183,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 IdFilter = missingNonLeafIds
             };
 
-            var missingNonLeafs = filter.Apply(MetadataSource)
-                .Cast<MicrosoftUpdatePackage>()
+            var missingNonLeafs = filter.Apply<MicrosoftUpdatePackage>(MetadataSource)
                 .Where(u => u.IsApplicable(installedNonLeaf)) // Eliminate not applicable updates
                 .Take(MaxUpdatesInResponse) // Only take the maximum number of updates allowed
                 .ToList();
@@ -220,8 +226,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 BundleFilter = BundleType.IsBundled // Get bundles
             };
 
-            var allMissingBundles = filter.Apply(MetadataSource)
-                .OfType<SoftwareUpdate>() // Select the software update by identity
+            var allMissingBundles = filter.Apply<SoftwareUpdate>(MetadataSource)
                 .Where(u => u.IsApplicable(installedNonLeaf)) // Remove not applicable
                 .Take(MaxUpdatesInResponse) // Only take the maximum number of updates allowed
                 .ToList();
@@ -264,8 +269,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 BundleFilter = BundleType.NotBundled //Exclude bundles
             };
 
-            var allMissingApplicableUpdates = filter.Apply(MetadataSource)
-                .OfType<SoftwareUpdate>()
+            var allMissingApplicableUpdates = filter.Apply<SoftwareUpdate>(MetadataSource)
                 .Where(u => u.IsApplicable(installedNonLeaf)) // Remove not applicable
                 .Take(MaxUpdatesInResponse) // Only take the maximum number of updates allowed
                 .ToList();
