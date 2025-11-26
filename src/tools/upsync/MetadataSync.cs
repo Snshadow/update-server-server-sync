@@ -242,12 +242,12 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
         }
 
-        private static List<Guid> CreateFilterListForCategory<T>(IEnumerable<string> userFilterList, IMetadataStore metadataSource)
+        private static List<Guid> CreateFilterListForCategory<T>(IEnumerable<string> userFilterList, IMetadataStore metadataSource) where T : MicrosoftUpdatePackage
         {
             List<Guid> filterList;
             if (userFilterList.Any())
             {
-                filterList = new List<Guid>();
+                filterList = [];
                 foreach (var guidString in userFilterList)
                 {
                     if (Guid.TryParse(guidString, out Guid guid))
@@ -258,8 +258,12 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             }
             else
             {
-                filterList = metadataSource.OfType<T>()
-                    .Select(update => (update as MicrosoftUpdatePackage).Id.ID)
+                MetadataFilter filter = new()
+                {
+                    IncludeExpired = true
+                };
+                filterList = filter.GetMatchingIdentities<T>(metadataSource)
+                    .Select(id => (id as MicrosoftUpdatePackageIdentity).ID)
                     .ToList();
 
                 if (filterList.Count == 0)
@@ -274,11 +278,11 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         private static UpstreamSourceFilter CreateValidFilterFromOptions(FetchCommand.Settings options, IMetadataStore metadataSource)
         {
             List<Guid> productFilter = CreateFilterListForCategory<ProductCategory>(
-                options.ProductsFilter?.Split('+') ?? Enumerable.Empty<string>(),
+                options.ProductsFilter?.Split('+') ?? [],
                 metadataSource);
 
             List<Guid> classificationFilter = CreateFilterListForCategory<ClassificationCategory>(
-                options.ClassificationsFilter?.Split('+') ?? Enumerable.Empty<string>(),
+                options.ClassificationsFilter?.Split('+') ?? [],
                 metadataSource);
 
             return new UpstreamSourceFilter(productFilter, classificationFilter);

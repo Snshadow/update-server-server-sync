@@ -327,10 +327,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc/>
-        public IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
-        {
-            return filter.Apply(this).GetEnumerator();
-        }
+        public abstract IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter);
 
         /// <inheritdoc/>
         public bool TrySimpleKeyLookup<T>(IPackageIdentity packageIdentity, string indexName, out T value)

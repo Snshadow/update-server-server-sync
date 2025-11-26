@@ -207,5 +207,22 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             return DeltaMetadataStores.SelectMany(store => store).GetEnumerator();
         }
+
+        public override IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
+        {
+            IEnumerable<IPackage> CombineEnumerable()
+            {
+                foreach (var store in DeltaMetadataStores)
+                {
+                    var enumerator = store.GetEnumerator(filter);
+                    while (enumerator.MoveNext())
+                    {
+                        yield return enumerator.Current;
+                    }
+                }
+            }
+
+            return CombineEnumerable().GetEnumerator();
+        }
     }
 }

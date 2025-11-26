@@ -5,6 +5,7 @@ using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -171,7 +172,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// </summary>
         /// <param name="packageIdentity">Identity of update to retrieve</param>
         /// <returns>Update metadata as stream</returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException" />
         public Stream GetMetadata(IPackageIdentity packageIdentity)
         {
             throw new NotImplementedException();
@@ -182,7 +183,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// </summary>
         /// <param name="packageIdentity">Indentity of package to lookup</param>
         /// <returns>True if found, false otherwise</returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException" />
         public bool ContainsMetadata(IPackageIdentity packageIdentity)
         {
             throw new NotImplementedException();
@@ -194,8 +195,34 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <typeparam name="T">Type of file to retrieve.</typeparam>
         /// <param name="packageIdentity">Identity of the package to retrieve files for.</param>
         /// <returns>List of files in the package</returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException" />
         public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Not Implemented for an upstream updates source
+        /// </summary>
+        /// <param name="identity">Package Identity</param>
+        /// <returns>Package Index</returns>
+        /// <exception cref="NotImplementedException" />
+        public int GetPackageIndex(IPackageIdentity identity)
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        /// <summary>
+        /// Not implemented for an upstream updates source
+        /// </summary>
+        /// <returns>Update metadata as stream</returns>
+        /// <exception cref="NotImplementedException" />
+        public IEnumerator<IPackage> GetEnumerator()
         {
             throw new NotImplementedException();
         }
@@ -205,7 +232,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// </summary>
         /// <param name="filter">The filter to apply.</param>
         /// <returns>Update metadata as stream</returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException" />
         public IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
         {
             throw new NotImplementedException();

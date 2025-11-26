@@ -3,6 +3,7 @@
 
 using Microsoft.PackageGraph.ObjectModel;
 using System;
+using System.Collections.Generic;
 
 namespace Microsoft.PackageGraph.Storage
 {
@@ -12,23 +13,33 @@ namespace Microsoft.PackageGraph.Storage
     public interface IDeploySyncStore
     {
         /// <summary>
-        /// Persists a deployment entry to the underlying storage
+        /// Persists a deployment entry to the underlying store
         /// </summary>
         /// <param name="deployment">The deployment to save</param>
         void SaveDeployment(IDeployment deployment);
 
         /// <summary>
-        /// Deletes a deployment entry from the underlying storage
+        /// Deletes a deployment entry from the underlying store
         /// </summary>
         /// <param name="revisionId">The revision ID of the deployment to delete</param>
         void DeleteDeployment(int revisionId);
 
         /// <summary>
-        /// Retrieves a deployment entry from the underlying storage
+        /// Retrieves a deployment entry from the underlying store
         /// </summary>
         /// <param name="revisionId">The revision ID of the deployment to retrieve</param>
         /// <returns>The requested deployment</returns>
         IDeployment GetDeployment(int revisionId);
+
+        /// <summary>
+        /// Retrieves revision ids of approved deployments from the underlying store
+        /// </summary>
+        IEnumerable<int> GetApprovedRevisionIds();
+
+        /// <summary>
+        /// Retriteves revision ids of unapproved deployments from the underlying store
+        /// </summary>
+        IEnumerable<int> GetUnapprovedRevisionIds();
 
         /// <summary>
         /// Updates the last sync time for a given computer

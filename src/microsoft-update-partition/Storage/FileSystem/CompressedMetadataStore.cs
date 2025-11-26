@@ -15,7 +15,7 @@ using System.Threading;
 
 namespace Microsoft.PackageGraph.Storage.Local
 {
-    class CompressedMetadataStore : IEnumerable<IPackage>, IMetadataSink, IMetadataSource
+    class CompressedMetadataStore : FileBasedBackingStoreBase, IMetadataSink, IMetadataSource
     {
         private ZipFile InputFile;
         private ZipOutputStream OutputFile;
@@ -23,7 +23,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         private bool _isDisposed;
         private readonly Lock WriteLock = new();
 
-        public bool SupportsParallelProcessing => true;
+        public override bool SupportsParallelProcessing => true;
 
         private Dictionary<string, long> ZipEntriesIndex;
 
@@ -34,13 +34,14 @@ namespace Microsoft.PackageGraph.Storage.Local
         public event EventHandler<PackageStoreEventArgs> PackagesAddProgress;
 #pragma warning restore 0067
 
-        internal CompressedMetadataStore()
+        internal CompressedMetadataStore(string path) : base(path)
         {
+
         }
 
         internal static CompressedMetadataStore OpenExisting(string path)
         {
-            var zipStorage = new CompressedMetadataStore()
+            var zipStorage = new CompressedMetadataStore(path)
             {
                 InputFile = new ZipFile(path)
             };
@@ -51,7 +52,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         internal static CompressedMetadataStore CreateNew(string path)
         {
-            var newZipStorage = new CompressedMetadataStore()
+            var newZipStorage = new CompressedMetadataStore(path)
             {
                 OutputFile = new ZipOutputStream(File.Create(path))
             };
@@ -76,7 +77,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             return identity.OpenId.Last().ToString();
         }
 
-        public Stream GetMetadata(IPackageIdentity packageIdentity)
+        public override Stream GetMetadata(IPackageIdentity packageIdentity)
         {
             if (InputFile is not null)
             {
@@ -114,7 +115,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
-        public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
+        public override List<T> GetFiles<T>(IPackageIdentity packageIdentity)
         {
             if (InputFile is null)
             {
@@ -134,10 +135,10 @@ namespace Microsoft.PackageGraph.Storage.Local
                 }
             }
 
-            return new();
+            return [];
         }
 
-        public void AddPackages(IEnumerable<IPackage> packages)
+        public override void AddPackages(IEnumerable<IPackage> packages)
         {
             foreach (var package in packages)
             {
@@ -145,7 +146,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
-        public IPackage GetPackage(IPackageIdentity packageIdentity)
+        public override IPackage GetPackage(IPackageIdentity packageIdentity)
         {
             if (PartitionRegistration.TryGetPartitionFromPackageId(packageIdentity, out var partitionDefinition))
             {
@@ -156,7 +157,12 @@ namespace Microsoft.PackageGraph.Storage.Local
             throw new KeyNotFoundException();
         }
 
-        public void AddPackage(IPackage package)
+        void IMetadataSink.AddPackage(IPackage package)
+        {
+            _ =AddPackage(package);
+        }
+
+        public override int AddPackage(IPackage package)
         {
             if (OutputFile is null)
             {
@@ -174,6 +180,18 @@ namespace Microsoft.PackageGraph.Storage.Local
                     WritePackageFiles(package);
                 }
             }
+
+            var newPackageIndex = PackageCount;
+            AddIdentity(package.Id, newPackageIndex);
+
+            Indexes.IndexPackage(package, newPackageIndex);
+            IsIndexDirty = true;
+
+            PendingPackages.Add(package);
+
+            IsDirty = true;
+
+            return newPackageIndex;
         }
 
         private void WritePackageMetadata(IPackage package)
@@ -201,7 +219,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public IEnumerator<IPackage> GetEnumerator()
+        public override IEnumerator<IPackage> GetEnumerator()
         {
             if (InputFile is null)
             {
@@ -256,7 +274,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
-        internal void Flush()
+        public override void Flush()
         {
             if (OutputFile is not null)
             {
@@ -267,7 +285,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             }
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             if (!_isDisposed)
             {
@@ -337,8 +355,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             });
         }
 
-        /// <inheritdoc/>
-        public IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
+        public override IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
         {
             return filter.Apply(this).GetEnumerator();
         }

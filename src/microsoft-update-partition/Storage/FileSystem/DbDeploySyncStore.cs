@@ -92,7 +92,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         }
 
         /// <summary>
-        /// Saves a list of deployments to the database in a single transaction.
+        /// Saves a list of deployments to the database.
         /// </summary>
         /// <param name="deployments">The deployments to save.</param>
         public void SaveDeployments(IEnumerable<IDeployment> deployments)
@@ -101,7 +101,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var transaction = connection.BeginTransaction();
             using var command = connection.CreateCommand();
 
-            command.Transaction = transaction;
             command.CommandText = """
             INSERT INTO deployments (revision_id, action, deadline, last_change_time)
                 VALUES (@revision_id, @action, @deadline, @last_change_time)
@@ -132,11 +131,29 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <param name="revisionId">The revision id of a deployment to delete</param>
         public void DeleteDeployment(int revisionId)
         {
+            DeleteDeployments([revisionId]);
+        }
+
+        /// <summary>
+        /// Deletes a list of deployments from the database
+        /// </summary>
+        /// <param name="revisionIds">Revision ids of deployments to delete</param>
+        public void DeleteDeployments(IEnumerable<int> revisionIds)
+        {
             using var connection = _context.GetConnection();
+            using var transaction = connection.BeginTransaction();
             using var command = connection.CreateCommand();
+
             command.CommandText = "DELETE FROM deployments WHERE revision_id = @revision_id";
-            command.Parameters.Add("@revision_id", SqliteType.Integer).Value = revisionId;
-            command.ExecuteNonQuery();
+            var revisionIdParam = command.Parameters.Add("@revision_id", SqliteType.Integer);
+
+            foreach (var revisionId in revisionIds)
+            {
+                revisionIdParam.Value = revisionId;
+                command.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
         }
 
         /// <summary>
@@ -165,6 +182,41 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             return null;
         }
+
+        /// <summary>
+        /// Retrieves revision ids of approved deployments(Install or OptionalInstall action)
+        /// </summary>
+        public IEnumerable<int> GetApprovedRevisionIds()
+        {
+            using var connection = _context.GetConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT revision_id FROM deployments WHERE action = @action0 OR action = @action1";
+            command.Parameters.Add("@action0", SqliteType.Integer).Value = DeploymentAction.Install;
+            command.Parameters.Add("@action1", SqliteType.Integer).Value = DeploymentAction.OptionalInstall;
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                yield return reader.GetInt32(0);
+            }
+        }
+
+        /// <summary>
+        /// Retrieves revision ids of unapproved deployments(PreDeploymentCheck action)
+        /// </summary>
+        public IEnumerable<int> GetUnapprovedRevisionIds()
+        {
+            using var connection = _context.GetConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT revision_id FROM deployments WHERE action = @action";
+            command.Parameters.Add("@action", SqliteType.Integer).Value = DeploymentAction.PreDeploymentCheck;
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                yield return reader.GetInt32(0);
+            }
+        }
     }
 
     /// <summary>
@@ -190,7 +242,10 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <param name="syncTime">The time of the synchronization</param>
         public void UpdateComputerSync(string computerId, DateTime syncTime)
         {
-            UpdateComputerSyncs(new[] { new ComputerSync { ComputerId = computerId, LastSyncTime = syncTime } });
+            UpdateComputerSyncs([new ComputerSync {
+                ComputerId = computerId,
+                LastSyncTime = syncTime
+            }]);
         }
 
         /// <summary>
@@ -203,7 +258,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var transaction = connection.BeginTransaction();
             using var command = connection.CreateCommand();
 
-            command.Transaction = transaction;
             command.CommandText = """
             INSERT INTO computer_sync_status (computer_id, last_sync_time) VALUES (@computer_id, @last_sync_time)
                 ON CONFLICT(computer_id) DO UPDATE SET last_sync_time = @last_sync_time
@@ -212,10 +266,10 @@ namespace Microsoft.PackageGraph.Storage.Local
             var computerIdParam = command.Parameters.Add("@computer_id", SqliteType.Text);
             var lastSyncTimeParam = command.Parameters.Add("@last_sync_time", SqliteType.Text);
 
-            foreach (var sync in computerSyncs)
+            foreach (var computerSync in computerSyncs)
             {
-                computerIdParam.Value = sync.ComputerId;
-                lastSyncTimeParam.Value = sync.LastSyncTime.ToString("o", DateTimeFormatInfo.InvariantInfo);
+                computerIdParam.Value = computerSync.ComputerId;
+                lastSyncTimeParam.Value = computerSync.LastSyncTime.ToString("o", DateTimeFormatInfo.InvariantInfo);
                 command.ExecuteNonQuery();
             }
 

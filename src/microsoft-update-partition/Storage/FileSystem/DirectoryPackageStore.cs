@@ -76,7 +76,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 packagesIdsToCopy = packagesIdsToCopy.Except(destinationPackageStore.GetPackageIdentities()).ToList();
             }
 
-            var packagesToAdd = packagesIdsToCopy.Select(id => GetPackage(id));
+            var packagesToAdd = packagesIdsToCopy.Select(GetPackage);
             destination.AddPackages(packagesToAdd);
         }
 
@@ -93,6 +93,16 @@ namespace Microsoft.PackageGraph.Storage.Local
         public IDeployment GetDeployment(int revisionId)
         {
             return Deployments.GetDeployment(revisionId);
+        }
+
+        public IEnumerable<int> GetApprovedRevisionIds()
+        {
+            return Deployments.GetApprovedRevisionIds();
+        }
+
+        public IEnumerable<int> GetUnapprovedRevisionIds()
+        {
+            return Deployments.GetUnapprovedRevisionIds();
         }
 
         public void UpdateComputerSync(string computerId, DateTime syncTime)

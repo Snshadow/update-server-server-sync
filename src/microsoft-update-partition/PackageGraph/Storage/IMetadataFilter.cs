@@ -14,22 +14,22 @@ namespace Microsoft.PackageGraph.Storage
         /// <summary>
         /// Apply the filter to a collection of packages
         /// </summary>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">Source to filter packages from</param>
         /// <returns>Matching packages</returns>
-        IEnumerable<IPackage> Apply(IEnumerable<IPackage> packages);
+        IEnumerable<IPackage> Apply(IMetadataSource source);
 
         /// <summary>
         /// Get the identities of packages that match the criteria
         /// </summary>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">Source to filter packages from</param>
         /// <returns>Matching packages' identities</returns>
-        IEnumerable<IPackageIdentity> GetMatchingIdentities(IEnumerable<IPackage> packages);
+        IEnumerable<IPackageIdentity> GetMatchingIdentities(IMetadataSource source);
 
         /// <summary>
         /// Get the number of packages that match the criteria
         /// </summary>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">Source to filter packages from</param>
         /// <returns>The number of matching packages</returns>
-        int GetCount(IEnumerable<IPackage> packages);
+        int GetCount(IMetadataSource source);
     }
 }

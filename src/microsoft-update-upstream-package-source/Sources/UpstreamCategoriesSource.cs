@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -199,7 +200,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <param name="destination">Destination store for the retrieved metadata</param>
         /// <param name="filter">Filter to apply during the copy operation</param>
         /// <param name="cancelToken">Cancellation token</param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException" />
         public void CopyTo(IMetadataSink destination, IMetadataFilter filter, CancellationToken cancelToken)
         {
             throw new NotImplementedException();
@@ -210,7 +211,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// </summary>
         /// <param name="packageIdentity">Identity of the category to retrieve</param>
         /// <returns>Category metadata as stream</returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException" />
         public Stream GetMetadata(IPackageIdentity packageIdentity)
         {
             throw new NotImplementedException();
@@ -221,7 +222,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// </summary>
         /// <param name="packageIdentity">Indentity of category to lookup</param>
         /// <returns>True if found, false otherwise</returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException" />
         public bool ContainsMetadata(IPackageIdentity packageIdentity)
         {
             throw new NotImplementedException();
@@ -233,8 +234,34 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <typeparam name="T">Type of file to retrieve.</typeparam>
         /// <param name="packageIdentity">Identity of the package to retrieve files for.</param>
         /// <returns>List of files in the package</returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException" />
         public List<T> GetFiles<T>(IPackageIdentity packageIdentity)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Not implemented for an upstream categories source
+        /// </summary>
+        /// <param name="identity">Package identity</param>
+        /// <returns>Package index</returns>
+        /// <exception cref="NotImplementedException" />
+        public int GetPackageIndex(IPackageIdentity identity)
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        /// <summary>
+        /// Not implemented for an upstream categories source
+        /// </summary>
+        /// <returns>Category metadata as stream</returns>
+        /// <exception cref="NotImplementedException" />
+        public IEnumerator<IPackage> GetEnumerator()
         {
             throw new NotImplementedException();
         }
@@ -244,7 +271,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// </summary>
         /// <param name="filter">The filter to apply.</param>
         /// <returns>Category metadata as stream</returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException" />
         public IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
         {
             throw new NotImplementedException();

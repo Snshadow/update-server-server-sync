@@ -154,7 +154,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 HardwareIdFilter = HardwareIdFilter,
                 ExcludedHardwareIdFilter = ExcludedHardwareIdFilter,
                 ComputerHardwareIdFilter = ComputerHardwareIdFilter,
-                ExcludedComputerHardwareIdFilter = ExcludedComputerHardwareIdFilter,
                 KbArticleFilter = KbArticleFilter,
                 ExcludedKbArticleFilter = ExcludedKbArticleFilter,
                 SortOrder = SortOrder
@@ -215,6 +214,19 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// </summary>
         /// <value>List of classification IDs to exclude</value>
         public List<Guid> ExcludedClassificationFilter;
+
+        /// <summary>
+        /// Get or set the revision ID(server-specific index) filter
+        /// </summary>
+        /// <value>List of revision IDs (update package index)</value>
+        public List<int> RevisionIdFilter;
+
+        /// <summary>
+        /// Get or set the revision ID (server-specific index) exclusion filter
+        /// </summary>
+        /// <value>List of revision IDs (update package index)</value>
+        public List<int> ExcludedRevisionIdFilter;
+
         /// <summary>
         /// Get or set the ID filter
         /// </summary>
@@ -285,12 +297,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// </summary>
         /// <value>Computer hardware ID (GUID)</value>
         public Guid ComputerHardwareIdFilter;
-
-        /// <summary>
-        /// Returns only updates that do not target this computer hardware ID
-        /// </summary>
-        /// <value>Excluded computer hardware ID (GUID)</value>
-        public Guid ExcludedComputerHardwareIdFilter;
 
         /// <summary>
         /// Get or set the KB article filter
@@ -391,11 +397,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// Apply the filter to a <see cref="IMetadataSource"/> and returns the matching packages of the specified type.
         /// </summary>
         /// <typeparam name="T">Package type to query. The type must inherit <see cref="MicrosoftUpdatePackage"/></typeparam>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">Source to filter packages from</param>
         /// <returns>Matching packages</returns>
-        public IEnumerable<T> Apply<T>(IEnumerable<IPackage> packages) where T : MicrosoftUpdatePackage
+        public IEnumerable<T> Apply<T>(IMetadataSource source) where T : MicrosoftUpdatePackage
         {
-            if (TryGetStoreBackedFilter(packages, out var storeBacked))
+            if (TryGetStoreBackedFilter(source, out var storeBacked))
             {
                 var packageType = GetStoredPackageType(typeof(T));
                 return storeBacked
@@ -403,7 +409,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     .Cast<T>();
             }
 
-            var filteredUpdates = packages.OfType<T>();
+            var filteredUpdates = source.OfType<T>();
 
             if (!string.IsNullOrEmpty(HardwareIdFilter))
             {
@@ -427,14 +433,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     u => u is DriverUpdate driverUpdate &&
                     driverUpdate.GetDriverMetadata()
                     .Any(metadata => metadata.DistributionComputerHardwareId.Contains(ComputerHardwareIdFilter)));
-            }
-
-            if (ExcludedComputerHardwareIdFilter != Guid.Empty)
-            {
-                filteredUpdates = filteredUpdates.Where(
-                    u => u is not DriverUpdate driverUpdate ||
-                    !driverUpdate.GetDriverMetadata()
-                        .Any(metadata => metadata.DistributionComputerHardwareId.Contains(ExcludedComputerHardwareIdFilter)));
             }
 
             if (ProductFilter is { Count: > 0 })
@@ -490,11 +488,25 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 filteredUpdates = filteredUpdates.Where(category => !category.MatchTitle(excludeTokens));
             }
 
+            // Apply the revision id filter
+            if (RevisionIdFilter is { Count: > 0 })
+            {
+                var revisionIdSet = RevisionIdFilter.ToHashSet();
+                filteredUpdates = filteredUpdates.Where(u => revisionIdSet.Contains(source.GetPackageIndex(u.Id)));
+            }
+
+            if (ExcludedRevisionIdFilter is { Count: > 0 })
+            {
+                var excludedRevisionIdSet = RevisionIdFilter.ToHashSet();
+                filteredUpdates = filteredUpdates.Where(u => !excludedRevisionIdSet.Contains(source.GetPackageIndex(u.Id)));
+            }
+
             // Apply the id filter
             if (IdFilter is { Count: > 0 })
             {
                 // Remove all updates that don't match the ID filter
-                filteredUpdates = filteredUpdates.Where(u => IdFilter.Contains(u.Id.ID));
+                var idSet = IdFilter.ToHashSet();
+                filteredUpdates = filteredUpdates.Where(u => idSet.Contains(u.Id.ID));
             }
 
             if (ExcludedIdFilter is { Count: > 0 })
@@ -549,56 +561,56 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Apply the filter to a <see cref="IMetadataSource"/> and returns matching packages of type <see cref="MicrosoftUpdatePackage"/>
         /// </summary>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">Source to filter packages from</param>
         /// <returns>Matching packages</returns>
-        public IEnumerable<IPackage> Apply(IEnumerable<IPackage> packages)
+        public IEnumerable<IPackage> Apply(IMetadataSource source)
         {
-            return Apply<MicrosoftUpdatePackage>(packages);
+            return Apply<MicrosoftUpdatePackage>(source);
         }
 
         /// <summary>
         /// Get the identities of packages that match the criteria from <see cref="IMetadataSource"/> 
         /// </summary>
         /// <typeparam name="T">Package identity type to get its identities. The type must inherit <see cref="MicrosoftUpdatePackage"/></typeparam>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">Source to filter packages from</param>
         /// <returns>Matching packages' identities</returns>
-        public IEnumerable<IPackageIdentity> GetMatchingIdentities<T>(IEnumerable<IPackage> packages) where T : MicrosoftUpdatePackage
+        public IEnumerable<IPackageIdentity> GetMatchingIdentities<T>(IMetadataSource source) where T : MicrosoftUpdatePackage
         {
-            if (TryGetStoreBackedFilter(packages, out var storeBacked))
+            if (TryGetStoreBackedFilter(source, out var storeBacked))
             {
                 var packageType = GetStoredPackageType(typeof(T));
                 return storeBacked
                     .GetIdentitiesFromStore(CloneWithPackageType(packageType));
             }
 
-            return Apply<MicrosoftUpdatePackage>(packages)
+            return Apply<MicrosoftUpdatePackage>(source)
                 .Select(p => p.Id);
         }
 
         /// <summary>
         /// Get the identities of packages that match the criteria from <see cref="IMetadataSource"/> 
         /// </summary>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">Store to filter packages from</param>
         /// <returns>Matching packages' identities</returns>
-        public IEnumerable<IPackageIdentity> GetMatchingIdentities(IEnumerable<IPackage> packages)
+        public IEnumerable<IPackageIdentity> GetMatchingIdentities(IMetadataSource source)
         {
-            return GetMatchingIdentities<MicrosoftUpdatePackage>(packages);
+            return GetMatchingIdentities<MicrosoftUpdatePackage>(source);
         }
 
         /// <summary>
-        /// Get the number of packages that match the criteria
+        /// Get the number of packages that match the criteria from <see cref="IMetadataSource" />
         /// </summary>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">Source to filter packages from</param>
         /// <returns>The number of matching packages</returns>
-        public int GetCount(IEnumerable<IPackage> packages)
+        public int GetCount(IMetadataSource source)
         {
-            if (TryGetStoreBackedFilter(packages, out var storeBacked))
+            if (TryGetStoreBackedFilter(source, out var storeBacked))
             {
                 var packageType = GetStoredPackageType(typeof(MicrosoftUpdatePackage));
                 return storeBacked.CountFromStore(CloneWithPackageType(packageType));
             }
 
-            return Apply(packages).Count();
+            return Apply(source).Count();
         }
     }
 }

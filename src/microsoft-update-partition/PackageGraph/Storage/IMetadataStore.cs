@@ -28,13 +28,6 @@ namespace Microsoft.PackageGraph.Storage
         List<IPackageIdentity> GetPackageIdentities();
 
         /// <summary>
-        /// Gets a integer index for a package. This index is unique only in the context of the metadata source that retrieved it.
-        /// </summary>
-        /// <param name="packageIdentity"></param>
-        /// <returns></returns>
-        int GetPackageIndex(IPackageIdentity packageIdentity);
-
-        /// <summary>
         /// Retrieves a package by package identity
         /// </summary>
         /// <param name="packageIdentity">Package identity</param>

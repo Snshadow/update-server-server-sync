@@ -39,7 +39,7 @@ namespace Microsoft.PackageGraph.Storage
     /// stored locally and queries.
     /// </para>
     /// </summary>
-    public interface IMetadataSource
+    public interface IMetadataSource : IEnumerable<IPackage>
     {
         /// <summary>
         /// Returns an enumerator that iterates through the collection using the provided filter.
@@ -52,8 +52,20 @@ namespace Microsoft.PackageGraph.Storage
         /// Get raw metadata for a package identity
         /// </summary>
         /// <param name="packageIdentity">Package identity</param>
-        /// <returns>Package raw metadata.</returns>
+        /// <returns>Package raw metadata</returns>
         Stream GetMetadata(IPackageIdentity packageIdentity);
+
+        /// <summary>
+        /// <para>
+        /// Get package index from update metadata source with package identity.
+        /// </para>
+        /// <para>
+        /// This index is unique only in the context of the metadata source that retrieved it.
+        /// </para>
+        /// </summary>
+        /// <param name="packageIdentity">Package identity</param>
+        /// <returns>Package index</returns>
+        int GetPackageIndex(IPackageIdentity packageIdentity);
 
         /// <summary>
         /// Checks if the source has metadata for a specific package ID

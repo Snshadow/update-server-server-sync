@@ -309,7 +309,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 // Generate the core XML fragment
                 var coreXml = GetCoreFragment(identity);
 
-                var isBundle = update.BundledUpdates is { Count: > 0 };
+                var hasBundle = update.BundledUpdates is { Count: > 0 };
                 var isBundled = update.BundledWithUpdates is { Count: > 0 };
 
                 var deploymentData = GetDeployment(revision);
@@ -322,8 +322,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                         // Use the Action value if deployment was created for this update
                         // Action is Evaluate for bundles of updates that are not part of a bundle
                         // Action is Bundle for updates that are part of a bundle
-                        Action = deploymentData?.Action ?? ((isBundle || !isBundled) ? DeploymentAction.Evaluate : DeploymentAction.Bundle),
-                        ID = isBundle ? 20000 : (isBundled ? 20001 : 20002),
+                        Action = deploymentData?.Action ?? ((hasBundle || !isBundled) ? DeploymentAction.Evaluate : DeploymentAction.Bundle),
+                        ID = hasBundle ? 20000 : (isBundled ? 20001 : 20002),
                         AutoDownload = "0",
                         AutoSelect = "0",
                         SupersedenceBehavior = "0",

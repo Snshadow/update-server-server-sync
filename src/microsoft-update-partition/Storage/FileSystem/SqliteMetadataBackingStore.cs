@@ -303,7 +303,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             using var transaction = connection.BeginTransaction();
 
             using var insertIdentityCommand = connection.CreateCommand();
-            insertIdentityCommand.Transaction = transaction;
             insertIdentityCommand.CommandText = """
             INSERT INTO identities (guid, revision, title, creation_date, is_expired)
                 VALUES (@guid, @revision, @title, @creation_date, @is_expired);
@@ -316,7 +315,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             insertIdentityCommand.Parameters.Add("@is_expired", SqliteType.Integer);
 
             using var insertMetadataCommand = connection.CreateCommand();
-            insertMetadataCommand.Transaction = transaction;
             insertMetadataCommand.CommandText = """
             INSERT INTO metadatas (revision_id, metadata, categories, files, prerequisites)
                 VALUES (@revision_id, @metadata, jsonb(@categories), jsonb(@files), jsonb(@prerequisites))
@@ -328,7 +326,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             insertMetadataCommand.Parameters.Add("@prerequisites", SqliteType.Blob);
 
             using var insertSoftwareCommand = connection.CreateCommand();
-            insertSoftwareCommand.Transaction = transaction;
             insertSoftwareCommand.CommandText = """
             INSERT INTO software_informations (revision_id, kb_article_id, bundled)
                 VALUES (@revision_id, @kb_article_id, jsonb(@bundled));
@@ -338,7 +335,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             insertSoftwareCommand.Parameters.Add("@bundled", SqliteType.Blob);
 
             using var insertBundledCommand = connection.CreateCommand();
-            insertBundledCommand.Transaction = transaction;
             insertBundledCommand.CommandText = """
             INSERT INTO bundled (revision_id, guid, revision)
                 VALUES (@revision_id, @guid, @revision)
@@ -348,13 +344,11 @@ namespace Microsoft.PackageGraph.Storage.Local
             var revisionBundledParam = insertBundledCommand.Parameters.Add("@revision", SqliteType.Integer);
 
             using var insertSupersededCommand = connection.CreateCommand();
-            insertSupersededCommand.Transaction = transaction;
             insertSupersededCommand.CommandText = "INSERT INTO superseded (revision_id, superseded_guid) VALUES (@revision_id, @superseded_guid)";
             insertSupersededCommand.Parameters.Add("@revision_id", SqliteType.Integer);
             insertSupersededCommand.Parameters.Add("@superseded_guid", SqliteType.Text);
 
             using var addFileCommand = connection.CreateCommand();
-            addFileCommand.Transaction = transaction;
             addFileCommand.CommandText = """
             INSERT INTO files (file_digest, name, size, modified_date, digests, urls, patching_type)
                 VALUES (@file_digest, @name, @size, @modified_date, jsonb(@digests), jsonb(@urls), @patching_type)
@@ -1363,7 +1357,6 @@ namespace Microsoft.PackageGraph.Storage.Local
                     { HardwareIdFilter.Length: > 0 } => true,
                     { ExcludedHardwareIdFilter.Length: > 0 } => true,
                     { ComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
-                    { ExcludedComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
                     _ => false
                 };
 
@@ -1433,7 +1426,6 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             using var transaction = connection.BeginTransaction();
             using var insertCmd = connection.CreateCommand();
-            insertCmd.Transaction = transaction;
             insertCmd.CommandText = "INSERT OR IGNORE INTO temp.filter_values(kind, value) VALUES (@kind, @value)";
             var kindParam = insertCmd.Parameters.Add("@kind", SqliteType.Text);
             var valueParam = insertCmd.Parameters.Add("@value", SqliteType.Text);
@@ -1537,7 +1529,6 @@ namespace Microsoft.PackageGraph.Storage.Local
                 { HardwareIdFilter: not null and { Length: > 0 } } => true,
                 { ExcludedHardwareIdFilter: not null and { Length: > 0 } } => true,
                 { ComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
-                { ExcludedComputerHardwareIdFilter: var id } when id != Guid.Empty => true,
                 _ => false
             };
 
@@ -1597,16 +1588,6 @@ namespace Microsoft.PackageGraph.Storage.Local
                     var computerMatch = metadata.Any(md =>
                         md.DistributionComputerHardwareId.Contains(metadataFilter.ComputerHardwareIdFilter));
                     if (!computerMatch)
-                    {
-                        continue;
-                    }
-                }
-
-                if (metadataFilter.ExcludedComputerHardwareIdFilter != Guid.Empty)
-                {
-                    var excludedComputerMatch = metadata.Any(md =>
-                        md.DistributionComputerHardwareId.Contains(metadataFilter.ExcludedComputerHardwareIdFilter));
-                    if (excludedComputerMatch)
                     {
                         continue;
                     }

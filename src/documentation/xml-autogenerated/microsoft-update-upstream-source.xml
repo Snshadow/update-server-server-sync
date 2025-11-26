@@ -460,7 +460,7 @@
             <param name="destination">Destination store for the retrieved metadata</param>
             <param name="filter">Filter to apply during the copy operation</param>
             <param name="cancelToken">Cancellation token</param>
-            <exception cref="T:System.NotImplementedException"></exception>
+            <exception cref="T:System.NotImplementedException" />
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamCategoriesSource.GetMetadata(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
             <summary>
@@ -468,7 +468,7 @@
             </summary>
             <param name="packageIdentity">Identity of the category to retrieve</param>
             <returns>Category metadata as stream</returns>
-            <exception cref="T:System.NotImplementedException"></exception>
+            <exception cref="T:System.NotImplementedException" />
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamCategoriesSource.ContainsMetadata(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
             <summary>
@@ -476,7 +476,7 @@
             </summary>
             <param name="packageIdentity">Indentity of category to lookup</param>
             <returns>True if found, false otherwise</returns>
-            <exception cref="T:System.NotImplementedException"></exception>
+            <exception cref="T:System.NotImplementedException" />
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamCategoriesSource.GetFiles``1(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
             <summary>
@@ -485,7 +485,22 @@
             <typeparam name="T">Type of file to retrieve.</typeparam>
             <param name="packageIdentity">Identity of the package to retrieve files for.</param>
             <returns>List of files in the package</returns>
-            <exception cref="T:System.NotImplementedException"></exception>
+            <exception cref="T:System.NotImplementedException" />
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamCategoriesSource.GetPackageIndex(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <summary>
+            Not implemented for an upstream categories source
+            </summary>
+            <param name="identity">Package identity</param>
+            <returns>Package index</returns>
+            <exception cref="T:System.NotImplementedException" />
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamCategoriesSource.GetEnumerator">
+            <summary>
+            Not implemented for an upstream categories source
+            </summary>
+            <returns>Category metadata as stream</returns>
+            <exception cref="T:System.NotImplementedException" />
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamCategoriesSource.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
             <summary>
@@ -493,7 +508,7 @@
             </summary>
             <param name="filter">The filter to apply.</param>
             <returns>Category metadata as stream</returns>
-            <exception cref="T:System.NotImplementedException"></exception>
+            <exception cref="T:System.NotImplementedException" />
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter">
             <summary>
@@ -576,25 +591,25 @@
             </summary>
             <returns>Hash code</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.Apply(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
             Applies the filter to a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataStore"/> and returns the matched packages
             </summary>
-            <param name="packages">The packages to filter</param>
+            <param name="source">Source to filter packages from</param>
             <returns>List of packages that match the filter</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.GetMatchingIdentities(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.GetMatchingIdentities(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
             Get the identities of packages that match the criteria 
             </summary>
-            <param name="packages">The packages to filter</param>
+            <param name="source">Source to filter packages from</param>
             <returns>Matching packages' identities</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamSourceFilter.GetCount(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
             Get the number of packages that match the criteria
             </summary>
-            <param name="packages">The packages to filter</param>
+            <param name="source">The packages to filter</param>
             <returns>The number of matching packages</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamUpdatesSource">
@@ -640,7 +655,7 @@
             </summary>
             <param name="packageIdentity">Identity of update to retrieve</param>
             <returns>Update metadata as stream</returns>
-            <exception cref="T:System.NotImplementedException"></exception>
+            <exception cref="T:System.NotImplementedException" />
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamUpdatesSource.ContainsMetadata(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
             <summary>
@@ -648,7 +663,7 @@
             </summary>
             <param name="packageIdentity">Indentity of package to lookup</param>
             <returns>True if found, false otherwise</returns>
-            <exception cref="T:System.NotImplementedException"></exception>
+            <exception cref="T:System.NotImplementedException" />
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamUpdatesSource.GetFiles``1(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
             <summary>
@@ -657,7 +672,22 @@
             <typeparam name="T">Type of file to retrieve.</typeparam>
             <param name="packageIdentity">Identity of the package to retrieve files for.</param>
             <returns>List of files in the package</returns>
-            <exception cref="T:System.NotImplementedException"></exception>
+            <exception cref="T:System.NotImplementedException" />
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamUpdatesSource.GetPackageIndex(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <summary>
+            Not Implemented for an upstream updates source
+            </summary>
+            <param name="identity">Package Identity</param>
+            <returns>Package Index</returns>
+            <exception cref="T:System.NotImplementedException" />
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamUpdatesSource.GetEnumerator">
+            <summary>
+            Not implemented for an upstream updates source
+            </summary>
+            <returns>Update metadata as stream</returns>
+            <exception cref="T:System.NotImplementedException" />
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Source.UpstreamUpdatesSource.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
             <summary>
@@ -665,7 +695,7 @@
             </summary>
             <param name="filter">The filter to apply.</param>
             <returns>Update metadata as stream</returns>
-            <exception cref="T:System.NotImplementedException"></exception>
+            <exception cref="T:System.NotImplementedException" />
         </member>
     </members>
 </doc>

@@ -179,11 +179,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <summary>
         /// Applies the filter to a <see cref="IMetadataStore"/> and returns the matched packages
         /// </summary>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">Source to filter packages from</param>
         /// <returns>List of packages that match the filter</returns>
-        public IEnumerable<IPackage> Apply(IEnumerable<IPackage> packages)
+        public IEnumerable<IPackage> Apply(IMetadataSource source)
         {
-            var filteredUpdates = packages.OfType<MicrosoftUpdatePackage>();
+            var filteredUpdates = source.OfType<MicrosoftUpdatePackage>();
 
             return filteredUpdates.Where(u =>
             {
@@ -204,21 +204,21 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Source
         /// <summary>
         /// Get the identities of packages that match the criteria 
         /// </summary>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">Source to filter packages from</param>
         /// <returns>Matching packages' identities</returns>
-        public IEnumerable<IPackageIdentity> GetMatchingIdentities(IEnumerable<IPackage> packages)
+        public IEnumerable<IPackageIdentity> GetMatchingIdentities(IMetadataSource source)
         {
-            return Apply(packages).Select(p => p.Id);
+            return Apply(source).Select(p => p.Id);
         }
 
         /// <summary>
         /// Get the number of packages that match the criteria
         /// </summary>
-        /// <param name="packages">The packages to filter</param>
+        /// <param name="source">The packages to filter</param>
         /// <returns>The number of matching packages</returns>
-        public int GetCount(IEnumerable<IPackage> packages)
+        public int GetCount(IMetadataSource source)
         {
-            return Apply(packages).Count();
+            return Apply(source).Count();
         }
     }
 }

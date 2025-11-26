@@ -30,7 +30,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
         {
             Dictionary<Guid, PrerequisiteGraphNode> graph = [];
 
-            var packages = source.OfType<MicrosoftUpdatePackage>();
+            // Exclude expired packages for calculating prerequisite graph
+            MetadataFilter filter = new();
+            var packages = filter.Apply<MicrosoftUpdatePackage>(source);
 
             foreach (var package in packages)
             {

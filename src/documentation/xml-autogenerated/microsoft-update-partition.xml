@@ -147,6 +147,18 @@
             </summary>
             <value>List of classification IDs to exclude</value>
         </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.RevisionIdFilter">
+            <summary>
+            Get or set the revision ID(server-specific index) filter
+            </summary>
+            <value>List of revision IDs (update package index)</value>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ExcludedRevisionIdFilter">
+            <summary>
+            Get or set the revision ID (server-specific index) exclusion filter
+            </summary>
+            <value>List of revision IDs (update package index)</value>
+        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IdFilter">
             <summary>
             Get or set the ID filter
@@ -218,12 +230,6 @@
             </summary>
             <value>Computer hardware ID (GUID)</value>
         </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.ExcludedComputerHardwareIdFilter">
-            <summary>
-            Returns only updates that do not target this computer hardware ID
-            </summary>
-            <value>Excluded computer hardware ID (GUID)</value>
-        </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.KbArticleFilter">
             <summary>
             Get or set the KB article filter
@@ -259,41 +265,41 @@
             </summary>
             <returns>The JSON string</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.Apply``1(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.Apply``1(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
             Apply the filter to a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> and returns the matching packages of the specified type.
             </summary>
             <typeparam name="T">Package type to query. The type must inherit <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/></typeparam>
-            <param name="packages">The packages to filter</param>
+            <param name="source">Source to filter packages from</param>
             <returns>Matching packages</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.Apply(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
             Apply the filter to a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> and returns matching packages of type <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/>
             </summary>
-            <param name="packages">The packages to filter</param>
+            <param name="source">Source to filter packages from</param>
             <returns>Matching packages</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetMatchingIdentities``1(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetMatchingIdentities``1(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
             Get the identities of packages that match the criteria from <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> 
             </summary>
             <typeparam name="T">Package identity type to get its identities. The type must inherit <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/></typeparam>
-            <param name="packages">The packages to filter</param>
+            <param name="source">Source to filter packages from</param>
             <returns>Matching packages' identities</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetMatchingIdentities(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetMatchingIdentities(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
             Get the identities of packages that match the criteria from <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> 
             </summary>
-            <param name="packages">The packages to filter</param>
+            <param name="source">Store to filter packages from</param>
             <returns>Matching packages' identities</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetCount(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
-            Get the number of packages that match the criteria
+            Get the number of packages that match the criteria from <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource" />
             </summary>
-            <param name="packages">The packages to filter</param>
+            <param name="source">Source to filter packages from</param>
             <returns>The number of matching packages</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Applicability.ApplicabilityRule">
@@ -2602,22 +2608,32 @@
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.SaveDeployment(Microsoft.PackageGraph.ObjectModel.IDeployment)">
             <summary>
-            Persists a deployment entry to the underlying storage
+            Persists a deployment entry to the underlying store
             </summary>
             <param name="deployment">The deployment to save</param>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.DeleteDeployment(System.Int32)">
             <summary>
-            Deletes a deployment entry from the underlying storage
+            Deletes a deployment entry from the underlying store
             </summary>
             <param name="revisionId">The revision ID of the deployment to delete</param>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.GetDeployment(System.Int32)">
             <summary>
-            Retrieves a deployment entry from the underlying storage
+            Retrieves a deployment entry from the underlying store
             </summary>
             <param name="revisionId">The revision ID of the deployment to retrieve</param>
             <returns>The requested deployment</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.GetApprovedRevisionIds">
+            <summary>
+            Retrieves revision ids of approved deployments from the underlying store
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.GetUnapprovedRevisionIds">
+            <summary>
+            Retriteves revision ids of unapproved deployments from the underlying store
+            </summary>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IDeploySyncStore.UpdateComputerSync(System.String,System.DateTime)">
             <summary>
@@ -2684,25 +2700,25 @@
             Interface for filtering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> or for selectively quering packages from a <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/>
             </summary>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.Apply(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.Apply(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
             Apply the filter to a collection of packages
             </summary>
-            <param name="packages">The packages to filter</param>
+            <param name="source">Source to filter packages from</param>
             <returns>Matching packages</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.GetMatchingIdentities(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.GetMatchingIdentities(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
             Get the identities of packages that match the criteria
             </summary>
-            <param name="packages">The packages to filter</param>
+            <param name="source">Source to filter packages from</param>
             <returns>Matching packages' identities</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.GetCount(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IPackage})">
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataFilter.GetCount(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>
             Get the number of packages that match the criteria
             </summary>
-            <param name="packages">The packages to filter</param>
+            <param name="source">Source to filter packages from</param>
             <returns>The number of matching packages</returns>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.IMetadataLookup">
@@ -2871,7 +2887,19 @@
             Get raw metadata for a package identity
             </summary>
             <param name="packageIdentity">Package identity</param>
-            <returns>Package raw metadata.</returns>
+            <returns>Package raw metadata</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.IMetadataSource.GetPackageIndex(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
+            <summary>
+            <para>
+            Get package index from update metadata source with package identity.
+            </para>
+            <para>
+            This index is unique only in the context of the metadata source that retrieved it.
+            </para>
+            </summary>
+            <param name="packageIdentity">Package identity</param>
+            <returns>Package index</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataSource.ContainsMetadata(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
             <summary>
@@ -2932,13 +2960,6 @@
             Retrieves a list of all package identities in the store
             </summary>
             <returns>List of package identities</returns>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IMetadataStore.GetPackageIndex(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
-            <summary>
-            Gets a integer index for a package. This index is unique only in the context of the metadata source that retrieved it.
-            </summary>
-            <param name="packageIdentity"></param>
-            <returns></returns>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.IMetadataStore.GetPackage(Microsoft.PackageGraph.ObjectModel.IPackageIdentity)">
             <summary>
@@ -3176,9 +3197,6 @@
             <param name="container">Container name that contains the metadata store</param>
             <returns>True if the metadata store exists, false otherwise</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.CompressedMetadataStore.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
-            <inheritdoc/>
-        </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.ContentDownloader">
             <summary>
             Simple HTTP content downloader implementation
@@ -3284,7 +3302,7 @@
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.SaveDeployments(System.Collections.Generic.IEnumerable{Microsoft.PackageGraph.ObjectModel.IDeployment})">
             <summary>
-            Saves a list of deployments to the database in a single transaction.
+            Saves a list of deployments to the database.
             </summary>
             <param name="deployments">The deployments to save.</param>
         </member>
@@ -3294,12 +3312,28 @@
             </summary>
             <param name="revisionId">The revision id of a deployment to delete</param>
         </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.DeleteDeployments(System.Collections.Generic.IEnumerable{System.Int32})">
+            <summary>
+            Deletes a list of deployments from the database
+            </summary>
+            <param name="revisionIds">Revision ids of deployments to delete</param>
+        </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.GetDeployment(System.Int32)">
             <summary>
             Retrieves a deployment from the database by its revision ID
             </summary>
             <param name="revisionId">The revision ID of the deployment to retrieve</param>
             <returns>The deployment, or null if not found</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.GetApprovedRevisionIds">
+            <summary>
+            Retrieves revision ids of approved deployments(Install or OptionalInstall action)
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.DeploymentStore.GetUnapprovedRevisionIds">
+            <summary>
+            Retrieves revision ids of unapproved deployments(PreDeploymentCheck action)
+            </summary>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.ComputerSyncStore">
             <summary>
@@ -3337,12 +3371,6 @@
             </summary>
             <param name="computerId"></param>
             <returns>A synchronization information of a computer</returns>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.DirectoryMetadataStore.AddPackage(Microsoft.PackageGraph.ObjectModel.IPackage)">
-            <inheritdoc/>
-        </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.DirectoryMetadataStore.GetEnumerator(Microsoft.PackageGraph.Storage.IMetadataFilter)">
-            <inheritdoc/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Local.DirectoryPackageStore.ReIndex">
             <inheritdoc/>

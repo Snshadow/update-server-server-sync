@@ -43,7 +43,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
         private const string CacheKeyRootUpdates = "RootUpdates";
         private const string CacheKeyNonLeafUpdates = "NonLeafUpdates";
-        private const string CacheKeyLeafUpdates = "LeafUpdates";
         private const string CacheKeySoftwareLeafUpdates = "SoftwareLeafUpdates";
 
         private readonly ReaderWriterLockSlim _metadataSourceLock = new();
@@ -165,20 +164,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             _memoryCache.Remove(CacheKeyRootUpdates);
             _memoryCache.Remove(CacheKeyNonLeafUpdates);
-            _memoryCache.Remove(CacheKeyLeafUpdates);
             _memoryCache.Remove(CacheKeySoftwareLeafUpdates);
 
             _distributedCache.Remove(CacheKeyRootUpdates);
             _distributedCache.Remove(CacheKeyNonLeafUpdates);
-            _distributedCache.Remove(CacheKeyLeafUpdates);
             _distributedCache.Remove(CacheKeySoftwareLeafUpdates);
         }
 
-        private (List<Guid> Root, List<Guid> NonLeaf, List<Guid> Leaf, List<Guid> SoftwareLeaf) ComputeGraphSlices()
+        private (List<Guid> Root, List<Guid> NonLeaf, List<Guid> SoftwareLeaf) ComputeGraphSlices()
         {
             if (MetadataSource is null)
             {
-                return ([], [], [], []);
+                return ([], [], []);
             }
 
             var graph = PrerequisitesGraph.FromIndexedPackageSource(MetadataSource);
@@ -187,29 +184,24 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
             var nonLeafUpdates = graph.GetNonLeafUpdates().ToList();
             var leafUpdates = graph.GetLeafUpdates().ToList();
 
-            MetadataFilter filter = new()
-            {
-                IncludeExpired = true,
-            };
+            MetadataFilter filter = new();
             var softwareLeafUpdates = filter.GetMatchingIdentities<SoftwareUpdate>(MetadataSource)
                 .Cast<MicrosoftUpdatePackageIdentity>()
                 .Select(i => i.ID)
                 .Intersect(leafUpdates)
                 .ToList();
 
-            return (rootUpdates, nonLeafUpdates, leafUpdates, softwareLeafUpdates);
+            return (rootUpdates, nonLeafUpdates, softwareLeafUpdates);
         }
 
-        private void StoreGraphSlices((List<Guid> Root, List<Guid> NonLeaf, List<Guid> Leaf, List<Guid> SoftwareLeaf) slices)
+        private void StoreGraphSlices((List<Guid> Root, List<Guid> NonLeaf, List<Guid> SoftwareLeaf) slices)
         {
             CacheGuidListInMemory(CacheKeyRootUpdates, slices.Root);
             CacheGuidListInMemory(CacheKeyNonLeafUpdates, slices.NonLeaf);
-            CacheGuidListInMemory(CacheKeyLeafUpdates, slices.Leaf);
             CacheGuidListInMemory(CacheKeySoftwareLeafUpdates, slices.SoftwareLeaf);
 
             PersistGuidList(CacheKeyRootUpdates, slices.Root);
             PersistGuidList(CacheKeyNonLeafUpdates, slices.NonLeaf);
-            PersistGuidList(CacheKeyLeafUpdates, slices.Leaf);
             PersistGuidList(CacheKeySoftwareLeafUpdates, slices.SoftwareLeaf);
         }
 
@@ -552,7 +544,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
                 {
                     CacheKeyRootUpdates => slices.Root,
                     CacheKeyNonLeafUpdates => slices.NonLeaf,
-                    CacheKeyLeafUpdates => slices.Leaf,
                     CacheKeySoftwareLeafUpdates => slices.SoftwareLeaf,
                     _ => []
                 };

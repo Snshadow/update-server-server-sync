@@ -119,7 +119,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             _ = AddPackage(package);
         }
 
-        /// <inheritdoc/>
         public override int AddPackage(IPackage package)
         {
             lock (WriteLock)
@@ -287,8 +286,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             });
         }
 
-        /// <inheritdoc/>
-        public new IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
+        public override IEnumerator<IPackage> GetEnumerator(IMetadataFilter filter)
         {
             return filter.Apply(this).GetEnumerator();
         }
