@@ -159,7 +159,7 @@ namespace Microsoft.PackageGraph.Storage.Local
 
         void IMetadataSink.AddPackage(IPackage package)
         {
-            _ =AddPackage(package);
+            _ = AddPackage(package);
         }
 
         public override int AddPackage(IPackage package)

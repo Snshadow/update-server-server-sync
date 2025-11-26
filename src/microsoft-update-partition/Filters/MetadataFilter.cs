@@ -142,6 +142,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 ExcludedProductFilter = ExcludedProductFilter,
                 ClassificationFilter = ClassificationFilter,
                 ExcludedClassificationFilter = ExcludedClassificationFilter,
+                RevisionIdFilter = RevisionIdFilter,
                 IdFilter = IdFilter,
                 ExcludedIdFilter = ExcludedIdFilter,
                 TitleFilter = TitleFilter,

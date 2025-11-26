@@ -108,7 +108,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         {
             MetadataFilter filter = new()
             {
-                IncludeExpired = true,
                 IdFilter = [id]
             };
 
@@ -138,7 +137,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataFilter filter = new()
             {
-                IncludeExpired = true,
                 IdFilter = missingRootIds,
                 FirstX = MaxUpdatesInResponse // Only take the maximum number of updates allowed 
             };
@@ -179,7 +177,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataFilter filter = new()
             {
-                IncludeExpired = true,
                 IdFilter = missingNonLeafIds
             };
 
@@ -205,7 +202,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
         /// </summary>
         /// <param name="cachedGuids">List of known updates from the client</param>
         /// <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
-        /// <param name="response">The response  to append new updates to</param>
+        /// <param name="response">The response to append new updates to</param>
         /// <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         private void AddMissingBundleUpdatesToSyncUpdatesResponse(List<Guid> cachedGuids, List<Guid> installedNonLeaf, SyncInfo response, out bool updatesAdded)
         {
@@ -221,7 +218,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataFilter filter = new()
             {
-                IncludeExpired = true,
                 IdFilter = missingBundleIds,
                 BundleFilter = BundleType.IsBundled // Get bundles
             };
@@ -264,7 +260,6 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             MetadataFilter filter = new()
             {
-                IncludeExpired = true,
                 IdFilter = missingAppliableUpdatesIds,
                 BundleFilter = BundleType.NotBundled //Exclude bundles
             };

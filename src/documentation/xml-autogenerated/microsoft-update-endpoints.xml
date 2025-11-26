@@ -239,7 +239,7 @@
             </summary>
             <param name="cachedGuids">List of known updates from the client</param>
             <param name="installedNonLeaf">List of non leaf updates installed on the client</param>
-            <param name="response">The response  to append new updates to</param>
+            <param name="response">The response to append new updates to</param>
             <param name="updatesAdded">On return: true of updates were added to the response, false otherwise</param>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.AddMissingSoftwareUpdatesToSyncUpdatesResponse(System.Collections.Generic.List{System.Guid},System.Collections.Generic.List{System.Guid},Microsoft.UpdateServices.WebServices.ClientSync.SyncInfo,System.Boolean@)">

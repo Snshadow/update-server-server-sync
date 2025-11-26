@@ -47,9 +47,9 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync
 
             List<Guid> computerHardwareIds = parameters.ComputerSpec?.HardwareIDs?.ToList() ?? [];
 
-            List<UpdateInfo> driverUpdates = new();
+            List<UpdateInfo> driverUpdates = [];
 
-            List<DriverUpdate> unapprovedDriversMatched = new();
+            List<DriverUpdate> unapprovedDriversMatched = [];
 
             // Go through all client reported devices
             foreach (var device in parameters.SystemSpec)
