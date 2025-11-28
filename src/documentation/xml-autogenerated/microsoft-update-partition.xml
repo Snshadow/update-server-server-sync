@@ -1730,7 +1730,7 @@
         </member>
         <member name="P:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites.AtLeastOne.IsCategory">
             <summary>
-            Check if the AtLestOne prerequisite is a "category" prerequisite. Category prerequisites are not true prerequisites,
+            Check if the AtLeastOne prerequisite is a "category" prerequisite. Category prerequisites are not true prerequisites,
             just a way to encode a product and classification for an update.
             </summary>
         </member>

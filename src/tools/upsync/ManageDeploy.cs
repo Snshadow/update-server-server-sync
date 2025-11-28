@@ -1,6 +1,7 @@
 // Copyright (c) Snshadow. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
@@ -27,6 +28,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 {
                     return;
                 }
+
+                // Bundled updates cannot be approved.
+                filter.BundleFilter = BundleType.NotBundled;
 
                 var updatesToApprove = filter.Apply(store).ToList();
 
@@ -66,6 +70,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 {
                     return;
                 }
+
+                // Bundled updates cannot be unapproved.
+                filter.BundleFilter = BundleType.NotBundled;
 
                 var updatesToUnapprove = filter.Apply(store).ToList();
 

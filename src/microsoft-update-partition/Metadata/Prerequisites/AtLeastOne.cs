@@ -23,7 +23,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Prerequisites
         public List<Simple> Simple { get; private set; }
 
         /// <summary>
-        /// Check if the AtLestOne prerequisite is a "category" prerequisite. Category prerequisites are not true prerequisites,
+        /// Check if the AtLeastOne prerequisite is a "category" prerequisite. Category prerequisites are not true prerequisites,
         /// just a way to encode a product and classification for an update.
         /// </summary>
         [JsonProperty]
