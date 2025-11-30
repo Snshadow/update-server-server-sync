@@ -74,6 +74,19 @@ namespace Microsoft.PackageGraph.Storage
         Task DownloadAsync(IEnumerable<IContentFile> files, CancellationToken cancelToken);
 
         /// <summary>
+        /// Deletes the specified update content file.
+        /// </summary>
+        /// <param name="file">The update file</param>
+        Task Delete(IContentFile file);
+
+        /// <summary>
+        /// Delete the specified update content file (by hash).
+        /// </summary>
+        /// <param name="fileDigest">The update file hash</param>
+        /// <returns></returns>
+        Task Delete(IContentFileDigest fileDigest);
+
+        /// <summary>
         /// The size in bytes of content left to be downloaded in the current download operation
         /// </summary>
         long QueuedSize { get; }

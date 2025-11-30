@@ -266,5 +266,17 @@ namespace Microsoft.PackageGraph.Storage.Azure
         {
             throw new NotImplementedException();
         }
+
+        /// <inheritdoc cref="IContentStore.Delete(IContentFile)"/>
+        public async Task Delete(IContentFile file)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc cref="IContentStore.Delete(IContentFileDigest)"/>
+        public async Task Delete(IContentFileDigest fileDigest)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

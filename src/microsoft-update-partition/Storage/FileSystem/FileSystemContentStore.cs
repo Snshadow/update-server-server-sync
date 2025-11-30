@@ -211,5 +211,21 @@ namespace Microsoft.PackageGraph.Storage.Local
 
             return File.OpenRead(GetUri(fileDigest));
         }
+
+        /// <inheritdoc cref="IContentStore.Delete(IContentFile)"/>
+        public async Task Delete(IContentFile file)
+        {
+            var fileDirPath = Path.GetDirectoryName(GetUri(file));
+
+            Directory.Delete(fileDirPath, true);
+        }
+
+        /// <inheritdoc cref="IContentStore.Delete(IContentFileDigest)"/>
+        public async Task Delete(IContentFileDigest fileDigest)
+        {
+            var fileDirPath = Path.GetDirectoryName(GetUri(fileDigest));
+
+            Directory.Delete(fileDirPath, true);
+        }
     }
 }

@@ -39,7 +39,10 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
             var filteredPackages = filter.Apply(metadataSource);
 
-            var filesToDownload = filteredPackages.Where(p => p.Files is not null).SelectMany(p => p.Files).ToList();
+            var filesToDownload = filteredPackages
+                .Where(p => p.Files is not null)
+                .SelectMany(p => p.Files)
+                .ToList();
 
             foreach (var microsoftUpdatePackage in filteredPackages.OfType<MicrosoftUpdatePackage>())
             {
@@ -66,7 +69,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
         /// <returns></returns>
         private static List<IContentFile> GetAllUpdateFiles(IMetadataStore metadataSource, MicrosoftUpdatePackage update)
         {
-            var filesList = new List<IContentFile>();
+            List<IContentFile> filesList = [];
             if (update.Files is not null)
             {
                 filesList.AddRange(update.Files);
@@ -86,7 +89,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
             return filesList;
         }
 
-        static string ContentSyncLastFileDigest = "";
+        static string ContentSyncLastFileDigest = string.Empty;
 
         private static void UpdateConsoleForMessageRefresh()
         {
@@ -140,7 +143,6 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 default:
                     ConsoleOutput.WriteRed("Content store type not supported.");
                     return null;
-
             }
         }
     }
