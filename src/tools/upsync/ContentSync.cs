@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Azure.Storage.Blobs;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
-using Microsoft.PackageGraph.Storage.Local;
 using Microsoft.PackageGraph.Utilitites.Upsync.Commands;
 using System;
 using System.Collections.Generic;
@@ -37,14 +35,14 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 return;
             }
 
-            var filteredPackages = filter.Apply(metadataSource);
+            var filteredPackages = filter.Apply<MicrosoftUpdatePackage>(metadataSource);
 
             var filesToDownload = filteredPackages
                 .Where(p => p.Files is not null)
                 .SelectMany(p => p.Files)
                 .ToList();
 
-            foreach (var microsoftUpdatePackage in filteredPackages.OfType<MicrosoftUpdatePackage>())
+            foreach (var microsoftUpdatePackage in filteredPackages)
             {
                 filesToDownload.AddRange(GetAllUpdateFiles(metadataSource, microsoftUpdatePackage));
             }
@@ -75,7 +73,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 filesList.AddRange(update.Files);
             }
 
-            if (update is SoftwareUpdate softwareUpdate && softwareUpdate.BundledUpdates is not null)
+            if (update is SoftwareUpdate { BundledUpdates: not null } softwareUpdate)
             {
                 foreach (var bundledUpdate in softwareUpdate.BundledUpdates)
                 {

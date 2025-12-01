@@ -22,14 +22,14 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <summary>
         /// Directory under which the store structure is created
         /// </summary>
-        readonly string LocalPath;
+        private readonly string LocalPath;
 
         /// <summary>
         /// Root content directory name
         /// </summary>
-        const string ContentDirectoryName = "content";
+        private const string ContentDirectoryName = "content";
 
-        string ContentDirectoryPath => Path.Combine(LocalPath, ContentDirectoryName);
+        private string ContentDirectoryPath => Path.Combine(LocalPath, ContentDirectoryName);
 
         /// <inheritdoc cref="IContentStore.QueuedSize"/>
         public long QueuedSize => throw new NotImplementedException();
@@ -181,7 +181,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             byte[] hashBytes = Convert.FromBase64String(fileDigest.DigestBase64);
             return string.Format("{0:X}", hashBytes.Last());
         }
-
 
         /// <inheritdoc cref="IContentStore.Contains(IContentFileDigest, out string)"/>
         public bool Contains(IContentFileDigest fileDigest, out string fileName)

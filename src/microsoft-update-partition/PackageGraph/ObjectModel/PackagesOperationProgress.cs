@@ -55,13 +55,13 @@ namespace Microsoft.PackageGraph.ObjectModel
         {
             get
             {
-                if (this is ContentOperationProgress contentProgress && contentProgress.TotalBytes > 0)
+                if (this is ContentOperationProgress { TotalBytes: > 0 } contentProgress)
                 {
                     return contentProgress.TotalBytes == 0 ? 0 : (double)contentProgress.BytesProcessed * 100 / contentProgress.TotalBytes;
                 }
                 else
                 {
-                    return Maximum == 0 ? 0 : ((double)Current * 100) / Maximum;
+                    return Maximum == 0 ? 0 : (double)Current * 100 / Maximum;
                 }
             }
         }
