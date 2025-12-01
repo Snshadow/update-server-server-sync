@@ -143,6 +143,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 ClassificationFilter = ClassificationFilter,
                 ExcludedClassificationFilter = ExcludedClassificationFilter,
                 RevisionIdFilter = RevisionIdFilter,
+                ExcludedRevisionIdFilter = ExcludedRevisionIdFilter,
                 IdFilter = IdFilter,
                 ExcludedIdFilter = ExcludedIdFilter,
                 TitleFilter = TitleFilter,
@@ -498,7 +499,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
             if (ExcludedRevisionIdFilter is { Count: > 0 })
             {
-                var excludedRevisionIdSet = RevisionIdFilter.ToHashSet();
+                var excludedRevisionIdSet = ExcludedRevisionIdFilter.ToHashSet();
                 filteredUpdates = filteredUpdates.Where(u => !excludedRevisionIdSet.Contains(source.GetPackageIndex(u.Id)));
             }
 

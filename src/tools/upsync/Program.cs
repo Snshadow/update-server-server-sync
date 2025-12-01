@@ -23,6 +23,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 config.AddCommand<QueryCommand>("query");
                 config.AddCommand<StatusCommand>("status");
                 config.AddCommand<ExportCommand>("export");
+                config.AddCommand<CleanupCommand>("cleanup");
                 config.AddCommand<ContentSyncCommand>("fetch-content");
                 config.AddCommand<RunUpstreamServerCommand>("run-upstream-server");
                 config.AddCommand<RunUpdateServerCommand>("run-update-server");

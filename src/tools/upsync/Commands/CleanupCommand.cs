@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 {
-    [Description("Run cleanup for content store")]
+    [Description("Run cleanup for underlying store")]
     public class CleanupCommand : AsyncCommand<CleanupCommand.Settings>
     {
         public class Settings : CommandSettings, IContentStoreOptions, IMetadataStoreOptions
@@ -65,6 +65,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
         public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
         {
+            await Cleanup.CleanupStore(settings).ConfigureAwait(false);
             return 0;
         }
     }

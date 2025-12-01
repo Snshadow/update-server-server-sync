@@ -2574,17 +2574,19 @@
             <param name="files">List of update content files to download</param>
             <param name="cancelToken">Cancellation token for aborting the operation</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IContentStore.Delete(Microsoft.PackageGraph.ObjectModel.IContentFile)">
+        <member name="M:Microsoft.PackageGraph.Storage.IContentStore.DeleteAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)">
             <summary>
             Deletes the specified update content file.
             </summary>
             <param name="file">The update file</param>
+            <param name="cancelToken">Cancellation token for aborting the operation</param>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.IContentStore.Delete(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)">
+        <member name="M:Microsoft.PackageGraph.Storage.IContentStore.DeleteAsync(Microsoft.PackageGraph.ObjectModel.IContentFileDigest,System.Threading.CancellationToken)">
             <summary>
-            Delete the specified update content file (by hash).
+            Deletes the specified update content file (by hash).
             </summary>
             <param name="fileDigest">The update file hash</param>
+            <param name="cancelToken">Cancellation token for aborting the operation</param>
             <returns></returns>
         </member>
         <member name="P:Microsoft.PackageGraph.Storage.IContentStore.QueuedSize">
@@ -3164,11 +3166,11 @@
         <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.GetUri(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.GetUri(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)"/>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.Delete(Microsoft.PackageGraph.ObjectModel.IContentFile)">
-            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Delete(Microsoft.PackageGraph.ObjectModel.IContentFile)"/>
+        <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.DeleteAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)">
+            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.DeleteAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)"/>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.Delete(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)">
-            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Delete(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)"/>
+        <member name="M:Microsoft.PackageGraph.Storage.Azure.BlobContentStore.DeleteAsync(Microsoft.PackageGraph.ObjectModel.IContentFileDigest,System.Threading.CancellationToken)">
+            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.DeleteAsync(Microsoft.PackageGraph.ObjectModel.IContentFileDigest,System.Threading.CancellationToken)"/>
         </member>
         <member name="M:Microsoft.PackageGraph.Storage.Azure.ContainerPackageStore.ReIndex">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IMetadataStore.ReIndex"/>
@@ -3609,11 +3611,11 @@
         <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.Get(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)">
             <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Get(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)"/>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.Delete(Microsoft.PackageGraph.ObjectModel.IContentFile)">
-            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Delete(Microsoft.PackageGraph.ObjectModel.IContentFile)"/>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.DeleteAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)">
+            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.DeleteAsync(Microsoft.PackageGraph.ObjectModel.IContentFile,System.Threading.CancellationToken)"/>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.Delete(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)">
-            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.Delete(Microsoft.PackageGraph.ObjectModel.IContentFileDigest)"/>
+        <member name="M:Microsoft.PackageGraph.Storage.Local.FileSystemContentStore.DeleteAsync(Microsoft.PackageGraph.ObjectModel.IContentFileDigest,System.Threading.CancellationToken)">
+            <inheritdoc cref="M:Microsoft.PackageGraph.Storage.IContentStore.DeleteAsync(Microsoft.PackageGraph.ObjectModel.IContentFileDigest,System.Threading.CancellationToken)"/>
         </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.BackingStoreType">
             <summary>

@@ -25,7 +25,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 return;
             }
 
-            var contentStore = GetContentStoreFromOptions(options);
+            var contentStore = ContentStoreCreator.GetFromOptions(options);
             if (contentStore is null)
             {
                 return;
@@ -118,31 +118,6 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     var progressInBytes = e;
                     Console.Write("Sync'ing file {0} of {1}. {2:000.00}%", e.Current, e.Maximum, progressInBytes.PercentDone);
                     break;
-            }
-        }
-
-        private static IContentStore GetContentStoreFromOptions(ContentSyncCommand.Settings options)
-        {
-            switch (options.ContentStoreType)
-            {
-                case "local":
-                    return new FileSystemContentStore(options.ContentPath);
-
-                case "azure":
-                    try
-                    {
-                        var blobClient = new BlobServiceClient(options.ContentStoreConnectionString);
-                        return Storage.Azure.BlobContentStore.OpenOrCreate(blobClient, options.ContentPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        ConsoleOutput.WriteRed($"Failed to get azure content store: {ex.Message}");
-                        return null;
-                    }
-
-                default:
-                    ConsoleOutput.WriteRed("Content store type not supported.");
-                    return null;
             }
         }
     }

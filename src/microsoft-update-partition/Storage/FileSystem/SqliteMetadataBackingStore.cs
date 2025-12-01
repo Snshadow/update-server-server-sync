@@ -1198,12 +1198,20 @@ namespace Microsoft.PackageGraph.Storage.Local
             var hasExcludedProductFilter = metadataFilter.ExcludedProductFilter is { Count: > 0 };
             var hasExcludedClassificationFilter = metadataFilter.ExcludedClassificationFilter is { Count: > 0 };
             var requiresCategoryFiltering = hasProductFilter || hasClassificationFilter || hasExcludedProductFilter || hasExcludedClassificationFilter;
+            var hasRevisionIdFilter = metadataFilter.RevisionIdFilter is { Count: > 0 };
+            var hasExcludedRevisionIdFilter = metadataFilter.ExcludedRevisionIdFilter is { Count: > 0 };
             var hasIdFilter = metadataFilter.IdFilter is { Count: > 0 };
             var hasExcludedIdFilter = metadataFilter.ExcludedIdFilter is { Count: > 0 };
             var hasKbFilter = metadataFilter.KbArticleFilter is { Count: > 0 };
             var hasExcludedKbFilter = metadataFilter.ExcludedKbArticleFilter is { Count: > 0 };
 
-            if (requiresCategoryFiltering || hasIdFilter || hasExcludedIdFilter || hasKbFilter || hasExcludedKbFilter)
+            if (requiresCategoryFiltering ||
+                hasRevisionIdFilter ||
+                hasExcludedRevisionIdFilter ||
+                hasIdFilter ||
+                hasExcludedIdFilter ||
+                hasKbFilter ||
+                hasExcludedKbFilter)
             {
                 PopulateFilterTable(
                     command.Connection,
@@ -1212,6 +1220,8 @@ namespace Microsoft.PackageGraph.Storage.Local
                     hasExcludedProductFilter,
                     hasClassificationFilter,
                     hasExcludedClassificationFilter,
+                    hasRevisionIdFilter,
+                    hasExcludedRevisionIdFilter,
                     hasIdFilter,
                     hasExcludedIdFilter,
                     hasKbFilter,
@@ -1285,6 +1295,17 @@ namespace Microsoft.PackageGraph.Storage.Local
             if (metadataFilter.SkipSuperseded)
             {
                 whereBuilder.Append("\nAND NOT EXISTS (SELECT 1 FROM superseded AS sup WHERE sup.superseded_guid = i.guid)");
+            }
+
+            if (hasRevisionIdFilter)
+            {
+                tableBuilder.Append("\nINNER JOIN temp.filter_values AS fv_rid ON fv_rid.kind = 'revision_id' AND CAST(fv_rid.value AS INTEGER) = i.id");
+            }
+
+            if (hasExcludedRevisionIdFilter)
+            {
+                tableBuilder.Append("\nLEFT JOIN temp.filter_values AS fv_exrid ON fv_exrid.kind = 'excluded_revision_id' AND CAST(fv_exrid.value AS INTEGER) = i.id");
+                whereBuilder.Append("\nAND fv_exrid.value IS NULL");
             }
 
             if (hasIdFilter)
@@ -1404,6 +1425,8 @@ namespace Microsoft.PackageGraph.Storage.Local
             bool hasExcludedProductFilter,
             bool hasClassificationFilter,
             bool hasExcludedClassificationFilter,
+            bool hasRevisionIdFilter,
+            bool hasExcludedRevisionIdFilter,
             bool hasIdFilter,
             bool hasExcludedIdFilter,
             bool hasKbFilter,
@@ -1458,6 +1481,16 @@ namespace Microsoft.PackageGraph.Storage.Local
             if (hasExcludedClassificationFilter)
             {
                 AddValues("excluded_classification", metadataFilter.ExcludedClassificationFilter);
+            }
+
+            if (hasRevisionIdFilter)
+            {
+                AddValues("revision_id", metadataFilter.RevisionIdFilter);
+            }
+
+            if (hasExcludedRevisionIdFilter)
+            {
+                AddValues("excluded_revision_id", metadataFilter.ExcludedRevisionIdFilter);
             }
 
             if (hasIdFilter)

@@ -77,14 +77,16 @@ namespace Microsoft.PackageGraph.Storage
         /// Deletes the specified update content file.
         /// </summary>
         /// <param name="file">The update file</param>
-        Task Delete(IContentFile file);
+        /// <param name="cancelToken">Cancellation token for aborting the operation</param>
+        Task DeleteAsync(IContentFile file, CancellationToken cancelToken);
 
         /// <summary>
-        /// Delete the specified update content file (by hash).
+        /// Deletes the specified update content file (by hash).
         /// </summary>
         /// <param name="fileDigest">The update file hash</param>
+        /// <param name="cancelToken">Cancellation token for aborting the operation</param>
         /// <returns></returns>
-        Task Delete(IContentFileDigest fileDigest);
+        Task DeleteAsync(IContentFileDigest fileDigest, CancellationToken cancelToken);
 
         /// <summary>
         /// The size in bytes of content left to be downloaded in the current download operation
@@ -94,7 +96,7 @@ namespace Microsoft.PackageGraph.Storage
         /// <summary>
         /// The size in bytes of content downloaded during the current download operation
         /// </summary>
-        long DownloadedSize { get;  }
+        long DownloadedSize { get; }
 
         /// <summary>
         /// The count of content files left to be downloaded in the current download operation

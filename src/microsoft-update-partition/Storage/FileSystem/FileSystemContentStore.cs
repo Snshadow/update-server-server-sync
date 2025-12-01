@@ -212,20 +212,26 @@ namespace Microsoft.PackageGraph.Storage.Local
             return File.OpenRead(GetUri(fileDigest));
         }
 
-        /// <inheritdoc cref="IContentStore.Delete(IContentFile)"/>
-        public async Task Delete(IContentFile file)
+        /// <inheritdoc cref="IContentStore.DeleteAsync(IContentFile, CancellationToken)"/>
+        public async Task DeleteAsync(IContentFile file, CancellationToken cancelToken)
         {
             var fileDirPath = Path.GetDirectoryName(GetUri(file));
 
-            Directory.Delete(fileDirPath, true);
+            await Task.Run(() =>
+            {
+                Directory.Delete(fileDirPath, true);
+            }, cancelToken);
         }
 
-        /// <inheritdoc cref="IContentStore.Delete(IContentFileDigest)"/>
-        public async Task Delete(IContentFileDigest fileDigest)
+        /// <inheritdoc cref="IContentStore.DeleteAsync(IContentFileDigest, CancellationToken)"/>
+        public async Task DeleteAsync(IContentFileDigest fileDigest, CancellationToken cancelToken)
         {
             var fileDirPath = Path.GetDirectoryName(GetUri(fileDigest));
 
-            Directory.Delete(fileDirPath, true);
+            await Task.Run(() =>
+            {
+                Directory.Delete(fileDirPath, true);
+            }, cancelToken);
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
     [Description("Downloads update content from an upstream server")]
     public class ContentSyncCommand : AsyncCommand<ContentSyncCommand.Settings>
     {
-        public class Settings : CommandSettings, IMetadataStoreOptions, IMetadataFilterOptions
+        public class Settings : CommandSettings, IMetadataStoreOptions, IContentStoreOptions, IMetadataFilterOptions
         {
             [CommandOption("--metadata-store-alias")]
             [Description("Destination store alias")]

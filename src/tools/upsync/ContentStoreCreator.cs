@@ -13,15 +13,13 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
     public interface IContentStoreOptions
     {
         public string ContentPath { get; }
-
         public string ContentStoreType { get; }
-
         public string ContentStoreConnectionString { get; }
     }
 
     class ContentStoreCreator
     {
-        public static IContentStore GetContentStoreFromOptions(IContentStoreOptions options)
+        public static IContentStore GetFromOptions(IContentStoreOptions options)
         {
             switch (options.ContentStoreType)
             {

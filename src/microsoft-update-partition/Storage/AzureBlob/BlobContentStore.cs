@@ -267,16 +267,18 @@ namespace Microsoft.PackageGraph.Storage.Azure
             throw new NotImplementedException();
         }
 
-        /// <inheritdoc cref="IContentStore.Delete(IContentFile)"/>
-        public async Task Delete(IContentFile file)
+#pragma warning disable 1998
+        /// <inheritdoc cref="IContentStore.DeleteAsync(IContentFile, CancellationToken)"/>
+        public async Task DeleteAsync(IContentFile file, CancellationToken cancelToken)
         {
             throw new NotImplementedException();
         }
 
-        /// <inheritdoc cref="IContentStore.Delete(IContentFileDigest)"/>
-        public async Task Delete(IContentFileDigest fileDigest)
+        /// <inheritdoc cref="IContentStore.DeleteAsync(IContentFileDigest, CancellationToken)"/>
+        public async Task DeleteAsync(IContentFileDigest fileDigest, CancellationToken cancelToken)
         {
             throw new NotImplementedException();
         }
+#pragma warning restore 1998
     }
 }
