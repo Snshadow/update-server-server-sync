@@ -284,7 +284,7 @@
             <summary>
             Get the identities of packages that match the criteria from <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource"/> 
             </summary>
-            <typeparam name="T">Package identity type to get its identities. The type must inherit <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/></typeparam>
+            <typeparam name="T">Package type to get its identities. The type must inherit <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/></typeparam>
             <param name="source">Source to filter packages from</param>
             <returns>Matching packages' identities</returns>
         </member>
@@ -294,6 +294,14 @@
             </summary>
             <param name="source">Store to filter packages from</param>
             <returns>Matching packages' identities</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetCount``1(Microsoft.PackageGraph.Storage.IMetadataSource)">
+            <summary>
+            Get the number of packages that match the criteria from <see cref="T:Microsoft.PackageGraph.Storage.IMetadataSource" />
+            </summary>
+            <typeparam name="T">Package type to count. The type must inherit <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/></typeparam>
+            <param name="source">Source to filter packages from</param>
+            <returns>The number of matching packages</returns>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.GetCount(Microsoft.PackageGraph.Storage.IMetadataSource)">
             <summary>

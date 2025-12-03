@@ -573,7 +573,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Get the identities of packages that match the criteria from <see cref="IMetadataSource"/> 
         /// </summary>
-        /// <typeparam name="T">Package identity type to get its identities. The type must inherit <see cref="MicrosoftUpdatePackage"/></typeparam>
+        /// <typeparam name="T">Package type to get its identities. The type must inherit <see cref="MicrosoftUpdatePackage"/></typeparam>
         /// <param name="source">Source to filter packages from</param>
         /// <returns>Matching packages' identities</returns>
         public IEnumerable<IPackageIdentity> GetMatchingIdentities<T>(IMetadataSource source) where T : MicrosoftUpdatePackage
@@ -602,17 +602,28 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         /// <summary>
         /// Get the number of packages that match the criteria from <see cref="IMetadataSource" />
         /// </summary>
+        /// <typeparam name="T">Package type to count. The type must inherit <see cref="MicrosoftUpdatePackage"/></typeparam>
         /// <param name="source">Source to filter packages from</param>
         /// <returns>The number of matching packages</returns>
-        public int GetCount(IMetadataSource source)
+        public int GetCount<T>(IMetadataSource source) where T : MicrosoftUpdatePackage
         {
             if (TryGetStoreBackedFilter(source, out var storeBacked))
             {
-                var packageType = GetStoredPackageType(typeof(MicrosoftUpdatePackage));
+                var packageType = GetStoredPackageType(typeof(T));
                 return storeBacked.CountFromStore(CloneWithPackageType(packageType));
             }
 
             return Apply(source).Count();
+        }
+
+        /// <summary>
+        /// Get the number of packages that match the criteria from <see cref="IMetadataSource" />
+        /// </summary>
+        /// <param name="source">Source to filter packages from</param>
+        /// <returns>The number of matching packages</returns>
+        public int GetCount(IMetadataSource source)
+        {
+            return GetCount<MicrosoftUpdatePackage>(source);
         }
     }
 }
