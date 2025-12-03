@@ -244,7 +244,13 @@
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.SortOrder">
             <summary>
-            Get the sorting order of this filter
+            Get or set the sorting order of this filter
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IncludeOnlyInstallable">
+            <summary>
+            Return only installable updates. Which are <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SoftwareUpdate"/> or <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.DriverUpdate"/><br/>
+            Ignored if queried package type is not base <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/>
             </summary>
         </member>
         <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.#ctor">

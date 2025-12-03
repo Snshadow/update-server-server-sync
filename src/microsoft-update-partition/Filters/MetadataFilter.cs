@@ -158,7 +158,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 ComputerHardwareIdFilter = ComputerHardwareIdFilter,
                 KbArticleFilter = KbArticleFilter,
                 ExcludedKbArticleFilter = ExcludedKbArticleFilter,
-                SortOrder = SortOrder
+                SortOrder = SortOrder,
+                IncludeOnlyInstallable = IncludeOnlyInstallable
             };
         }
 
@@ -313,9 +314,15 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public List<string> ExcludedKbArticleFilter;
 
         /// <summary>
-        /// Get the sorting order of this filter
+        /// Get or set the sorting order of this filter
         /// </summary>
         public MetadataSortOrder SortOrder;
+
+        /// <summary>
+        /// Return only installable updates. Which are <see cref="SoftwareUpdate"/> or <see cref="DriverUpdate"/><br/>
+        /// Ignored if queried package type is not base <see cref="MicrosoftUpdatePackage"/>
+        /// </summary>
+        public bool IncludeOnlyInstallable;
 
         /// <summary>
         /// Initialize a new filter. An empty filter matches all updates or categories.
@@ -411,7 +418,18 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                     .Cast<T>();
             }
 
-            var filteredUpdates = source.OfType<T>();
+            IEnumerable<T> filteredUpdates;
+
+            if (IncludeOnlyInstallable && typeof(T) == typeof(MicrosoftUpdatePackage))
+            {
+                filteredUpdates = source.Where(update =>
+                    update is SoftwareUpdate || update is DriverUpdate)
+                    .Cast<T>();
+            }
+            else
+            {
+                filteredUpdates = source.OfType<T>();
+            }
 
             if (!string.IsNullOrEmpty(HardwareIdFilter))
             {

@@ -1274,6 +1274,11 @@ namespace Microsoft.PackageGraph.Storage.Local
                 whereBuilder.Append("\nAND i.package_type = @package_type");
                 command.Parameters.Add("@package_type", SqliteType.Integer).Value = metadataFilter.PackageType;
             }
+            else if (metadataFilter.IncludeOnlyInstallable)
+            {
+                // Get only software and driver updates
+                whereBuilder.Append("\nAND (i.package_type = 3 OR i.package_type = 4)");
+            }
 
             if (!string.IsNullOrEmpty(metadataFilter.TitleFilter))
             {
