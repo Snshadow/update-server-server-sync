@@ -3,6 +3,7 @@
 
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
 using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Content;
+using Microsoft.PackageGraph.ObjectModel;
 using Microsoft.PackageGraph.Storage;
 using Microsoft.PackageGraph.Storage.Local;
 using Microsoft.UpdateServices.WebServices.ServerSync;
@@ -192,16 +193,36 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     var filteredPackages = filter.Apply(PackageStore);
 
                     // Also select all updates that are bundled with updates matching the filter
+                    List<MicrosoftUpdatePackageIdentity> GetAllBundledUpdates(IPackage update)
+                    {
+                        if (update is SoftwareUpdate { BundledUpdates: not null } softwareUpdate)
+                        {
+                            List<MicrosoftUpdatePackageIdentity> bundledList = [];
+                            bundledList.AddRange(softwareUpdate.BundledUpdates);
+
+                            MetadataFilter bundledFilter = new()
+                            {
+                                IncludeExpired = true,
+                                IdFilter = softwareUpdate.BundledUpdates.Select(id => id.ID)
+                                    .ToList()
+                            };
+
+                            foreach (var bundledUpdate in bundledFilter
+                                .Apply<MicrosoftUpdatePackage>(PackageStore))
+                            {
+                                bundledList.AddRange(GetAllBundledUpdates(bundledUpdate));
+                            }
+
+                            return bundledList;
+                        }
+
+                        return [];
+                    }
+
                     List<MicrosoftUpdatePackageIdentity> bundledUpdates = [];
                     foreach (var package in filteredPackages)
                     {
-                        if (package is SoftwareUpdate softwareUpdate)
-                        {
-                            if (softwareUpdate.BundledUpdates is not null)
-                            {
-                                bundledUpdates.AddRange(softwareUpdate.BundledUpdates);
-                            }
-                        }
+                        bundledUpdates.AddRange(GetAllBundledUpdates(package));
                     }
 
                     // Deduplicate result and convert to raw identity format
