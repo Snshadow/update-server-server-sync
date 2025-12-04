@@ -183,7 +183,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
                 .OfType<AtLeastOne>()
                 .SelectMany(atLeastOne => atLeastOne.Simple)
                 .Select(simple => simple.UpdateId)
-                .Where(simple => knownCategories.Contains(simple))
+                .Where(knownCategories.Contains)
                 .Select(simple => knownCategories[simple].First())
                 .ToList();
         }

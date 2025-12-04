@@ -1277,7 +1277,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             else if (metadataFilter.IncludeOnlyInstallable)
             {
                 // Get only software and driver updates
-                whereBuilder.Append("\nAND (i.package_type = 3 OR i.package_type = 4)");
+                whereBuilder.Append("\nAND (i.package_type = 3 OR i.package_type = 4)\nAND m.categories IS NOT NULL");
             }
 
             if (!string.IsNullOrEmpty(metadataFilter.TitleFilter))

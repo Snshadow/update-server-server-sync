@@ -319,7 +319,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
         public MetadataSortOrder SortOrder;
 
         /// <summary>
-        /// Return only installable updates. Which are <see cref="SoftwareUpdate"/> or <see cref="DriverUpdate"/><br/>
+        /// Return only installable updates. Which are <see cref="SoftwareUpdate"/> or <see cref="DriverUpdate"/>
+        /// not bundled by other updates and have categories as prerequisite.<br/>
         /// Ignored if queried package type is not base <see cref="MicrosoftUpdatePackage"/>
         /// </summary>
         public bool IncludeOnlyInstallable;
@@ -422,8 +423,11 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata
 
             if (IncludeOnlyInstallable && typeof(T) == typeof(MicrosoftUpdatePackage))
             {
-                filteredUpdates = source.Where(update =>
-                    update is SoftwareUpdate || update is DriverUpdate)
+                filteredUpdates = source
+                    .Where(update =>
+                        update is SoftwareUpdate || update is DriverUpdate)
+                    .Where(update => GetCategoryPrerequisiteIds((MicrosoftUpdatePackage)update)
+                        .Any())
                     .Cast<T>();
             }
             else

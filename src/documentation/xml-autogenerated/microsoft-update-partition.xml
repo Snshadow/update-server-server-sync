@@ -249,7 +249,8 @@
         </member>
         <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MetadataFilter.IncludeOnlyInstallable">
             <summary>
-            Return only installable updates. Which are <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SoftwareUpdate"/> or <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.DriverUpdate"/><br/>
+            Return only installable updates. Which are <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SoftwareUpdate"/> or <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.DriverUpdate"/>
+            not bundled by other updates and have categories as prerequisite.<br/>
             Ignored if queried package type is not base <see cref="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.MicrosoftUpdatePackage"/>
             </summary>
         </member>
