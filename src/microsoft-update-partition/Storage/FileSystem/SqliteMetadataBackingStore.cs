@@ -1197,7 +1197,7 @@ namespace Microsoft.PackageGraph.Storage.Local
             var hasClassificationFilter = metadataFilter.ClassificationFilter is { Count: > 0 };
             var hasExcludedProductFilter = metadataFilter.ExcludedProductFilter is { Count: > 0 };
             var hasExcludedClassificationFilter = metadataFilter.ExcludedClassificationFilter is { Count: > 0 };
-            var requiresCategoryFiltering = hasProductFilter || hasClassificationFilter || hasExcludedProductFilter || hasExcludedClassificationFilter;
+            var requiresCategoryFiltering = hasProductFilter || hasClassificationFilter || hasExcludedProductFilter || hasExcludedClassificationFilter || metadataFilter.IncludeOnlyInstallable;
             var hasRevisionIdFilter = metadataFilter.RevisionIdFilter is { Count: > 0 };
             var hasExcludedRevisionIdFilter = metadataFilter.ExcludedRevisionIdFilter is { Count: > 0 };
             var hasIdFilter = metadataFilter.IdFilter is { Count: > 0 };
