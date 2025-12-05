@@ -195,7 +195,7 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
                     // Also select all updates that are bundled with updates matching the filter
                     List<MicrosoftUpdatePackageIdentity> GetAllBundledUpdates(IPackage update)
                     {
-                        if (update is SoftwareUpdate { BundledUpdates: not null } softwareUpdate)
+                        if (update is SoftwareUpdate { BundledUpdates.Count: > 0 } softwareUpdate)
                         {
                             List<MicrosoftUpdatePackageIdentity> bundledList = [];
                             bundledList.AddRange(softwareUpdate.BundledUpdates);
@@ -275,8 +275,8 @@ namespace Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ServerSync
 
             PackageStoreLock.EnterReadLock();
 
-            var returnUpdatesList = new List<ServerSyncUpdateData>();
-            var returnFilesList = new List<ServerSyncUrlData>();
+            List<ServerSyncUpdateData> returnUpdatesList = [];
+            List<ServerSyncUrlData> returnFilesList = [];
 
             try
             {

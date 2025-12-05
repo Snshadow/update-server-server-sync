@@ -203,7 +203,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         /// <inheritdoc cref="IContentStore.Get(IContentFileDigest)"/>
         public Stream Get(IContentFileDigest fileDigest)
         {
-            if (!Contains(fileDigest, out var _))
+            if (!Contains(fileDigest, out _))
             {
                 throw new Exception("The requested file is not downloaded");
             }

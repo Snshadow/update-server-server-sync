@@ -28,7 +28,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                 fileDigestList.AddRange(update.Files.Select(file => file.Digest));
             }
 
-            if (update is SoftwareUpdate { BundledUpdates: not null } softwareUpdate)
+            if (update is SoftwareUpdate { BundledUpdates.Count: > 0 } softwareUpdate)
             {
                 foreach (var bundledUpdate in softwareUpdate.BundledUpdates)
                 {
