@@ -3408,9 +3408,6 @@
             <param name="computerId"></param>
             <returns>A synchronization information of a computer</returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.Storage.Local.DirectoryPackageStore.ReIndex">
-            <inheritdoc/>
-        </member>
         <member name="T:Microsoft.PackageGraph.Storage.Local.FileBasedBackingStoreBase">
             <summary>
             Abstract base class for file-based metadata backing stores.

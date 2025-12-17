@@ -227,7 +227,6 @@ namespace Microsoft.PackageGraph.Storage.Local
             return storeBackedFilter is not null;
         }
 
-        /// <inheritdoc/>
         public void ReIndex()
         {
             _metadataBackingStore.CheckIndex(true);
@@ -291,7 +290,7 @@ namespace Microsoft.PackageGraph.Storage.Local
                 packagesIdsToCopy = packagesIdsToCopy.Except(destinationPackageStore.GetPackageIdentities()).ToList();
             }
 
-            var packagesToAdd = packagesIdsToCopy.Select(id => GetPackage(id));
+            var packagesToAdd = packagesIdsToCopy.Select(GetPackage);
             destination.AddPackages(packagesToAdd);
         }
 

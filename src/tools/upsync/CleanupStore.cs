@@ -86,7 +86,7 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
                     .SelectMany(approved => GetAllFileDigests(metadataStore, approved))
                     .Distinct();
 
-                var unusedFileDigests = fileDigests.Except(usedFileDigests);
+                var unusedFileDigests = fileDigests.Except(usedFileDigests).ToList();
 
                 ParallelOptions parallelOptions = new()
                 {
@@ -95,19 +95,19 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync
 
                 ContentOperationProgress deleteProgress = new()
                 {
-                    Maximum = unusedFileDigests.Count()
+                    Maximum = unusedFileDigests.Count
                 };
 
                 await Parallel.ForEachAsync(unusedFileDigests, parallelOptions, async (fileDigest, _) =>
                 {
-                    await contentStore.DeleteAsync(fileDigest, CancellationToken.None);
+                    await contentStore.DeleteAsync(fileDigest, CancellationToken.None).ConfigureAwait(false);
                     lock (deleteProgress)
                     {
                         deleteProgress.Current++;
                         UpdateConsoleForMessageRefresh();
                         Console.Write("Deleted {0} of {1} files", deleteProgress.Current, deleteProgress.Maximum);
                     }
-                });
+                }).ConfigureAwait(false);
             }
         }
     }

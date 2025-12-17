@@ -676,7 +676,7 @@ namespace Microsoft.PackageGraph.Storage.Local
         {
             using var connection = GetConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT guid, revision FROM identities";
+            command.CommandText = "SELECT guid, revision FROM identities WHERE package_type != -1";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -1278,6 +1278,11 @@ namespace Microsoft.PackageGraph.Storage.Local
             {
                 // Get only software and driver updates
                 whereBuilder.Append("\nAND (i.package_type = 3 OR i.package_type = 4)\nAND m.categories IS NOT NULL");
+            }
+            else
+            {
+                // Prevent querying incomplete identity
+                whereBuilder.Append("\nAND i.package_type != -1");
             }
 
             if (!string.IsNullOrEmpty(metadataFilter.TitleFilter))
