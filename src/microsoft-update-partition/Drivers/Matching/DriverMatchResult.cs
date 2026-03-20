@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
 using System;
 
-namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
+namespace Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching
 {
     /// <summary>
-    /// The result of finding the best driver update for a device. 
+    /// The result of finding the best driver update for a device.
     /// <para>
     /// Contains ranking information that can be used to determine if the matched driver update is better than an installed driver.
     /// </para>

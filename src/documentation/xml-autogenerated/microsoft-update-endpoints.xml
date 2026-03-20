@@ -198,7 +198,7 @@
             <param name="parameters"></param>
             <returns></returns>
         </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.IsInstalledDriverBetterMatch(Microsoft.UpdateServices.WebServices.ClientSync.InstalledDriver,Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMatchResult,System.Collections.Generic.List{System.String},System.Collections.Generic.List{System.Guid})">
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Endpoints.ClientSync.ClientSyncWebService.IsInstalledDriverBetterMatch(Microsoft.UpdateServices.WebServices.ClientSync.InstalledDriver,Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverMatchResult,System.Collections.Generic.List{System.String},System.Collections.Generic.List{System.Guid})">
             <summary>
             Check if the currently installed driver is a better match than the best driver we found in the updates source
             </summary>

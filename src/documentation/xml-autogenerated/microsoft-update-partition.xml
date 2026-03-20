@@ -33,6 +33,160 @@
             <param name="outFile">Ouput file to set in the directive file</param>
             <returns></returns>
         </member>
+        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverMatchResult">
+            <summary>
+            The result of finding the best driver update for a device.
+            <para>
+            Contains ranking information that can be used to determine if the matched driver update is better than an installed driver.
+            </para>
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverMatchResult.Driver">
+            <summary>
+            The matched driver
+            </summary>
+            <value>
+            An update of type Driver
+            </value>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverMatchResult.MatchedVersion">
+            <summary>
+            The version of the matched driver
+            </summary>
+            <value>
+            Driver version consisting of timestamp and 4 part version
+            </value>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverMatchResult.MatchedFeatureScore">
+            <summary>
+            The feature score of the matched driver if available; null otherwise
+            </summary>
+            <value>
+            Driver feature score
+            </value>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverMatchResult.MatchedHardwareId">
+            <summary>
+            The most specific device hardwared ID that was matched
+            </summary>
+            <value>
+            Hardware ID string
+            </value>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverMatchResult.MatchedComputerHardwareId">
+            <summary>
+            The computer hardware ID that was matched, if any. Null otherwise
+            </summary>
+            <value>
+            Computer hardware ID (GUID)
+            </value>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverMatchResult.#ctor(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.DriverUpdate)">
+            <summary>
+            Create a driver match result for a device
+            </summary>
+            <param name="driver">The driver that matched a device hardware id</param>
+        </member>
+        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching">
+            <summary>
+            Indexes driver matching metadata from a metadata store.
+            Efficiently checks if a driver is available in the metadata store for a specific hardware ID.
+            </summary>
+        </member>
+        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.DriverMetadataStore">
+            <summary>
+            Driver metadata serialized as JSON for quick reading.
+            The data in this list is parsed from driver update metadata XML
+            </summary>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.FromPackageSource(Microsoft.PackageGraph.Storage.IMetadataStore)">
+            <summary>
+            Loads driver update matching metadata from a metadata store.
+            </summary>
+            <param name="packageSource"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.ExtractAndIndexDriverMetadata(System.Int32,System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata})">
+            <summary>
+            Extract driver metadata from an update XML and added relevant information to indexes and maps
+            for quick retrieval
+            </summary>
+            <param name="updateIndex">The index of the update to parse.</param>
+            <param name="driverMetadata"></param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.AddDriverFeatureScoreToIndex(System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata},System.Int32)">
+            <summary>
+            Index feature scores from the list of drivers metadata
+            </summary>
+            <param name="driverMetadata">List of driver metadata</param>
+            <param name="startIndexInMetadataStore">The index of the first update in this list when added to the metadata store</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.AddDriverVersionToIndex(System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata},System.Int32)">
+            <summary>
+            Index driver versions from the driver metadata list
+            </summary>
+            <param name="driverMetadata">List of driver metadata to add</param>
+            <param name="startIndexInMetadataStore">The index of the first update in this list when added to the metadata store</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.AddDriverMetadataToHWIDIndex(System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata},System.Int32)">
+            <summary>
+            Index hardware ids from the driver metadata list
+            </summary>
+            <param name="driverMetadata">List of driver metadata to add</param>
+            <param name="startIndexInMetadataStore">The index of the first update in this list when added to the metadata store</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.AddDriverMetadataToComputerHwIdIndex(System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata},System.Int32)">
+            <summary>
+            Index computer hardware ids from the driver metadata list
+            </summary>
+            <param name="driverMetadata">List of driver metadata to add</param>
+            <param name="startIndexInMetadataStore">The index of the first update in this list when added to the metadata store</param>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.MatchDriver(System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.List{System.Guid})">
+            <summary>
+            Finds the best match for a driver update that matches the specified hardware ids and computer hardware ids
+            </summary>
+            <param name="hardwareIds">Device hardware ids, sorted from specific to generic</param>
+            <param name="computerHardwareIds">List of computer hardware ids</param>
+            <param name="installedPrerequisites">List of prerequisites installed on the target computer. Used to filter updates to just those applicable to a system</param>
+            <returns>If a driver match is found, matching information; null otherwise</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.MatchDriverMetadata(System.String,System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.List{System.Guid})">
+            <summary>
+            Finds the best match for a hardware id and computer hardware ids
+            </summary>
+            <param name="hardwareId">Device hardware id</param>
+            <param name="computerHardwareIds">List of computer hardware ids</param>
+            <param name="installedPrerequisites">List of prerequisites installed on the target computer. Used to filter updates to just those applicable to a system</param>
+            <returns>Best matched driver</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.MatchByComputerHardwareId(System.Collections.Generic.List{System.Int32},System.Collections.Generic.IEnumerable{System.Guid})">
+            <summary>
+            From the list of drivers matched to a device on hardware id, attempts to match by computer hardware id
+            </summary>
+            <param name="metadataMatchedByHwId">List of driver metadata that was matched by a hardware id</param>
+            <param name="computerHardwareIds">List of computer hardware ids compatible with a system</param>
+            <returns>Best driver match based on computer hardware id matching</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.MatchBySimpleHardwareId(System.Collections.Generic.List{System.Int32})">
+            <summary>
+            Finds the best match for a driver that was matched by just hardware ID matching (no computer hardware id or feature score available)
+            </summary>
+            <param name="metadataMatchedByHwId">The list of drivers matched by hardware id</param>
+            <returns>Best driver match based on device hardware id</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.GetDriverMetadataForHardwareId(System.String)">
+            <summary>
+            Gets driver metadata entries that match the specified HW ID. This method is recursive across all delta baselines.
+            </summary>
+            <param name="hardwareId">Device hardware id</param>
+            <returns>List of driver metadata indexes that match the device hardware id</returns>
+        </member>
+        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching.DriverUpdateMatching.GetDriverUpdateFromMetadataIndex(System.Int32)">
+            These getters recusively go into all delta baselines for a metadata source and retrieve driver metadata
+            Recursive getters are prefered to avoid having to accumulate driver indexes into the latest delta source - it can lead to huge memory utilization over time.
+            Instead, each incremental metadata source contains its own complete set of driver metadata and we query recursively across all deltas
+        </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.SortOrder">
             <summary>
             Specifies the order of sorting with specific criteria
@@ -1154,60 +1308,6 @@
             <param name="obj">Other object</param>
             <returns>-1 if other feature score is lower (better), 0 if equal and 1 if higher (worse)</returns>
         </member>
-        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMatchResult">
-            <summary>
-            The result of finding the best driver update for a device. 
-            <para>
-            Contains ranking information that can be used to determine if the matched driver update is better than an installed driver.
-            </para>
-            </summary>
-        </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMatchResult.Driver">
-            <summary>
-            The matched driver
-            </summary>
-            <value>
-            An update of type Driver
-            </value>
-        </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMatchResult.MatchedVersion">
-            <summary>
-            The version of the matched driver
-            </summary>
-            <value>
-            Driver version consisting of timestamp and 4 part version
-            </value>
-        </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMatchResult.MatchedFeatureScore">
-            <summary>
-            The feature score of the matched driver if available; null otherwise
-            </summary>
-            <value>
-            Driver feature score
-            </value>
-        </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMatchResult.MatchedHardwareId">
-            <summary>
-            The most specific device hardwared ID that was matched
-            </summary>
-            <value>
-            Hardware ID string
-            </value>
-        </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMatchResult.MatchedComputerHardwareId">
-            <summary>
-            The computer hardware ID that was matched, if any. Null otherwise
-            </summary>
-            <value>
-            Computer hardware ID (GUID)
-            </value>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMatchResult.#ctor(Microsoft.PackageGraph.MicrosoftUpdate.Metadata.DriverUpdate)">
-            <summary>
-            Create a driver match result for a device
-            </summary>
-            <param name="driver">The driver that matched a device hardware id</param>
-        </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata">
             <summary>
             Extended information about a hardware ID handled by a driver update.
@@ -1311,106 +1411,6 @@
             </summary>
             <param name="obj"></param>
             <returns></returns>
-        </member>
-        <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching">
-            <summary>
-            Indexes driver matching metadata from a metadata store.
-            Efficiently checks if a driver is available in the metadata store for a specific hardware ID.
-            </summary>
-        </member>
-        <member name="F:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.DriverMetadataStore">
-            <summary>
-            Driver metadata serialized as JSON for quick reading.
-            The data in this list is parsed from driver update metadata XML
-            </summary>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.FromPackageSource(Microsoft.PackageGraph.Storage.IMetadataStore)">
-            <summary>
-            Loads driver update matching metadata from a metadata store.
-            </summary>
-            <param name="packageSource"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.ExtractAndIndexDriverMetadata(System.Int32,System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata})">
-            <summary>
-            Extract driver metadata from an update XML and added relevant information to indexes and maps
-            for quick retrieval
-            </summary>
-            <param name="updateIndex">The index of the update to parse.</param>
-            <param name="driverMetadata"></param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.AddDriverFeatureScoreToIndex(System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata},System.Int32)">
-            <summary>
-            Index feature scores from the list of drivers metadata
-            </summary>
-            <param name="driverMetadata">List of driver metadata</param>
-            <param name="startIndexInMetadataStore">The index of the first update in this list when added to the metadata store</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.AddDriverVersionToIndex(System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata},System.Int32)">
-            <summary>
-            Index driver versions from the driver metadata list
-            </summary>
-            <param name="driverMetadata">List of driver metadata to add</param>
-            <param name="startIndexInMetadataStore">The index of the first update in this list when added to the metadata store</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.AddDriverMetadataToHWIDIndex(System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata},System.Int32)">
-            <summary>
-            Index hardware ids from the driver metadata list
-            </summary>
-            <param name="driverMetadata">List of driver metadata to add</param>
-            <param name="startIndexInMetadataStore">The index of the first update in this list when added to the metadata store</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.AddDriverMetadataToComputerHwIdIndex(System.Collections.Generic.List{Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverMetadata},System.Int32)">
-            <summary>
-            Index computer hardware ids from the driver metadata list
-            </summary>
-            <param name="driverMetadata">List of driver metadata to add</param>
-            <param name="startIndexInMetadataStore">The index of the first update in this list when added to the metadata store</param>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.MatchDriver(System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.List{System.Guid})">
-            <summary>
-            Finds the best match for a driver update that matches the specified hardware ids and computer hardware ids
-            </summary>
-            <param name="hardwareIds">Device hardware ids, sorted from specific to generic</param>
-            <param name="computerHardwareIds">List of computer hardware ids</param>
-            <param name="installedPrerequisites">List of prerequisites installed on the target computer. Used to filter updates to just those applicable to a system</param>
-            <returns>If a driver match is found, matching information; null otherwise</returns>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.MatchDriverMetadata(System.String,System.Collections.Generic.IEnumerable{System.Guid},System.Collections.Generic.List{System.Guid})">
-            <summary>
-            Finds the best match for a hardware id and computer hardware ids
-            </summary>
-            <param name="hardwareId">Device hardware id</param>
-            <param name="computerHardwareIds">List of computer hardware ids</param>
-            <param name="installedPrerequisites">List of prerequisites installed on the target computer. Used to filter updates to just those applicable to a system</param>
-            <returns>Best matched driver</returns>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.MatchByComputerHardwareId(System.Collections.Generic.List{System.Int32},System.Collections.Generic.IEnumerable{System.Guid})">
-            <summary>
-            From the list of drivers matched to a device on hardware id, attempts to match by computer hardware id
-            </summary>
-            <param name="metadataMatchedByHwId">List of driver metadata that was matched by a hardware id</param>
-            <param name="computerHardwareIds">List of computer hardware ids compatible with a system</param>
-            <returns>Best driver match based on computer hardware id matching</returns>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.MatchBySimpleHardwareId(System.Collections.Generic.List{System.Int32})">
-            <summary>
-            Finds the best match for a driver that was matched by just hardware ID matching (no computer hardware id or feature score available)
-            </summary>
-            <param name="metadataMatchedByHwId">The list of drivers matched by hardware id</param>
-            <returns>Best driver match based on device hardware id</returns>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.GetDriverMetadataForHardwareId(System.String)">
-            <summary>
-            Gets driver metadata entries that match the specified HW ID. This method is recursive across all delta baselines.
-            </summary>
-            <param name="hardwareId">Device hardware id</param>
-            <returns>List of driver metadata indexes that match the device hardware id</returns>
-        </member>
-        <member name="M:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverUpdateMatching.GetDriverUpdateFromMetadataIndex(System.Int32)">
-            These getters recusively go into all delta baselines for a metadata source and retrieve driver metadata
-            Recursive getters are prefered to avoid having to accumulate driver indexes into the latest delta source - it can lead to huge memory utilization over time.
-            Instead, each incremental metadata source contains its own complete set of driver metadata and we query recursively across all deltas
         </member>
         <member name="T:Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers.DriverVersion">
             <summary>

@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata;
+using Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers;
 using Microsoft.PackageGraph.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.PackageGraph.MicrosoftUpdate.Metadata.Drivers
+namespace Microsoft.PackageGraph.MicrosoftUpdate.Drivers.Matching
 {
     /// <summary>
     /// Indexes driver matching metadata from a metadata store.

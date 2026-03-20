@@ -16,10 +16,6 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
             [Description("The endpoint from which to fetch categories.")]
             public string UpstreamEndpoint { get; set; }
 
-            [CommandOption("-m|--master")]
-            [Description("Fetch categories from the official Microsoft upstream server.")]
-            public bool MasterEndpoint { get; set; }
-
             [CommandOption("--account-name")]
             [Description("Account name; if not set, a random GUID is used.")]
             public string AccountName { get; set; }
@@ -47,9 +43,9 @@ namespace Microsoft.PackageGraph.Utilitites.Upsync.Commands
 
             public override ValidationResult Validate()
             {
-                if (!string.IsNullOrEmpty(UpstreamEndpoint) && MasterEndpoint)
+                if (!string.IsNullOrEmpty(UpstreamEndpoint))
                 {
-                    return ValidationResult.Error("Cannot specify both --endpoint and --master.");
+                    return ValidationResult.Error("Cannot specify both --endpoint.");
                 }
                 if (string.IsNullOrEmpty(Alias) == string.IsNullOrEmpty(Path))
                 {
